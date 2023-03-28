@@ -129,14 +129,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ARM7\ARM7TDMI.cpp" />
+    <ClCompile Include="ARM7\ARM7_ARMOps.cpp" />
+    <ClCompile Include="ARM7\ARM7_BarrelShifter.cpp" />
+    <ClCompile Include="ARM7\ARM7_Flags.cpp" />
+    <ClCompile Include="ARM7\ARM7_ThumbOps.cpp" />
+    <ClCompile Include="ARM9\ARM946E.cpp" />
+    <ClCompile Include="ARM9\ARM9_ARMOps.cpp" />
+    <ClCompile Include="ARM9\ARM9_BarrelShifter.cpp" />
+    <ClCompile Include="ARM9\ARM9_Flags.cpp" />
+    <ClCompile Include="ARM9\ARM9_ThumbOps.cpp" />
     <ClCompile Include="Bus.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ARM7\ARM7TDMI.h" />
+    <ClInclude Include="ARM9\ARM946E.h" />
     <ClInclude Include="Bus.h" />
+    <ClInclude Include="InterruptManager.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="NDSMem.h" />
+    <ClInclude Include="Scheduler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

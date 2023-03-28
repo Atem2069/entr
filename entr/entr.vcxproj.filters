@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\ARM7">
+      <UniqueIdentifier>{222dffba-9ed3-4e86-8833-4316d47c1a3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ARM9">
+      <UniqueIdentifier>{d7598a71-0647-4614-80fd-a67785ce7a20}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ARM">
+      <UniqueIdentifier>{2420ea6d-2723-4fc5-90f6-6d24755eb9d1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -24,6 +33,36 @@
     <ClCompile Include="Bus.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ARM7\ARM7_ARMOps.cpp">
+      <Filter>Source Files\ARM7</Filter>
+    </ClCompile>
+    <ClCompile Include="ARM7\ARM7_BarrelShifter.cpp">
+      <Filter>Source Files\ARM7</Filter>
+    </ClCompile>
+    <ClCompile Include="ARM7\ARM7_Flags.cpp">
+      <Filter>Source Files\ARM7</Filter>
+    </ClCompile>
+    <ClCompile Include="ARM7\ARM7_ThumbOps.cpp">
+      <Filter>Source Files\ARM7</Filter>
+    </ClCompile>
+    <ClCompile Include="ARM7\ARM7TDMI.cpp">
+      <Filter>Source Files\ARM7</Filter>
+    </ClCompile>
+    <ClCompile Include="ARM9\ARM9_ARMOps.cpp">
+      <Filter>Source Files\ARM9</Filter>
+    </ClCompile>
+    <ClCompile Include="ARM9\ARM9_BarrelShifter.cpp">
+      <Filter>Source Files\ARM9</Filter>
+    </ClCompile>
+    <ClCompile Include="ARM9\ARM9_Flags.cpp">
+      <Filter>Source Files\ARM9</Filter>
+    </ClCompile>
+    <ClCompile Include="ARM9\ARM9_ThumbOps.cpp">
+      <Filter>Source Files\ARM9</Filter>
+    </ClCompile>
+    <ClCompile Include="ARM9\ARM946E.cpp">
+      <Filter>Source Files\ARM9</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
@@ -34,6 +73,18 @@
     </ClInclude>
     <ClInclude Include="NDSMem.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InterruptManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Scheduler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARM7\ARM7TDMI.h">
+      <Filter>Header Files\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="ARM9\ARM946E.h">
+      <Filter>Header Files\ARM</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
