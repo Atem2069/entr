@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Don't let BIOS dumps or ROMs get into repo directory
+*.nds
+*.bin
