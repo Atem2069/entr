@@ -456,63 +456,77 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 //Handle NDS7 IO
 uint8_t Bus::NDS7_readIO8(uint32_t address)
 {
+	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
 }
 
 void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
 }
 
 uint16_t Bus::NDS7_readIO16(uint32_t address)
 {
-	return 0;
+	uint8_t lower = NDS7_readIO8(address);
+	uint8_t upper = NDS7_readIO8(address + 1);
+	return (upper << 8) | lower;
 }
 
 void Bus::NDS7_writeIO16(uint32_t address, uint16_t value)
 {
-
+	NDS7_writeIO8(address, value & 0xFF);
+	NDS7_writeIO8(address + 1, (value >> 8) & 0xFF);
 }
 
 uint32_t Bus::NDS7_readIO32(uint32_t address)
 {
-	return 0;
+	uint16_t lower = NDS7_readIO16(address);
+	uint16_t upper = NDS7_readIO16(address + 2);
+	return (upper << 16) | lower;
 }
 
 void Bus::NDS7_writeIO32(uint32_t address, uint32_t value)
 {
-
+	NDS7_writeIO16(address, value & 0xFFFF);
+	NDS7_writeIO16(address + 2, ((value >> 16) & 0xFFFF));
 }
 
 //Handle NDS9 IO
 uint8_t Bus::NDS9_readIO8(uint32_t address)
 {
+	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
 }
 
 void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address,value));
 }
 
 uint16_t Bus::NDS9_readIO16(uint32_t address)
 {
-	return 0;
+	uint8_t lower = NDS9_readIO8(address);
+	uint8_t upper = NDS9_readIO8(address + 1);
+	return (upper << 8) | lower;
 }
 
 void Bus::NDS9_writeIO16(uint32_t address, uint16_t value)
 {
-
+	NDS9_writeIO8(address, value & 0xFF);
+	NDS9_writeIO8(address + 1, ((value >> 8) & 0xFF));
 }
 
 uint32_t Bus::NDS9_readIO32(uint32_t address)
 {
-	return 0;
+	uint16_t lower = NDS9_readIO16(address);
+	uint16_t upper = NDS9_readIO16(address + 2);
+	return (upper << 16) | lower;
 }
 
 void Bus::NDS9_writeIO32(uint32_t address, uint32_t value)
 {
-
+	NDS9_writeIO16(address, value & 0xFFFF);
+	NDS9_writeIO16(address + 2, ((value >> 16) & 0xFFFF));
 }
 
 //Handles reading/writing larger than byte sized values (the addresses should already be aligned so no issues there)
