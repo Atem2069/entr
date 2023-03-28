@@ -12,32 +12,158 @@ Bus::~Bus()
 
 uint8_t Bus::NDS7_read8(uint32_t address)
 {
+	uint8_t page = (address >> 24) & 0xFF;
+	switch (page)
+	{
+	case 0:
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented BIOS read!");
+		return 0;
+	case 2:
+		return m_mem->RAM[address & 0x3FFFFF];
+	case 3:
+		if (address >= 0x03800000)						//i hate this.
+			return m_mem->ARM7_WRAM[address & 0xFFFF];
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM read!");
+		return 0;
+	case 4:
+		return NDS7_readIO8(address);
+	case 6:
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM read!");
+		return 0;
+	default:
+		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
+	}
 
+	return 0;
 }
 
 void Bus::NDS7_write8(uint32_t address, uint8_t value)
 {
-
+	uint8_t page = (address >> 24) & 0xFF;
+	switch (page)
+	{
+	case 2:
+		m_mem->RAM[address & 0x3FFFFF] = value;
+		break;
+	case 3:
+		if (address >= 0x03800000)
+			m_mem->ARM7_WRAM[address & 0xFFFF] = value;
+		else
+			Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM write!");
+		break;
+	case 4:
+		NDS7_writeIO8(address,value);
+		break;
+	case 6:
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM write!");
+		break;
+	default:
+		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
+	}
 }
 
 uint16_t Bus::NDS7_read16(uint32_t address)
 {
+	uint8_t page = (address >> 24) & 0xFF;
+	switch (page)
+	{
+	case 0:
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented BIOS read!");
+		return 0;
+	case 2:
+		return getValue16(m_mem->RAM,address & 0x3FFFFF,0x3FFFFF);
+	case 3:
+		if (address >= 0x03800000)						//i hate this.
+			return getValue16(m_mem->ARM7_WRAM,address & 0xFFFF,0xFFFF);
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM read!");
+		return 0;
+	case 4:
+		return NDS7_readIO16(address);
+	case 6:
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM read!");
+		return 0;
+	default:
+		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
+	}
+
 	return 0;
 }
 
 void Bus::NDS7_write16(uint32_t address, uint16_t value)
 {
-
+	uint8_t page = (address >> 24) & 0xFF;
+	switch (page)
+	{
+	case 2:
+		setValue16(m_mem->RAM,address & 0x3FFFFF,0x3FFFFF, value);
+		break;
+	case 3:
+		if (address >= 0x03800000)
+			setValue16(m_mem->ARM7_WRAM,address & 0xFFFF,0xFFFF, value);
+		else
+			Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM write!");
+		break;
+	case 4:
+		NDS7_writeIO16(address, value);
+		break;
+	case 6:
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM write!");
+		break;
+	default:
+		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
+	}
 }
 
 uint32_t Bus::NDS7_read32(uint32_t address)
 {
+	uint8_t page = (address >> 24) & 0xFF;
+	switch (page)
+	{
+	case 0:
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented BIOS read!");
+		return 0;
+	case 2:
+		return getValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF);
+	case 3:
+		if (address >= 0x03800000)						//i hate this.
+			return getValue32(m_mem->ARM7_WRAM, address & 0xFFFF, 0xFFFF);
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM read!");
+		return 0;
+	case 4:
+		return NDS7_readIO32(address);
+	case 6:
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM read!");
+		return 0;
+	default:
+		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
+	}
+
 	return 0;
 }
 
 void Bus::NDS7_write32(uint32_t address, uint32_t value)
 {
-
+	uint8_t page = (address >> 24) & 0xFF;
+	switch (page)
+	{
+	case 2:
+		setValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF, value);
+		break;
+	case 3:
+		if (address >= 0x03800000)
+			setValue32(m_mem->ARM7_WRAM, address & 0xFFFF, 0xFFFF, value);
+		else
+			Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM write!");
+		break;
+	case 4:
+		NDS7_writeIO32(address, value);
+		break;
+	case 6:
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM write!");
+		break;
+	default:
+		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
+	}
 }
 
 uint8_t Bus::NDS9_read8(uint32_t address)
