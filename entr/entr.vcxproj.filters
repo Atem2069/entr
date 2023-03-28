@@ -63,6 +63,9 @@
     <ClCompile Include="ARM9\ARM946E.cpp">
       <Filter>Source Files\ARM9</Filter>
     </ClCompile>
+    <ClCompile Include="NDS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
@@ -84,6 +87,12 @@
       <Filter>Header Files\ARM</Filter>
     </ClInclude>
     <ClInclude Include="ARM9\ARM946E.h">
+      <Filter>Header Files\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="NDS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARM_Common.h">
       <Filter>Header Files\ARM</Filter>
     </ClInclude>
   </ItemGroup>
