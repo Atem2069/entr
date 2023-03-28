@@ -3,6 +3,8 @@
 #include"NDSMem.h"
 #include"Logger.h"
 
+#include<format>
+
 class Bus
 {
 public:
