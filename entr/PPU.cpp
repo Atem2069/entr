@@ -51,20 +51,21 @@ void PPU::HDraw()
 	//todo
 
 	//line=2130 cycles. hdraw=1606 cycles? hblank=524 cycles
-	//set HBlank flag  here
+	setHBlankFlag(true);
 	m_state = PPUState::HBlank;
 	m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 523);
 }
 
 void PPU::HBlank()
 {
-	//unset HBlank flag here
+	setHBlankFlag(false);
 	VCOUNT++;
 	//check vcount interrupt
 
 	if (VCOUNT == 192)
 	{
 		//set vblank flag here, request vblank interrupt
+		setVBlankFlag(true);
 		m_state = PPUState::VBlank;
 		m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 1607);
 		return;
@@ -79,17 +80,17 @@ void PPU::VBlank()
 {
 	if (!vblank_setHblankBit)
 	{
-		//set hblank flag here, maybe trigger hblank irq
+		setHBlankFlag(true);
 		vblank_setHblankBit = true;
 		m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 523);
 		return;
 	}
 	vblank_setHblankBit = false;
-	//unset hblank bit here
+	setHBlankFlag(false);
 	VCOUNT++;
 	if (VCOUNT == 262)
 	{
-		//unset vblank bit
+		setVBlankFlag(false);
 		VCOUNT = 0;
 		m_state = PPUState::HDraw;
 	}
@@ -100,12 +101,50 @@ void PPU::VBlank()
 
 uint8_t PPU::readIO(uint32_t address)
 {
-	//todo
+	switch (address)
+	{
+	case 0x04000000:
+		return DISPCNT & 0xFF;
+	case 0x04000001:
+		return ((DISPCNT >> 8) & 0xFF);
+	case 0x04000002:
+		return ((DISPCNT >> 16) & 0xFF);
+	case 0x04000003:
+		return ((DISPCNT >> 24) & 0xFF);
+	case 0x04000004:
+		return DISPSTAT & 0xFF;
+	case 0x04000005:
+		return ((DISPSTAT >> 8) & 0xFF);
+	case 0x04000006:
+		return VCOUNT & 0xFF;
+	case 0x04000007:
+		return ((VCOUNT >> 8) & 0xFF);
+	}
+	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO read! addr={:#x}", address));
+	return 0;
 }
 
 void PPU::writeIO(uint32_t address, uint8_t value)
 {
-	//todo
+	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));
+}
+
+void PPU::setVBlankFlag(bool value)
+{
+	DISPSTAT &= ~0b1;
+	DISPSTAT |= value;
+}
+
+void PPU::setHBlankFlag(bool value)
+{
+	DISPSTAT &= ~0b10;
+	DISPSTAT |= (value << 1);
+}
+
+void PPU::setVCounterFlag(bool value)
+{
+	DISPSTAT &= ~0b100;
+	DISPSTAT |= (value << 2);
 }
 
 uint32_t PPU::col16to32(uint16_t col)

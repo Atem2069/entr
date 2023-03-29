@@ -44,6 +44,10 @@ private:
 	void VBlank();
 	bool vblank_setHblankBit = false;
 
+	void setVBlankFlag(bool value);
+	void setHBlankFlag(bool value);
+	void setVCounterFlag(bool value);
+
 	uint32_t col16to32(uint16_t col);
 
 	uint32_t DISPCNT = {};

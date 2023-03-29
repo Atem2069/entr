@@ -497,12 +497,19 @@ void Bus::NDS7_writeIO32(uint32_t address, uint32_t value)
 //Handle NDS9 IO
 uint8_t Bus::NDS9_readIO8(uint32_t address)
 {
+	if (address >= 0x04000000 && address <= 0x04000058)
+		return m_ppu->readIO(address);
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
 }
 
 void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 {
+	if (address >= 0x04000000 && address <= 0x04000058)
+	{
+		m_ppu->writeIO(address, value);
+		return;
+	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address,value));
 }
 
