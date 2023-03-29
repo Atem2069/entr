@@ -13,7 +13,7 @@
 class ARM7TDMI
 {
 public:
-	ARM7TDMI(std::shared_ptr<Bus> bus, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler);
+	ARM7TDMI(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler);
 	~ARM7TDMI();
 
 	void step();

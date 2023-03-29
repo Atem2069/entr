@@ -1,6 +1,6 @@
 #include"ARM946E.h"
 
-ARM946E::ARM946E(std::shared_ptr<Bus> bus, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler)
+ARM946E::ARM946E(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler)
 {
 	m_bus = bus;
 	m_interruptManager = interruptManager;
@@ -10,7 +10,7 @@ ARM946E::ARM946E(std::shared_ptr<Bus> bus, std::shared_ptr<InterruptManager> int
 	for (int i = 0; i < 16; i++)
 		R[i] = 0;
 
-	R[15] = 0x00000000;
+	R[15] = entry;
 	flushPipeline();
 	refillPipeline();
 	m_pipelineFlushed = false;
@@ -92,7 +92,7 @@ void ARM946E::fetch()
 	if (m_inThumbMode)
 		m_pipeline[curPipelinePtr].opcode = m_bus->NDS9_read16(R[15]);
 	else
-		m_pipeline[curPipelinePtr].opcode = m_bus->NDS9_read16(R[15]);
+		m_pipeline[curPipelinePtr].opcode = m_bus->NDS9_read32(R[15]);
 }
 
 void ARM946E::executeARM()
