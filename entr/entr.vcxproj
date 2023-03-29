@@ -143,6 +143,7 @@
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NDS.cpp" />
+    <ClCompile Include="PPU.cpp" />
     <ClCompile Include="Scheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -154,6 +155,7 @@
     <ClInclude Include="Logger.h" />
     <ClInclude Include="NDS.h" />
     <ClInclude Include="NDSMem.h" />
+    <ClInclude Include="PPU.h" />
     <ClInclude Include="Scheduler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
