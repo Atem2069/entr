@@ -2,13 +2,14 @@
 
 #include"NDSMem.h"
 #include"Logger.h"
+#include"PPU.h"
 
 #include<format>
 
 class Bus
 {
 public:
-	Bus();
+	Bus(std::shared_ptr<PPU> ppu);
 	~Bus();
 
 	//NDS7 read/write handlers
@@ -53,6 +54,7 @@ public:
 
 private:
 	std::shared_ptr<NDSMem> m_mem;
+	std::shared_ptr<PPU> m_ppu;
 
 	//helper functions for reading/writing wide values etc.
 	uint16_t getValue16(uint8_t* arr, int base, int mask);

@@ -1,8 +1,11 @@
 #include"Bus.h"
 
-Bus::Bus()
+Bus::Bus(std::shared_ptr<PPU> ppu)
 {
+	m_ppu = ppu;
 	m_mem = std::make_shared<NDSMem>();
+
+	m_ppu->registerMemory(m_mem);
 }
 
 Bus::~Bus()

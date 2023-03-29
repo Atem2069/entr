@@ -2,8 +2,9 @@
 
 NDS::NDS()
 {
-	//should init scheduler here (when fully implemented, i.e. i'm not lazy)
+	m_scheduler = std::make_shared<Scheduler>();
 	m_initialise();
+	m_scheduler->addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
 }
 
 NDS::~NDS()
@@ -13,9 +14,7 @@ NDS::~NDS()
 
 void NDS::run()
 {
-	//for now, just load in nds file and parse header - and print out ARM9/ARM7 load points, entry points, code size etc.
-	//then need to map that data, could just use the bus's read/write functions lol.
-	//also have to set R15 for both the ARM9/ARM7 so they start executing at the right place.
+	//need to move all of this out of run soon! this is bad..
 	std::vector<uint8_t> romData = readFile("rom\\armwrestler.nds");
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
 	uint32_t ARM9Entry = romData[0x024] | (romData[0x025] << 8) | (romData[0x026] << 16) | (romData[0x027] << 24);
@@ -30,7 +29,8 @@ void NDS::run()
 	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("ARM9 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM9Offs, ARM9Entry, ARM9LoadAddr, ARM9Size));
 	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
 
-	m_bus = std::make_shared<Bus>();
+	m_ppu = std::make_shared<PPU>(m_interruptManager, m_scheduler);
+	m_bus = std::make_shared<Bus>(m_ppu);
 	//load arm9/arm7 binaries
 	for (int i = 0; i < ARM9Size; i++)
 	{
@@ -51,8 +51,18 @@ void NDS::run()
 	{
 		ARM9->run(32);	//ARM9 runs twice the no. cycles as the ARM7, as it runs at twice the clock speed
 		ARM7->run(16);
+		m_scheduler->addCycles(16);
+		m_scheduler->tick();	//<--should probably remove this 'tick' logic, remnant from agbe
 		//todo: tick scheduler 16 cycles here. most hardware runs at ~33MHz so we're using that as a base clock
 	}
+}
+
+void NDS::frameEventHandler()
+{
+	//handle video sync at some point..
+	m_ppu->updateDisplayOutput();
+	m_scheduler->addEvent(Event::Frame, &NDS::onEvent, (void*)this, m_scheduler->getEventTime()+560190);
+	//tick input here too
 }
 
 void NDS::notifyDetach()
@@ -67,7 +77,8 @@ void NDS::m_initialise()
 
 void NDS::m_destroy()
 {
-	//todo
+	m_scheduler->invalidateAll();
+	m_scheduler->addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
 }
 
 std::vector<uint8_t> NDS::readFile(const char* name)
@@ -97,4 +108,10 @@ std::vector<uint8_t> NDS::readFile(const char* name)
 	file.close();
 
 	return vec;
+}
+
+void NDS::onEvent(void* context)
+{
+	NDS* thisPtr = (NDS*)context;
+	thisPtr->frameEventHandler();
 }
