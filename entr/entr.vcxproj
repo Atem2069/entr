@@ -143,6 +143,7 @@
     <ClCompile Include="ARM9\ARM9_Flags.cpp" />
     <ClCompile Include="ARM9\ARM9_ThumbOps.cpp" />
     <ClCompile Include="Bus.cpp" />
+    <ClCompile Include="Display.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NDS.cpp" />
@@ -154,12 +155,15 @@
     <ClInclude Include="ARM9\ARM946E.h" />
     <ClInclude Include="ARM_Common.h" />
     <ClInclude Include="Bus.h" />
+    <ClInclude Include="Display.h" />
     <ClInclude Include="InterruptManager.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="NDS.h" />
     <ClInclude Include="NDSMem.h" />
     <ClInclude Include="PPU.h" />
     <ClInclude Include="Scheduler.h" />
+    <ClInclude Include="Shaders\fragment.h" />
+    <ClInclude Include="Shaders\vertex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
