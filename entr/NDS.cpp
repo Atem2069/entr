@@ -49,8 +49,9 @@ void NDS::run()
 
 	while (true)
 	{
-		ARM9->step();
-		ARM7->step();
+		ARM9->run(32);	//ARM9 runs twice the no. cycles as the ARM7, as it runs at twice the clock speed
+		ARM7->run(16);
+		//todo: tick scheduler 16 cycles here. most hardware runs at ~33MHz so we're using that as a base clock
 	}
 }
 

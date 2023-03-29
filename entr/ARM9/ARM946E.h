@@ -16,7 +16,7 @@ public:
 	ARM946E(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler);
 	~ARM946E();
 
-	void step();
+	void run(int cycles);
 private:
 	static constexpr int incrAmountLUT[2] = { 4,2 };
 	std::shared_ptr<Bus> m_bus;

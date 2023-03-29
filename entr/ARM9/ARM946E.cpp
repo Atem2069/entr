@@ -57,32 +57,35 @@ consteval std::array<ARM946E::instructionFn, 1024> ARM946E::genThumbTable()
 	return thumbTable;
 }
 
-void ARM946E::step()
+void ARM946E::run(int cycles)
 {
-	fetch();
-	if (dispatchInterrupt())	//if interrupt was dispatched then fetch new opcode (dispatchInterrupt already flushes pipeline !)
-		return;
-
-	int exPipelinePtr = m_pipelinePtr + 1;
-	if (exPipelinePtr == 3)			//seems faster than using modulus
-		exPipelinePtr = 0;
-	m_currentOpcode = m_pipeline[exPipelinePtr].opcode;
-	switch (m_inThumbMode)
+	for (int i = 0; i < cycles; i++)
 	{
-	case 0:
-		executeARM(); break;
-	case 1:
-		executeThumb(); break;
-	}
+		fetch();
+		if (dispatchInterrupt())	//if interrupt was dispatched then fetch new opcode (dispatchInterrupt already flushes pipeline !)
+			return;
 
-	if (!m_pipelineFlushed)
-	{
-		R[15] += incrAmountLUT[m_inThumbMode];
-		m_pipelinePtr = exPipelinePtr;
-		m_pipelineFlushed = false;
+		int exPipelinePtr = m_pipelinePtr + 1;
+		if (exPipelinePtr == 3)			//seems faster than using modulus
+			exPipelinePtr = 0;
+		m_currentOpcode = m_pipeline[exPipelinePtr].opcode;
+		switch (m_inThumbMode)
+		{
+		case 0:
+			executeARM(); break;
+		case 1:
+			executeThumb(); break;
+		}
+
+		if (!m_pipelineFlushed)
+		{
+			R[15] += incrAmountLUT[m_inThumbMode];
+			m_pipelinePtr = exPipelinePtr;
+			m_pipelineFlushed = false;
+		}
+		else
+			refillPipeline();
 	}
-	else
-		refillPipeline();
 }
 
 void ARM946E::fetch()
