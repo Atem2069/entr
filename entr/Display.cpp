@@ -84,7 +84,7 @@ Display::Display(int scaleFactor)
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);	//override driver's default 4-byte unpack stride, maybe reudndant
 	glGenTextures(1, &m_texHandle);
 	glBindTexture(GL_TEXTURE_2D, m_texHandle);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 240, 160, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, nullptr);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 384, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -129,7 +129,7 @@ void Display::draw()
 void Display::update(void* data)
 {
 	glBindTexture(GL_TEXTURE_2D, m_texHandle);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 240, 160, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, data);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 384, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, data);
 }
 
 bool Display::getPressed(unsigned int key)

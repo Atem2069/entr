@@ -109,6 +109,11 @@ std::vector<uint8_t> NDS::readFile(const char* name)
 	return vec;
 }
 
+void* NDS::getPPUData()
+{
+	return PPU::m_safeDisplayBuffer;
+}
+
 void NDS::onEvent(void* context)
 {
 	NDS* thisPtr = (NDS*)context;

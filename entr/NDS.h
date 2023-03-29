@@ -20,6 +20,7 @@ public:
 	void run();
 	void notifyDetach();	
 
+	void* getPPUData();
 	static void onEvent(void* context);
 private:
 	std::shared_ptr<ARM946E> ARM9;

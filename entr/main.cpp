@@ -21,7 +21,9 @@ int main()
 
 	while (!m_display.getShouldClose())
 	{
-		//todo: update texture data.
+		void* data = m_nds->getPPUData();
+		if (data != nullptr)
+			m_display.update(data);
 		m_display.draw();
 
 		//todo: update input
