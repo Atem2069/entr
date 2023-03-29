@@ -11,7 +11,7 @@ PPU::PPU(std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Sch
 	VCOUNT = 0;
 	m_state = PPUState::HDraw;
 
-	//todo: schedule first ppu event here
+	m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, 1606);
 }
 
 PPU::~PPU()
@@ -32,22 +32,70 @@ void PPU::registerMemory(std::shared_ptr<NDSMem> mem)
 
 void PPU::eventHandler()
 {
-	//todo
+	switch (m_state)
+	{
+	case PPUState::HDraw:
+		HDraw();
+		break;
+	case PPUState::HBlank:
+		HBlank();
+		break;
+	case PPUState::VBlank:
+		VBlank();
+		break;
+	}
 }
 
 void PPU::HDraw()
 {
 	//todo
+
+	//line=2130 cycles. hdraw=1606 cycles? hblank=524 cycles
+	//set HBlank flag  here
+	m_state = PPUState::HBlank;
+	m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 523);
 }
 
 void PPU::HBlank()
 {
-	//todo
+	//unset HBlank flag here
+	VCOUNT++;
+	//check vcount interrupt
+
+	if (VCOUNT == 192)
+	{
+		//set vblank flag here, request vblank interrupt
+		m_state = PPUState::VBlank;
+		m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 1607);
+		return;
+	}
+	else
+		m_state = PPUState::HDraw;
+
+	m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 1607);
 }
 
 void PPU::VBlank()
 {
-	//todo
+	if (!vblank_setHblankBit)
+	{
+		//set hblank flag here, maybe trigger hblank irq
+		vblank_setHblankBit = true;
+		m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 523);
+		return;
+	}
+	vblank_setHblankBit = false;
+	//unset hblank bit here
+	VCOUNT++;
+	if (VCOUNT == 262)
+	{
+		//unset vblank bit
+		VCOUNT = 0;
+		m_state = PPUState::HDraw;
+	}
+	//todo: weird behaviour of last line in vblank (same as in gba)
+
+	m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 1607);
 }
 
 uint8_t PPU::readIO(uint32_t address)

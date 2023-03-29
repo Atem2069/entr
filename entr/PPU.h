@@ -42,6 +42,7 @@ private:
 	void HDraw();
 	void HBlank();
 	void VBlank();
+	bool vblank_setHblankBit = false;
 
 	uint32_t col16to32(uint16_t col);
 
