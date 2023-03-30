@@ -182,6 +182,11 @@ void ARM946E::m_setOverflowFlag(bool value)
 	CPSR |= (mask & (value << 28));
 }
 
+void ARM946E::m_setSaturationFlag()
+{
+	CPSR |= (1 << 27);
+}
+
 uint32_t ARM946E::getReg(uint8_t reg)
 {
 	return R[reg];
@@ -320,4 +325,66 @@ int ARM946E::calculateMultiplyCycles(uint32_t operand, bool isSigned)
 	else if ((operand >> 24) == 0)
 		totalCycles = 3;
 	return totalCycles;
+}
+
+uint32_t ARM946E::doSaturatingAdd(int64_t a, int64_t b)
+{
+	static constexpr int64_t I32_MAX = 0x7FFFFFFF;
+	static constexpr int64_t I32_MIN = 0xFFFFFFFF80000000;
+	if (b > I32_MAX)
+	{
+		b = I32_MAX;
+		m_setSaturationFlag();
+	}
+	if (b < I32_MIN)
+	{
+		b = I32_MIN;
+		m_setSaturationFlag();
+	}
+	
+	int64_t result = a + b;
+
+	if (result >= I32_MIN && result <= I32_MAX)
+		return (uint32_t)result;
+	else if (result > I32_MAX)
+	{
+		m_setSaturationFlag();
+		return 0x7FFFFFFF;
+	}
+	else if (result < I32_MIN)
+	{
+		m_setSaturationFlag();
+		return 0x80000000;
+	}
+}
+
+uint32_t ARM946E::doSaturatingSub(int64_t a, int64_t b)
+{
+	static constexpr int64_t I32_MAX = 0x7FFFFFFF;
+	static constexpr int64_t I32_MIN = 0xFFFFFFFF80000000;
+	if (b > I32_MAX)
+	{
+		b = I32_MAX;
+		m_setSaturationFlag();
+	}
+	if (b < I32_MIN)
+	{
+		b = I32_MIN;
+		m_setSaturationFlag();
+	}
+
+	int64_t result = a - b;
+
+	if (result >= I32_MIN && result <= I32_MAX)
+		return (uint32_t)result;
+	else if (result > I32_MAX)
+	{
+		m_setSaturationFlag();
+		return 0x7FFFFFFF;
+	}
+	else if (result < I32_MIN)
+	{
+		m_setSaturationFlag();
+		return 0x80000000;
+	}
 }

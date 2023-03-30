@@ -840,7 +840,35 @@ void ARM946E::ARM_CountLeadingZeros()
 }
 void ARM946E::ARM_EnhancedDSPAddSubtract()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+	uint8_t opcode = ((m_currentOpcode >> 20) & 0xF);
+	uint8_t destRegIdx = ((m_currentOpcode >> 12) & 0xF);
+	uint8_t operandAIdx = m_currentOpcode & 0xF;
+	uint8_t operandBIdx = ((m_currentOpcode >> 16) & 0xF);
+
+	int32_t operandA = (int32_t)getReg(operandAIdx);
+	int32_t operandB = (int32_t)getReg(operandBIdx);
+
+	uint32_t result = 0;
+
+	switch (opcode)
+	{
+	case 0b0000:
+		result = doSaturatingAdd(operandA, operandB);
+		break;
+	case 0b0010:
+		result = doSaturatingSub(operandA, operandB);
+		break;
+	case 0b0100:
+		result = doSaturatingAdd(operandA, (int64_t)(operandB) << 1);
+		break;
+	case 0b0110:
+		result = doSaturatingSub(operandA, (int64_t)(operandB) << 1);
+		break;
+	}
+
+	std::cout << std::hex << operandA << " " << operandB << " " << (uint32_t)opcode << " " << result << '\n';
+
+	setReg(destRegIdx, result);
 }
 
 void ARM946E::ARM_EnhancedDSPMultiply()

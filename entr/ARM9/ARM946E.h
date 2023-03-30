@@ -57,6 +57,7 @@ private:
 	void m_setZeroFlag(bool value);
 	void m_setCarryFlag(bool value);
 	void m_setOverflowFlag(bool value);
+	void m_setSaturationFlag();
 
 	//get/set registers
 	uint32_t getReg(uint8_t reg);
@@ -124,6 +125,8 @@ private:
 	//Flag setting
 	void setLogicalFlags(uint32_t result, int carry);
 	void setArithmeticFlags(uint32_t input, uint64_t operand, uint32_t result, bool addition);
+	uint32_t doSaturatingAdd(int64_t a, int64_t b);
+	uint32_t doSaturatingSub(int64_t a, int64_t b);
 
 	//magic code for generating compile time arm/thumb luts
 
