@@ -5,8 +5,8 @@ ARM946E::ARM946E(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<Inter
 	m_bus = bus;
 	m_interruptManager = interruptManager;
 	m_scheduler = scheduler;
-	CPSR = 0x13;				//starts in svc mode upon boot?
-	m_lastCheckModeBits = 0x13;
+	CPSR = 0x1F;				//we're direct booting, so maybe starts in sys or whatever?
+	m_lastCheckModeBits = 0x1F;
 	for (int i = 0; i < 16; i++)
 		R[i] = 0;
 

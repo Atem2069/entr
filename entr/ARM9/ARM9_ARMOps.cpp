@@ -735,10 +735,11 @@ void ARM946E::ARM_BlockDataTransfer()
 			}
 
 			//special case behaviour (base included in rlist)
-			if (i == baseReg && writeBack)
+			if ((i == baseReg) && writeBack)
 			{
+				//LDM: writeback if Rb is only register, or not the last register in rlist
 				if (loadStore)
-					writeBack = false;
+					writeBack = ((transferCount == 1) || ((r_list >> (i + 1))));
 				else
 				{
 					if (baseIsFirst)
@@ -760,10 +761,14 @@ void ARM946E::ARM_BlockDataTransfer()
 		}
 	}
 
+	if (psr)
+	{
+		CPSR = oldCPSR;
+		swapBankedRegisters();
+	}
+
 	if (writeBack)
 		setReg(baseReg, finalBase);	//don't use base_addr, because decrementing load/stores will modify the internal transfer register differently
-
-	int cycles = transferCount + ((loadStore) ? 2 : 1);
 
 	if (transferCount == 0)		//no registers to transfer, weird behaviour
 	{
@@ -777,24 +782,8 @@ void ARM946E::ARM_BlockDataTransfer()
 		if (prePost)				//preincrement causes 'DA' or 'IB' (decrementing after, incrementing before) to do load/store either +4h or -3Ch bytes from base
 			base_addr += 4;
 
-		if (loadStore)
-		{
-			setReg(15, m_bus->NDS9_read32(base_addr));
-		}
-		else
-		{
-			m_bus->NDS9_write32(base_addr, getReg(15) + 4);
-		}
-
 		if (upDown)
 			setReg(baseReg, old_base + 0x40);	//use old_base bc 'base_addr' might have been offset by 4h already
-	}
-
-
-	if (psr)
-	{
-		CPSR = oldCPSR;
-		swapBankedRegisters();
 	}
 }
 
