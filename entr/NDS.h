@@ -9,6 +9,7 @@
 #include"ARM9/ARM946E.h"
 #include"PPU.h"
 #include"InterruptManager.h"
+#include"Input.h"
 #include"Scheduler.h"
 
 class NDS
@@ -20,6 +21,8 @@ public:
 	void run();
 	void notifyDetach();	
 
+	void registerInput(std::shared_ptr<InputState> inp);
+
 	void* getPPUData();
 	static void onEvent(void* context);
 private:
@@ -28,6 +31,8 @@ private:
 	std::shared_ptr<Bus> m_bus;
 	std::shared_ptr<PPU> m_ppu;
 	std::shared_ptr<InterruptManager> m_interruptManager;
+	std::shared_ptr<Input> m_input;
+	std::shared_ptr<InputState> m_inputState;
 	std::shared_ptr<Scheduler> m_scheduler;
 
 	void m_initialise();

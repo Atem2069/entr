@@ -1,8 +1,9 @@
 #include"Bus.h"
 
-Bus::Bus(std::shared_ptr<PPU> ppu)
+Bus::Bus(std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input)
 {
 	m_ppu = ppu;
+	m_input = input;
 	m_mem = std::make_shared<NDSMem>();
 
 	m_ppu->registerMemory(m_mem);
@@ -459,13 +460,25 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 //Handle NDS7 IO
 uint8_t Bus::NDS7_readIO8(uint32_t address)
 {
+	switch (address)
+	{
+	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
+		return m_input->readIORegister(address);
+	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
 }
 
 void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
+	switch (address)
+	{
+	case 0x04000132: case 0x04000133:
+		m_input->writeIORegister(address, value);
+		break;
+	default:
+		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
+	}
 }
 
 uint16_t Bus::NDS7_readIO16(uint32_t address)
@@ -501,10 +514,8 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 		return m_ppu->readIO(address);
 	switch (address)
 	{
-	case 0x04000130:			//hack until we add actual input
-		return 0xFF;
-	case 0x04000131:
-		return 0b11000000;
+	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
+		return m_input->readIORegister(address);
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
@@ -517,7 +528,14 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		m_ppu->writeIO(address, value);
 		return;
 	}
-	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address,value));
+	switch (address)
+	{
+	case 0x04000132: case 0x04000133:
+		m_input->writeIORegister(address, value);
+		break;
+	default:
+		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
+	}
 }
 
 uint16_t Bus::NDS9_readIO16(uint32_t address)

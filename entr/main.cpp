@@ -6,6 +6,7 @@
 #include"Logger.h"
 
 std::shared_ptr<NDS> m_nds;
+std::shared_ptr<InputState> m_inputState;
 
 void emuWorkerThread();
 
@@ -16,7 +17,9 @@ int main()
 
 	Display m_display(2);
 
+	m_inputState = std::make_shared<InputState>();
 	m_nds = std::make_shared<NDS>();
+	m_nds->registerInput(m_inputState);
 	std::thread m_workerThread(&emuWorkerThread);
 
 	while (!m_display.getShouldClose())
@@ -26,7 +29,17 @@ int main()
 			m_display.update(data);
 		m_display.draw();
 
-		//todo: update input
+		//blarg. key input
+		m_inputState->A = m_display.getPressed(GLFW_KEY_X);
+		m_inputState->B = m_display.getPressed(GLFW_KEY_Z);
+		m_inputState->L = m_display.getPressed(GLFW_KEY_A);
+		m_inputState->R = m_display.getPressed(GLFW_KEY_S);
+		m_inputState->Start = m_display.getPressed(GLFW_KEY_ENTER);
+		m_inputState->Select = m_display.getPressed(GLFW_KEY_RIGHT_SHIFT);
+		m_inputState->Up = m_display.getPressed(GLFW_KEY_UP);
+		m_inputState->Down = m_display.getPressed(GLFW_KEY_DOWN);
+		m_inputState->Left = m_display.getPressed(GLFW_KEY_LEFT);
+		m_inputState->Right = m_display.getPressed(GLFW_KEY_RIGHT);
 	}
 
 	if(m_workerThread.joinable())

@@ -2,6 +2,7 @@
 
 NDS::NDS()
 {
+	m_input = std::make_shared<Input>();
 	m_scheduler = std::make_shared<Scheduler>();
 	m_initialise();
 	m_scheduler->addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
@@ -30,12 +31,18 @@ void NDS::frameEventHandler()
 	//handle video sync at some point..
 	m_ppu->updateDisplayOutput();
 	m_scheduler->addEvent(Event::Frame, &NDS::onEvent, (void*)this, m_scheduler->getEventTime()+560190);
-	//tick input here too
+	m_input->tick();
 }
 
 void NDS::notifyDetach()
 {
 	//todo
+}
+
+void NDS::registerInput(std::shared_ptr<InputState> inp)
+{
+	m_inputState = inp;
+	m_input->registerInput(m_inputState);
 }
 
 void NDS::m_initialise()
@@ -55,7 +62,7 @@ void NDS::m_initialise()
 	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
 
 	m_ppu = std::make_shared<PPU>(m_interruptManager, m_scheduler);
-	m_bus = std::make_shared<Bus>(m_ppu);
+	m_bus = std::make_shared<Bus>(m_ppu, m_input);
 	//load arm9/arm7 binaries
 	for (int i = 0; i < ARM9Size; i++)
 	{
