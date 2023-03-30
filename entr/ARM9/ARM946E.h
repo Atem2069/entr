@@ -87,6 +87,9 @@ private:
 	void ARM_CoprocessorDataOperation();
 	void ARM_CoprocessorRegisterTransfer();
 	void ARM_SoftwareInterrupt();
+	void ARM_CountLeadingZeros();
+	void ARM_EnhancedDSPAddSubtract();
+	void ARM_EnhancedDSPMultiply();
 
 	//Thumb instruction set
 	void Thumb_MoveShiftedRegister();
@@ -141,6 +144,12 @@ private:
 			table[i] = (instructionFn)&ARM946E::ARM_HalfwordTransferImmediateOffset;
 		else if ((tempOpcode & 0b0000'1111'1111'0000'0000'0000'1111'0000) == 0b0000'0001'0010'0000'0000'0000'0001'0000)
 			table[i] = (instructionFn)&ARM946E::ARM_BranchExchange;
+		else if ((tempOpcode & 0b0000'1111'1111'0000'0000'0000'1111'0000) == 0b0000'0001'0110'0000'0000'0000'0001'0000)
+			table[i] = (instructionFn)&ARM946E::ARM_CountLeadingZeros;
+		else if ((tempOpcode & 0b0000'1111'1001'0000'0000'0000'1111'0000) == 0b0000'0001'0000'0000'0000'0000'0101'0000)
+			table[i] = (instructionFn)&ARM946E::ARM_EnhancedDSPAddSubtract;
+		else if ((tempOpcode & 0b0000'1111'1001'0000'0000'0000'1001'0000) == 0b0000'0001'0000'0000'0000'0000'1000'0000)
+			table[i] = (instructionFn)&ARM946E::ARM_EnhancedDSPMultiply;
 		else if ((tempOpcode & 0b0000'1100'0000'0000'0000'0000'0000'0000) == 0b0000'0000'0000'0000'0000'0000'0000'0000)
 			table[i] = (instructionFn)&ARM946E::ARM_DataProcessing;
 		else if ((tempOpcode & 0b0000'1110'0000'0000'0000'0000'0001'0000) == 0b0000'0110'0000'0000'0000'0000'0001'0000)

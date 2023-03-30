@@ -817,3 +817,17 @@ void ARM946E::ARM_SoftwareInterrupt()
 	setReg(14, oldPC);			//Save old R15
 	setReg(15, 0x00000008);		//SWI entry point is 0x08
 }
+
+void ARM946E::ARM_CountLeadingZeros()
+{
+	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+}
+void ARM946E::ARM_EnhancedDSPAddSubtract()
+{
+	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+}
+
+void ARM946E::ARM_EnhancedDSPMultiply()
+{
+	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+}
