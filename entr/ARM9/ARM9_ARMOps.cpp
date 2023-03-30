@@ -462,10 +462,16 @@ void ARM946E::ARM_HalfwordTransferRegisterOffset()
 			m_bus->NDS9_write16(base, data & 0xFFFF);
 			break;
 		case 2:
-			m_bus->NDS9_write8(base, data & 0xFF);
+		{
+			uint32_t a = m_bus->NDS9_read32(base);
+			uint32_t b = m_bus->NDS9_read32(base + 4);
+			setReg(srcDestRegIdx, a);
+			setReg(srcDestRegIdx + 1, b);
 			break;
+		}
 		case 3:
-			m_bus->NDS9_write16(base, data & 0xFFFF);
+			m_bus->NDS9_write32(base, getReg(srcDestRegIdx));
+			m_bus->NDS9_write32(base + 4, getReg(srcDestRegIdx + 1));
 			break;
 		}
 	}
@@ -557,10 +563,16 @@ void ARM946E::ARM_HalfwordTransferImmediateOffset()
 			m_bus->NDS9_write16(base, data & 0xFFFF);
 			break;
 		case 2:
-			m_bus->NDS9_write8(base, data & 0xFF);
+		{
+			uint32_t a = m_bus->NDS9_read32(base);
+			uint32_t b = m_bus->NDS9_read32(base + 4);
+			setReg(srcDestRegIdx, a);
+			setReg(srcDestRegIdx + 1, b);
 			break;
+		}
 		case 3:
-			m_bus->NDS9_write16(base, data & 0xFFFF);
+			m_bus->NDS9_write32(base, getReg(srcDestRegIdx));
+			m_bus->NDS9_write32(base + 4, getReg(srcDestRegIdx + 1));
 			break;
 		}
 	}
@@ -820,7 +832,11 @@ void ARM946E::ARM_SoftwareInterrupt()
 
 void ARM946E::ARM_CountLeadingZeros()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+	uint8_t operandRegIdx = m_currentOpcode & 0xF;
+	uint8_t destRegIdx = ((m_currentOpcode >> 12) & 0xF);
+
+	uint32_t zeroCount = __lzcnt(getReg(operandRegIdx));	//this might not be portable, but who cares
+	setReg(destRegIdx, zeroCount);
 }
 void ARM946E::ARM_EnhancedDSPAddSubtract()
 {
