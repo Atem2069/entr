@@ -865,13 +865,52 @@ void ARM946E::ARM_EnhancedDSPAddSubtract()
 		result = doSaturatingSub(operandA, (int64_t)(operandB) << 1);
 		break;
 	}
-
-	std::cout << std::hex << operandA << " " << operandB << " " << (uint32_t)opcode << " " << result << '\n';
-
 	setReg(destRegIdx, result);
 }
 
 void ARM946E::ARM_EnhancedDSPMultiply()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+	uint8_t operandAIdx = m_currentOpcode & 0xF;
+	uint8_t operandBIdx = ((m_currentOpcode >> 8) & 0xF);
+	uint32_t topBottomA = ((m_currentOpcode >> 5) & 0b1)<<4;	//multiply by 16 to gen a shift amount. we'll rightshift by this to extract proper half of the reg, then mask off rest
+	uint32_t topBottomB = ((m_currentOpcode >> 6) & 0b1)<<4;    //same here
+	uint8_t accumulateRegIdx = ((m_currentOpcode >> 12) & 0xF);
+	uint8_t destRegIdx = ((m_currentOpcode >> 16) & 0xF);
+
+	uint8_t opcode = ((m_currentOpcode >> 21) & 0xF);
+	uint32_t result = 0;
+	switch (opcode)
+	{
+	case 0b1000:
+	{
+		int16_t a = (getReg(operandAIdx) >> topBottomA) & 0xFFFF;
+		int16_t b = (getReg(operandBIdx) >> topBottomB) & 0xFFFF;
+
+		int32_t multiplyResult = (int32_t)a * (int32_t)b;
+
+		int32_t accum = getReg(accumulateRegIdx);
+		//result = doSaturatingAdd((int64_t)multiplyResult, (int64_t)accum);
+		int64_t tempResult = (int64_t)multiplyResult + (int64_t)accum;
+
+		if (tempResult > 0x7FFFFFFF)
+			m_setSaturationFlag();
+		else if (tempResult < (int64_t)0xFFFFFFFF80000000)
+			m_setSaturationFlag();
+
+		result = multiplyResult + accum;
+		break;
+	}
+	case 0b1011:
+	{
+		int16_t a = (getReg(operandAIdx) >> topBottomA) & 0xFFFF;
+		int16_t b = (getReg(operandBIdx) >> topBottomB) & 0xFFFF;
+
+		result = (int32_t)a * (int32_t)b;
+		break;
+	}
+	default:
+		std::cout << "I don't know this mul opcode! " << (int)opcode << '\n';
+	}
+
+	setReg(destRegIdx, result);
 }
