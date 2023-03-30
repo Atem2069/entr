@@ -2,7 +2,7 @@
 
 Display::Display(int scaleFactor)
 {
-	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Init display - width={0} height={1}", 240 * scaleFactor, 160 * scaleFactor));
+	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Init display - width={0} height={1}", 256 * scaleFactor, 384 * scaleFactor));
 	if (!glfwInit())
 		return;
 

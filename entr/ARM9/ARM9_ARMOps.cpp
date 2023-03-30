@@ -785,12 +785,7 @@ void ARM946E::ARM_BlockDataTransfer()
 				if (loadStore)
 					writeBack = ((transferCount == 1) || ((r_list >> (i + 1))));
 				else
-				{
-					if (baseIsFirst)
-						val = old_base;
-					else
-						val = finalBase;
-				}
+					val = old_base;
 			}
 
 			if (loadStore)
