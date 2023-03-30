@@ -44,6 +44,8 @@ private:
 	void VBlank();
 	bool vblank_setHblankBit = false;
 
+	void renderLCDCMode();
+
 	void setVBlankFlag(bool value);
 	void setHBlankFlag(bool value);
 	void setVCounterFlag(bool value);

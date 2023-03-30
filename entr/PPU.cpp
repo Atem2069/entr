@@ -48,7 +48,8 @@ void PPU::eventHandler()
 
 void PPU::HDraw()
 {
-	//todo
+	//this is a hack, should fix!
+	renderLCDCMode();
 
 	//line=2130 cycles. hdraw=1606 cycles? hblank=524 cycles
 	setHBlankFlag(true);
@@ -67,6 +68,9 @@ void PPU::HBlank()
 		//set vblank flag here, request vblank interrupt
 		setVBlankFlag(true);
 		m_state = PPUState::VBlank;
+
+		pageIdx = !pageIdx;
+
 		m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 1607);
 		return;
 	}
@@ -99,6 +103,18 @@ void PPU::VBlank()
 	m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 1607);
 }
 
+void PPU::renderLCDCMode()
+{
+	for (int i = 0; i < 256; i++)
+	{
+		uint32_t address = (VCOUNT * (256 * 2)) + (i * 2);
+		uint8_t colLow = m_mem->VRAM[address];
+		uint8_t colHigh = m_mem->VRAM[address + 1];
+		uint16_t col = ((colHigh << 8) | colLow);
+		m_renderBuffer[pageIdx][((VCOUNT * 256) + i)] = col16to32(col);
+	}
+}
+
 uint8_t PPU::readIO(uint32_t address)
 {
 	switch (address)
@@ -126,7 +142,23 @@ uint8_t PPU::readIO(uint32_t address)
 
 void PPU::writeIO(uint32_t address, uint8_t value)
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));
+	switch (address)
+	{
+	case 0x04000000:
+		DISPCNT &= 0xFFFFFF00; DISPCNT |= value;
+		break;
+	case 0x04000001:
+		DISPCNT &= 0xFFFF00FF; DISPCNT |= (value << 8);
+		break;
+	case 0x04000002:
+		DISPCNT &= 0xFF00FFFF; DISPCNT |= (value << 16);
+		break;
+	case 0x04000003:
+		DISPCNT &= 0x00FFFFFF; DISPCNT |= (value << 24);
+		break;
+	default:
+		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));
+	}
 }
 
 void PPU::setVBlankFlag(bool value)

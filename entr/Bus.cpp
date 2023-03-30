@@ -499,6 +499,13 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 {
 	if (address >= 0x04000000 && address <= 0x04000058)
 		return m_ppu->readIO(address);
+	switch (address)
+	{
+	case 0x04000130:			//hack until we add actual input
+		return 0xFF;
+	case 0x04000131:
+		return 0b11000000;
+	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
 }
