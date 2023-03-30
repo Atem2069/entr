@@ -8,11 +8,23 @@ void ARM946E::ARM_Branch()
 	if ((offset >> 25) & 0b1)	//if sign (bit 25) set, then must sign extend
 		offset |= 0xFC000000;
 
-	//set R15
-	uint32_t oldR15 = getReg(15);
-	setReg(15, getReg(15) + offset);
-	if (link)
+	bool blx = ((m_currentOpcode >> 28) & 0xF)==0xF;
+	if (blx)
+	{
+		uint32_t oldR15 = getReg(15);
+		m_inThumbMode = true;
+		setReg(15, getReg(15) + offset + (link << 1));
+		CPSR |= 0b100000;
 		setReg(14, (oldR15 - 4) & ~0b11);
+	}
+	else
+	{
+		//set R15
+		uint32_t oldR15 = getReg(15);
+		setReg(15, getReg(15) + offset);
+		if (link)
+			setReg(14, (oldR15 - 4) & ~0b11);
+	}
 }
 
 void ARM946E::ARM_DataProcessing()
@@ -377,6 +389,8 @@ void ARM946E::ARM_BranchExchange()
 {
 	uint8_t regIdx = m_currentOpcode & 0xF;
 	uint32_t newAddr = getReg(regIdx);
+	bool link = ((m_currentOpcode >> 4) & 0xF) == 0b0011;
+	uint32_t oldPC = getReg(15)&~0b11;
 	if (newAddr & 0b1)	//start executing THUMB instrs
 	{
 		CPSR |= 0b100000;	//set T bit in CPSR
@@ -386,6 +400,10 @@ void ARM946E::ARM_BranchExchange()
 	else				//keep going as ARM (but pipeline will be flushed)
 	{
 		setReg(15, newAddr & ~0b11);
+	}
+	if (link)
+	{
+		setReg(14, oldPC - 4);
 	}
 }
 

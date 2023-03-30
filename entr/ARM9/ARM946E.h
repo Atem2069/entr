@@ -147,6 +147,8 @@ private:
 			table[i] = (instructionFn)&ARM946E::ARM_HalfwordTransferImmediateOffset;
 		else if ((tempOpcode & 0b0000'1111'1111'0000'0000'0000'1111'0000) == 0b0000'0001'0010'0000'0000'0000'0001'0000)
 			table[i] = (instructionFn)&ARM946E::ARM_BranchExchange;
+		else if ((tempOpcode & 0b0000'1111'1111'0000'0000'0000'1111'0000) == 0b0000'0001'0010'0000'0000'0000'0011'0000)		//don't like this tbh.
+			table[i] = (instructionFn)&ARM946E::ARM_BranchExchange;
 		else if ((tempOpcode & 0b0000'1111'1111'0000'0000'0000'1111'0000) == 0b0000'0001'0110'0000'0000'0000'0001'0000)
 			table[i] = (instructionFn)&ARM946E::ARM_CountLeadingZeros;
 		else if ((tempOpcode & 0b0000'1111'1001'0000'0000'0000'1111'0000) == 0b0000'0001'0000'0000'0000'0000'0101'0000)
@@ -214,6 +216,8 @@ private:
 		else if ((tempOpcode & 0b1111'1000'0000'0000) == 0b1110'0000'0000'0000)
 			table[i] = (instructionFn)&ARM946E::Thumb_UnconditionalBranch;
 		else if ((tempOpcode & 0b1111'0000'0000'0000) == 0b1111'0000'0000'0000)
+			table[i] = (instructionFn)&ARM946E::Thumb_LongBranchWithLink;
+		else if ((tempOpcode & 0b1111'1000'0000'0000) == 0b1110'1000'0000'0000)
 			table[i] = (instructionFn)&ARM946E::Thumb_LongBranchWithLink;
 		else
 		{

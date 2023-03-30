@@ -237,6 +237,8 @@ void ARM946E::Thumb_HiRegisterOperations()
 		}
 		break;
 	case 3:
+	{
+		uint32_t oldPC = getReg(15);
 		if (!(operand2 & 0b1))
 		{
 			//enter arm
@@ -251,7 +253,11 @@ void ARM946E::Thumb_HiRegisterOperations()
 			operand2 &= ~0b1;
 			setReg(15, operand2);
 		}
+		bool link = ((m_currentOpcode >> 7) & 0b1);
+		if (link)
+			setReg(14, oldPC - 2);
 		break;
+	}
 	}
 }
 
