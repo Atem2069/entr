@@ -4,7 +4,6 @@
 #include"../Bus.h"
 #include"../InterruptManager.h"
 #include"../Scheduler.h"
-#include"../ARM_Common.h"
 
 #include<iostream>
 #include<stdexcept>
@@ -23,11 +22,7 @@ private:
 	std::shared_ptr<InterruptManager> m_interruptManager;
 	std::shared_ptr<Scheduler> m_scheduler;
 
-	Pipeline m_pipeline[3];
-	uint8_t m_pipelinePtr = 0;
-	bool pipelineFull = false;
 	bool m_pipelineFlushed = false;
-
 	uint32_t R[16];
 	uint32_t usrBankedRegisters[2];          //user mode r13-r14
 	uint32_t usrExtraBankedRegisters[5];	 //not really only usermode, but banks of r8-r12 for if fiq mode is used
@@ -44,8 +39,6 @@ private:
 	bool m_inThumbMode = false;
 
 	void fetch();
-	void flushPipeline();
-	void refillPipeline();
 
 	void executeARM();
 	void executeThumb();

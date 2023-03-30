@@ -10,9 +10,7 @@ ARM946E::ARM946E(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<Inter
 	for (int i = 0; i < 16; i++)
 		R[i] = 0;
 
-	R[15] = entry;
-	flushPipeline();
-	refillPipeline();
+	R[15] = entry + 8;
 	m_pipelineFlushed = false;
 }
 
@@ -64,11 +62,6 @@ void ARM946E::run(int cycles)
 		fetch();
 		if (dispatchInterrupt())	//if interrupt was dispatched then fetch new opcode (dispatchInterrupt already flushes pipeline !)
 			return;
-
-		int exPipelinePtr = m_pipelinePtr + 1;
-		if (exPipelinePtr == 3)			//seems faster than using modulus
-			exPipelinePtr = 0;
-		m_currentOpcode = m_pipeline[exPipelinePtr].opcode;
 		switch (m_inThumbMode)
 		{
 		case 0:
@@ -80,27 +73,21 @@ void ARM946E::run(int cycles)
 		if (!m_pipelineFlushed)
 		{
 			R[15] += incrAmountLUT[m_inThumbMode];
-			m_pipelinePtr = exPipelinePtr;
-			m_pipelineFlushed = false;
 		}
-		else
-			refillPipeline();
+		m_pipelineFlushed = false;
 	}
 }
 
 void ARM946E::fetch()
 {
-	int curPipelinePtr = m_pipelinePtr;
-	m_pipeline[curPipelinePtr].state = PipelineState::FILLED;
 	if (m_inThumbMode)
-		m_pipeline[curPipelinePtr].opcode = m_bus->NDS9_read16(R[15]);
+		m_currentOpcode = m_bus->NDS9_read16(R[15] - 4);
 	else
-		m_pipeline[curPipelinePtr].opcode = m_bus->NDS9_read32(R[15]);
+		m_currentOpcode = m_bus->NDS9_read32(R[15] - 8);
 }
 
 void ARM946E::executeARM()
 {
-	pipelineFull = true;
 	//check conditions before executing
 	uint8_t conditionCode = ((m_currentOpcode >> 28) & 0xF);
 	static constexpr auto conditionLUT = genConditionCodeTable();
@@ -116,7 +103,6 @@ void ARM946E::executeARM()
 
 void ARM946E::executeThumb()
 {
-	pipelineFull = true;
 	static constexpr auto thumbTable = genThumbTable();
 	uint16_t lookup = m_currentOpcode >> 6;
 	instructionFn instr = thumbTable[lookup];
@@ -146,35 +132,6 @@ bool ARM946E::dispatchInterrupt()
 	return true;*/
 }
 
-void ARM946E::flushPipeline()
-{
-	m_pipelineFlushed = true;
-	pipelineFull = false;
-}
-
-void ARM946E::refillPipeline()
-{
-	m_pipelineFlushed = false;
-
-	switch (m_inThumbMode)
-	{
-	case 0:		//refill ARM
-		m_pipeline[0].opcode = m_bus->NDS9_read32(R[15]);
-		m_pipeline[1].opcode = m_bus->NDS9_read32(R[15] + 4);
-		R[15] += 8;
-		break;
-	case 1:		//refill thumb
-		m_pipeline[0].opcode = m_bus->NDS9_read16(R[15]);
-		m_pipeline[1].opcode = m_bus->NDS9_read16(R[15] + 2);
-		R[15] += 4;
-		break;
-	}
-
-	m_pipeline[0].state = PipelineState::FILLED;
-	m_pipeline[1].state = PipelineState::FILLED;
-	m_pipeline[2].state = PipelineState::UNFILLED;	//this will be filled upon next FDE cycle
-	m_pipelinePtr = 2;
-}
 
 //misc flag stuff
 bool ARM946E::m_getNegativeFlag()
@@ -234,7 +191,10 @@ void ARM946E::setReg(uint8_t reg, uint32_t value)
 {
 	R[reg] = value;
 	if (reg == 15)
-		flushPipeline();
+	{
+		m_pipelineFlushed = true;
+		R[reg] += (incrAmountLUT[m_inThumbMode] << 1);
+	}
 }
 
 void ARM946E::swapBankedRegisters()

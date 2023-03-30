@@ -107,9 +107,6 @@
     <ClInclude Include="NDS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ARM_Common.h">
-      <Filter>Header Files\ARM</Filter>
-    </ClInclude>
     <ClInclude Include="PPU.h">
       <Filter>Header Files</Filter>
     </ClInclude>

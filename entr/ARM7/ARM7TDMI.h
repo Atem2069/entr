@@ -4,11 +4,22 @@
 #include"../Bus.h"
 #include"../InterruptManager.h"
 #include"../Scheduler.h"
-#include"../ARM_Common.h"
 
 #include<iostream>
 #include<stdexcept>
 #include<array>
+
+enum class PipelineState
+{
+	UNFILLED,
+	FILLED
+};
+
+struct Pipeline
+{
+	PipelineState state;
+	uint32_t opcode;
+};
 
 class ARM7TDMI
 {

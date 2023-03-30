@@ -154,7 +154,6 @@
   <ItemGroup>
     <ClInclude Include="ARM7\ARM7TDMI.h" />
     <ClInclude Include="ARM9\ARM946E.h" />
-    <ClInclude Include="ARM_Common.h" />
     <ClInclude Include="Bus.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="Input.h" />
