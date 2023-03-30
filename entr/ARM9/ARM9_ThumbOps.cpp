@@ -503,7 +503,15 @@ void ARM946E::Thumb_PushPopRegisters()
 		if (PCLR)
 		{
 			uint32_t newPC = m_bus->NDS9_read32(SP);
-			setReg(15, newPC & ~0b1);
+			//setReg(15, newPC & ~0b1);
+			if (newPC & 0b1)	//stay in thumb mode, no change
+				setReg(15, newPC & ~0b1);
+			else				//switch out to ARM mode
+			{
+				CPSR &= ~0b100000;
+				m_inThumbMode = false;
+				setReg(15, newPC & ~0b11);
+			}
 			SP += 4;
 		}
 	}

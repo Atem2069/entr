@@ -652,7 +652,21 @@ void ARM946E::ARM_SingleDataTransfer()
 			if (base & 3)
 				val = std::rotr(val, (base & 3) * 8);
 		}
-		setReg(destRegIdx, val);
+		if (destRegIdx == 15)		//loading r15 can switch cpu state
+		{
+			if (val & 0b1)	//start executing THUMB instrs
+			{
+				CPSR |= 0b100000;	//set T bit in CPSR
+				m_inThumbMode = true;
+				setReg(15, val & ~0b1);
+			}
+			else				//keep going as ARM (but pipeline will be flushed)
+			{
+				setReg(15, val & ~0b11);
+			}
+		}
+		else
+			setReg(destRegIdx, val);
 	}
 	else //store value
 	{
@@ -762,7 +776,23 @@ void ARM946E::ARM_BlockDataTransfer()
 			}
 
 			if (loadStore)
-				setReg(i, val);
+			{
+				if (i == 15)
+				{
+					if (val & 0b1)	//start executing THUMB instrs
+					{
+						CPSR |= 0b100000;	//set T bit in CPSR
+						m_inThumbMode = true;
+						setReg(15, val & ~0b1);
+					}
+					else				//keep going as ARM (but pipeline will be flushed)
+					{
+						setReg(15, val & ~0b11);
+					}
+				}
+				else
+					setReg(i, val);
+			}
 			else
 				m_bus->NDS9_write32(base_addr, val);
 
