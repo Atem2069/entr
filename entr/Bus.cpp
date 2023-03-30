@@ -472,6 +472,10 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	{
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
+	case 0x04000180:
+		return NDS9_IPCData & 0xF;
+	case 0x04000181:
+		return NDS7_IPCData & 0xF;	//<--todo: irq bits and IPCSYNC IRQ
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
@@ -483,6 +487,11 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	{
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
+		break;
+	case 0x04000180:	//stop console from being spammed from bad io write
+		break;
+	case 0x04000181:
+		NDS7_IPCData = value & 0xF;
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
@@ -524,6 +533,10 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 	{
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
+	case 0x04000180:
+		return NDS7_IPCData & 0xF;
+	case 0x04000181:
+		return NDS9_IPCData & 0xF;	//<--same as ARM7, need to impl. IRQ bits
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
@@ -540,6 +553,11 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	{
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
+		break;
+	case 0x04000180:
+		break;
+	case 0x04000181:
+		NDS9_IPCData = value & 0xF;
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));

@@ -58,6 +58,9 @@ private:
 	std::shared_ptr<PPU> m_ppu;
 	std::shared_ptr<Input> m_input;
 
+	uint8_t NDS7_IPCData = {};
+	uint8_t NDS9_IPCData = {};
+
 	//helper functions for reading/writing wide values etc.
 	uint16_t getValue16(uint8_t* arr, int base, int mask);
 	void setValue16(uint8_t* arr, int base, int mask, uint16_t val);
