@@ -889,7 +889,6 @@ void ARM946E::ARM_EnhancedDSPMultiply()
 		int32_t multiplyResult = (int32_t)a * (int32_t)b;
 
 		int32_t accum = getReg(accumulateRegIdx);
-		//result = doSaturatingAdd((int64_t)multiplyResult, (int64_t)accum);
 		int64_t tempResult = (int64_t)multiplyResult + (int64_t)accum;
 
 		if (tempResult > 0x7FFFFFFF)
@@ -898,6 +897,54 @@ void ARM946E::ARM_EnhancedDSPMultiply()
 			m_setSaturationFlag();
 
 		result = multiplyResult + accum;
+		setReg(destRegIdx, result);
+		break;
+	}
+	case 0b1001:
+	{
+		bool accumulate = !((m_currentOpcode >> 5) & 0b1);
+		int32_t a = getReg(operandAIdx);
+		int16_t b = (getReg(operandBIdx) >> topBottomB) & 0xFFFF;
+
+		int64_t multiplyResult = (int64_t)a * (int64_t)b;
+		int32_t shiftedResult = (multiplyResult >> 16) & 0xFFFFFFFF;
+
+		if (accumulate)
+		{
+			int32_t accum = getReg(accumulateRegIdx);
+			int64_t tempResult = (int64_t)shiftedResult + (int64_t)accum;
+
+			if (tempResult > 0x7FFFFFFF)
+				m_setSaturationFlag();
+			else if (tempResult < (int64_t)0xFFFFFFFF80000000)
+				m_setSaturationFlag();
+
+			result = shiftedResult + accum;
+		}
+		else
+			result = shiftedResult;
+		setReg(destRegIdx, result);
+		break;
+	}
+	case 0b1010:
+	{
+		int16_t a = (getReg(operandAIdx) >> topBottomA) & 0xFFFF;
+		int16_t b = (getReg(operandBIdx) >> topBottomB) & 0xFFFF;
+
+		int32_t multiplyResult = (int32_t)a * (int32_t)b;
+
+		uint8_t loRegIdx = ((m_currentOpcode >> 12) & 0xF);
+		uint8_t hiRegIdx = ((m_currentOpcode >> 16) & 0xF);
+		int64_t accum = (((int64_t)getReg(hiRegIdx)) << 32) | getReg(loRegIdx);
+
+		int64_t res = (int64_t)multiplyResult + accum;
+		int32_t low = res & 0xFFFFFFFF;
+		int32_t high = (res >> 32) & 0xFFFFFFFF;
+
+		setReg(loRegIdx, low);
+		setReg(hiRegIdx, high);
+		
+
 		break;
 	}
 	case 0b1011:
@@ -906,11 +953,9 @@ void ARM946E::ARM_EnhancedDSPMultiply()
 		int16_t b = (getReg(operandBIdx) >> topBottomB) & 0xFFFF;
 
 		result = (int32_t)a * (int32_t)b;
+		setReg(destRegIdx, result);
 		break;
 	}
-	default:
-		std::cout << "I don't know this mul opcode! " << (int)opcode << '\n';
 	}
 
-	setReg(destRegIdx, result);
 }
