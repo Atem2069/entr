@@ -801,19 +801,16 @@ void ARM946E::ARM_BlockDataTransfer()
 void ARM946E::ARM_CoprocessorDataTransfer()
 {
 	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
-	throw std::runtime_error("unimplemented");
 }
 
 void ARM946E::ARM_CoprocessorDataOperation()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
-	throw std::runtime_error("unimplemented");
+	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");;
 }
 
 void ARM946E::ARM_CoprocessorRegisterTransfer()
 {
 	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
-	throw std::runtime_error("unimplemented");
 }
 
 void ARM946E::ARM_SoftwareInterrupt()
