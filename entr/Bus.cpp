@@ -473,7 +473,7 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	{
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
-	case 0x04000180: case 0x04000181:
+	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		return m_ipc->NDS7_read8(address);
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
@@ -487,7 +487,7 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
 		break;
-	case 0x04000180: case 0x04000181:
+	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		m_ipc->NDS7_write8(address, value);
 		break;
 	default:
@@ -510,6 +510,10 @@ void Bus::NDS7_writeIO16(uint32_t address, uint16_t value)
 
 uint32_t Bus::NDS7_readIO32(uint32_t address)
 {
+	//special case: read ipcfifo
+	if (address == 0x04100000)
+		return m_ipc->NDS7_read32(address);
+
 	uint16_t lower = NDS7_readIO16(address);
 	uint16_t upper = NDS7_readIO16(address + 2);
 	return (upper << 16) | lower;
@@ -517,6 +521,13 @@ uint32_t Bus::NDS7_readIO32(uint32_t address)
 
 void Bus::NDS7_writeIO32(uint32_t address, uint32_t value)
 {
+	//special case: write ipcfifo
+	if (address == 0x04000188)
+	{
+		m_ipc->NDS7_write32(address, value);
+		return;
+	}
+
 	NDS7_writeIO16(address, value & 0xFFFF);
 	NDS7_writeIO16(address + 2, ((value >> 16) & 0xFFFF));
 }
@@ -530,7 +541,7 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 	{
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
-	case 0x04000180: case 0x04000181:
+	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		return m_ipc->NDS9_read8(address);
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
@@ -549,7 +560,7 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
 		break;
-	case 0x04000180: case 0x04000181:
+	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		m_ipc->NDS9_write8(address, value);
 		break;
 	default:
@@ -572,6 +583,10 @@ void Bus::NDS9_writeIO16(uint32_t address, uint16_t value)
 
 uint32_t Bus::NDS9_readIO32(uint32_t address)
 {
+	//special case: read ipcfifo
+	if (address == 0x04100000)
+		return m_ipc->NDS9_read32(address);
+
 	uint16_t lower = NDS9_readIO16(address);
 	uint16_t upper = NDS9_readIO16(address + 2);
 	return (upper << 16) | lower;
@@ -579,6 +594,12 @@ uint32_t Bus::NDS9_readIO32(uint32_t address)
 
 void Bus::NDS9_writeIO32(uint32_t address, uint32_t value)
 {
+	//special case: write ipcfifo
+	if (address == 0x04000188)
+	{
+		m_ipc->NDS9_write32(address, value);
+		return;
+	}
 	NDS9_writeIO16(address, value & 0xFFFF);
 	NDS9_writeIO16(address + 2, ((value >> 16) & 0xFFFF));
 }
