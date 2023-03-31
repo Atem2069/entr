@@ -4,6 +4,7 @@
 #include"Logger.h"
 #include"PPU.h"
 #include"Input.h"
+#include"IPC.h"
 
 #include<format>
 
@@ -57,9 +58,7 @@ private:
 	std::shared_ptr<NDSMem> m_mem;
 	std::shared_ptr<PPU> m_ppu;
 	std::shared_ptr<Input> m_input;
-
-	uint8_t NDS7_IPCData = {};
-	uint8_t NDS9_IPCData = {};
+	std::shared_ptr<IPC> m_ipc;
 
 	//helper functions for reading/writing wide values etc.
 	uint16_t getValue16(uint8_t* arr, int base, int mask);

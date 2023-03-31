@@ -47,7 +47,7 @@ void NDS::registerInput(std::shared_ptr<InputState> inp)
 
 void NDS::m_initialise()
 {
-	std::vector<uint8_t> romData = readFile("rom\\armwrestler.nds");
+	std::vector<uint8_t> romData = readFile("rom\\rockwrestler.nds");
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
 	uint32_t ARM9Entry = romData[0x024] | (romData[0x025] << 8) | (romData[0x026] << 16) | (romData[0x027] << 24);
 	uint32_t ARM9LoadAddr = romData[0x028] | (romData[0x029] << 8) | (romData[0x02A] << 16) | (romData[0x02B] << 24);
