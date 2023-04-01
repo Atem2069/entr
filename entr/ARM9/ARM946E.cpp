@@ -136,41 +136,93 @@ bool ARM946E::dispatchInterrupt()
 //internal r/w functions
 uint16_t ARM946E::m_fetch16(uint32_t address)
 {
+	address &= 0xFFFFFFFE;
+	if (address >= ITCM_Base && address < (ITCM_Base + ITCM_Size) && (ITCM_enabled && !ITCM_load))
+		return Bus::getValue16(ITCM, address & 0x7FFF, 0x7FFF);
 	return m_bus->NDS9_read16(address);
 }
 
 uint32_t ARM946E::m_fetch32(uint32_t address)
 {
+	address &= 0xFFFFFFFC;
+	if (address >= ITCM_Base && address < (ITCM_Base + ITCM_Size) && (ITCM_enabled && !ITCM_load))
+		return Bus::getValue32(ITCM, address & 0x7FFF, 0x7FFF);
 	return m_bus->NDS9_read32(address);
 }
 
 uint8_t ARM946E::m_read8(uint32_t address)
 {
+	if (address >= ITCM_Base && address < (ITCM_Base + ITCM_Size) && (ITCM_enabled && !ITCM_load))
+		return ITCM[address & 0x7FFF];
+	if (address >= DTCM_Base && address < (DTCM_Base + DTCM_Size) && (DTCM_enabled && !DTCM_load))
+		return DTCM[address & 0x3FFF];
 	return m_bus->NDS9_read8(address);
 }
 
 uint16_t ARM946E::m_read16(uint32_t address)
 {
+	address &= 0xFFFFFFFE;
+	if (address >= ITCM_Base && address < (ITCM_Base + ITCM_Size) && (ITCM_enabled && !ITCM_load))
+		return Bus::getValue16(ITCM, address & 0x7FFF, 0x7FFF);
+	if (address >= DTCM_Base && address < (DTCM_Base + DTCM_Size) && (DTCM_enabled && !DTCM_load))
+		return Bus::getValue16(DTCM, address & 0x3FFF, 0x3FFF);
 	return m_bus->NDS9_read16(address);
 }
 
 uint32_t ARM946E::m_read32(uint32_t address)
 {
+	address &= 0xFFFFFFFC;
+	if (address >= ITCM_Base && address < (ITCM_Base + ITCM_Size) && (ITCM_enabled && !ITCM_load))
+		return Bus::getValue32(ITCM, address & 0x7FFF, 0x7FFF);
+	if (address >= DTCM_Base && address < (DTCM_Base + DTCM_Size) && (DTCM_enabled && !DTCM_load))
+		return Bus::getValue32(DTCM, address & 0x3FFF, 0x3FFF);
 	return m_bus->NDS9_read32(address);
 }
 
 void ARM946E::m_write8(uint32_t address, uint8_t value)
 {
+	if (address >= ITCM_Base && address < (ITCM_Base + ITCM_Size) && ITCM_enabled)
+	{
+		ITCM[address & 0x7FFF] = value;
+		return;
+	}
+	if (address >= DTCM_Base && address < (DTCM_Base + DTCM_Size) && DTCM_enabled)
+	{
+		DTCM[address & 0x3FFF] = value;
+		return;
+	}
 	m_bus->NDS9_write8(address, value);
 }
 
 void ARM946E::m_write16(uint32_t address, uint16_t value)
 {
+	address &= 0xFFFFFFFE;
+	if (address >= ITCM_Base && address < (ITCM_Base + ITCM_Size) && ITCM_enabled)
+	{
+		Bus::setValue16(ITCM, address & 0x7FFF, 0x7FFF, value);
+		return;
+	}
+	if (address >= DTCM_Base && address < (DTCM_Base + DTCM_Size) && DTCM_enabled)
+	{
+		Bus::setValue16(DTCM, address & 0x3FFF, 0x3FFF, value);
+		return;
+	}
 	m_bus->NDS9_write16(address, value);
 }
 
 void ARM946E::m_write32(uint32_t address, uint32_t value)
 {
+	address &= 0xFFFFFFFC;
+	if (address >= ITCM_Base && address < (ITCM_Base + ITCM_Size) && ITCM_enabled)
+	{
+		Bus::setValue32(ITCM, address & 0x7FFF, 0x7FFF, value);
+		return;
+	}
+	if (address >= DTCM_Base && address < (DTCM_Base + DTCM_Size) && DTCM_enabled)
+	{
+		Bus::setValue32(DTCM, address & 0x3FFF, 0x3FFF, value);
+		return;
+	}
 	m_bus->NDS9_write32(address, value);
 }
 
