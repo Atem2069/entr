@@ -844,7 +844,16 @@ void ARM946E::ARM_BlockDataTransfer()
 
 void ARM946E::ARM_CoprocessorDataTransfer()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+	bool prePost = (m_currentOpcode >> 24) & 0b1;
+	bool upDown = (m_currentOpcode >> 23) & 0b1;
+	bool transferLength = (m_currentOpcode >> 22) & 0b1;
+	bool writeback = (m_currentOpcode >> 21) & 0b1;
+	bool loadStore = (m_currentOpcode >> 20) & 0b1;
+	uint8_t baseRegIdx = (m_currentOpcode >> 16) & 0xF;
+	uint8_t coprocessorSrcDestReg = (m_currentOpcode >> 12) & 0xF;
+	uint8_t coprocessorNumber = (m_currentOpcode >> 8) & 0xF;
+	uint8_t offset = m_currentOpcode & 0xFF;
+	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented transfer. Coprocessor={} (register={}), load? {} length bit={}", coprocessorNumber, coprocessorSrcDestReg, loadStore,transferLength));
 }
 
 void ARM946E::ARM_CoprocessorDataOperation()
