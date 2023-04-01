@@ -8,6 +8,12 @@ Bus::Bus(std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input)
 	m_ipc = std::make_shared<IPC>();
 
 	m_ppu->registerMemory(m_mem);
+
+	//i don't know if this initial state is accurate, but oh well..
+	m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[0];
+	m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[1];
+	m_mem->NDS7_sharedWRAMPtrs[0] = nullptr;
+	m_mem->NDS7_sharedWRAMPtrs[1] = nullptr;
 }
 
 Bus::~Bus()
@@ -26,10 +32,12 @@ uint8_t Bus::NDS7_read8(uint32_t address)
 	case 2:
 		return m_mem->RAM[address & 0x3FFFFF];
 	case 3:
-		if (address >= 0x03800000)						//i hate this.
+	{
+		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (!bank || address >= 0x03800000)
 			return m_mem->ARM7_WRAM[address & 0xFFFF];
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM read!");
-		return 0;
+		return bank[address & 0x3FFF];
+	}
 	case 4:
 		return NDS7_readIO8(address);
 	case 6:
@@ -51,11 +59,14 @@ void Bus::NDS7_write8(uint32_t address, uint8_t value)
 		m_mem->RAM[address & 0x3FFFFF] = value;
 		break;
 	case 3:
-		if (address >= 0x03800000)
+	{
+		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (!bank || address >= 0x03800000)
 			m_mem->ARM7_WRAM[address & 0xFFFF] = value;
 		else
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM write!");
+			bank[address & 0x3FFF] = value;
 		break;
+	}
 	case 4:
 		NDS7_writeIO8(address,value);
 		break;
@@ -79,10 +90,12 @@ uint16_t Bus::NDS7_read16(uint32_t address)
 	case 2:
 		return getValue16(m_mem->RAM,address & 0x3FFFFF,0x3FFFFF);
 	case 3:
-		if (address >= 0x03800000)						//i hate this.
-			return getValue16(m_mem->ARM7_WRAM,address & 0xFFFF,0xFFFF);
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM read!");
-		return 0;
+	{
+		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (!bank || address >= 0x03800000)
+			return getValue16(m_mem->ARM7_WRAM, address & 0xFFFF, 0xFFFF);
+		return getValue16(bank, address & 0x3FFF, 0x3FFF);
+	}
 	case 4:
 		return NDS7_readIO16(address);
 	case 6:
@@ -105,11 +118,14 @@ void Bus::NDS7_write16(uint32_t address, uint16_t value)
 		setValue16(m_mem->RAM,address & 0x3FFFFF,0x3FFFFF, value);
 		break;
 	case 3:
-		if (address >= 0x03800000)
-			setValue16(m_mem->ARM7_WRAM,address & 0xFFFF,0xFFFF, value);
+	{
+		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (!bank || address >= 0x03800000)
+			setValue16(m_mem->ARM7_WRAM, address & 0xFFFF, 0xFFFF, value);
 		else
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM write!");
+			setValue16(bank, address & 0x3FFF, 0x3FFF, value);
 		break;
+	}
 	case 4:
 		NDS7_writeIO16(address, value);
 		break;
@@ -133,10 +149,12 @@ uint32_t Bus::NDS7_read32(uint32_t address)
 	case 2:
 		return getValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF);
 	case 3:
-		if (address >= 0x03800000)						//i hate this.
+	{
+		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (!bank || address >= 0x03800000)
 			return getValue32(m_mem->ARM7_WRAM, address & 0xFFFF, 0xFFFF);
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM read!");
-		return 0;
+		return getValue32(bank, address & 0x3FFF, 0x3FFF);
+	}
 	case 4:
 		return NDS7_readIO32(address);
 	case 6:
@@ -159,11 +177,14 @@ void Bus::NDS7_write32(uint32_t address, uint32_t value)
 		setValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF, value);
 		break;
 	case 3:
-		if (address >= 0x03800000)
+	{
+		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (!bank || address >= 0x03800000)
 			setValue32(m_mem->ARM7_WRAM, address & 0xFFFF, 0xFFFF, value);
 		else
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented shared WRAM write!");
+			setValue32(bank, address & 0x3FFF, 0x3FFF, value);
 		break;
+	}
 	case 4:
 		NDS7_writeIO32(address, value);
 		break;
@@ -186,8 +207,12 @@ uint8_t Bus::NDS9_read8(uint32_t address)
 	case 2:
 		return m_mem->RAM[address & 0x3FFFFF];
 	case 3:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented read from shared WRAM!!");
-		return 0;
+	{
+		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (!bank)
+			return 0;
+		return bank[address & 0x3FFF];
+	}
 	case 4:
 		return NDS9_readIO8(address);
 	case 5:
@@ -234,8 +259,12 @@ void Bus::NDS9_write8(uint32_t address, uint8_t value)
 		m_mem->RAM[address & 0x3FFFFF] = value;
 		break;
 	case 3:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented write to shared WRAM!!");
+	{
+		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (bank)
+			bank[address & 0x3FFF] = value;
 		break;
+	}
 	case 4:
 		NDS9_writeIO8(address,value);
 		break;
@@ -284,8 +313,12 @@ uint16_t Bus::NDS9_read16(uint32_t address)
 	case 2:
 		return getValue16(m_mem->RAM,address & 0x3FFFFF,0x3FFFFF);
 	case 3:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented read from shared WRAM!!");
-		return 0;
+	{
+		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (!bank)
+			return 0;
+		return getValue16(bank, address & 0x3FFF, 0x3FFF);
+	}
 	case 4:
 		return NDS9_readIO16(address);
 	case 5:
@@ -333,8 +366,12 @@ void Bus::NDS9_write16(uint32_t address, uint16_t value)
 		setValue16(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF, value);
 		break;
 	case 3:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented write to shared WRAM!!");
+	{
+		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (bank)
+			setValue16(bank, address & 0x3FFF, 0x3FFF, value);
 		break;
+	}
 	case 4:
 		NDS9_writeIO16(address, value);
 		break;
@@ -383,8 +420,12 @@ uint32_t Bus::NDS9_read32(uint32_t address)
 	case 2:
 		return getValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF);
 	case 3:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented read from shared WRAM!!");
-		return 0;
+	{
+		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (!bank)
+			return 0;
+		return getValue32(bank, address & 0x3FFF, 0x3FFF);
+	}
 	case 4:
 		return NDS9_readIO32(address);
 	case 5:
@@ -432,8 +473,12 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 		setValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF, value);
 		break;
 	case 3:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented write to shared WRAM!!");
+	{
+		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
+		if (bank)
+			setValue32(bank, address & 0x3FFF, 0x3FFF, value);
 		break;
+	}
 	case 4:
 		NDS9_writeIO32(address, value);
 		break;
@@ -478,6 +523,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return m_input->readIORegister(address);
 	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		return m_ipc->NDS7_read8(address);
+	case 0x04000241:
+		return WRAMCNT;
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
@@ -546,6 +593,8 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 		return m_input->readIORegister(address);
 	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		return m_ipc->NDS9_read8(address);
+	case 0x04000247:
+		return WRAMCNT;
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
@@ -566,6 +615,38 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		m_ipc->NDS9_write8(address, value);
 		break;
+	case 0x04000247:
+	{
+		WRAMCNT = value & 0b11;
+		//nested switch, ugly!
+		switch (WRAMCNT)
+		{
+		case 0:
+			m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[0];
+			m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[1];
+			m_mem->NDS7_sharedWRAMPtrs[0] = nullptr;
+			m_mem->NDS7_sharedWRAMPtrs[1] = nullptr;
+			break;
+		case 1:
+			m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[1];
+			m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[1];
+			m_mem->NDS7_sharedWRAMPtrs[0] = m_mem->WRAM[0];
+			m_mem->NDS7_sharedWRAMPtrs[1] = m_mem->WRAM[0];
+			break;
+		case 2:
+			m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[0];
+			m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[0];
+			m_mem->NDS7_sharedWRAMPtrs[0] = m_mem->WRAM[1];
+			m_mem->NDS7_sharedWRAMPtrs[1] = m_mem->WRAM[1];
+			break;
+		case 3:
+			m_mem->NDS9_sharedWRAMPtrs[0] = nullptr;
+			m_mem->NDS9_sharedWRAMPtrs[1] = nullptr;
+			m_mem->NDS7_sharedWRAMPtrs[0] = m_mem->WRAM[0];
+			m_mem->NDS7_sharedWRAMPtrs[1] = m_mem->WRAM[1];
+		}
+		break;
+	}
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
 	}

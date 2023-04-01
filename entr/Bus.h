@@ -67,6 +67,8 @@ private:
 	std::shared_ptr<Input> m_input;
 	std::shared_ptr<IPC> m_ipc;
 
+	uint8_t WRAMCNT = 0;
+
 	void setByteInWord(uint32_t* word, uint8_t byte, int pos);
 	void setByteInHalfword(uint16_t* halfword, uint8_t byte, int pos);
 };

@@ -11,4 +11,7 @@ struct NDSMem
 	uint8_t OAM[2048];
 
 	uint8_t ARM7_WRAM[65536];
+
+	uint8_t* NDS7_sharedWRAMPtrs[2];		//dealing with shared wram banking
+	uint8_t* NDS9_sharedWRAMPtrs[2];
 };
