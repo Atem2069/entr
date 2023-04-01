@@ -282,6 +282,10 @@ private:
 	uint32_t CP15_MainID = 0x41059461;
 	uint32_t CP15_CacheType = 0x0F0D2112;
 	uint32_t CP15_control = 0x00002078;		//these initial values are taken from running rockwrestler on a 3ds, could be wrong?
+
+
+	uint8_t ITCM[32768];
+	uint8_t DTCM[16384];
 	
 	bool ITCM_enabled = false;
 	bool ITCM_load = false;

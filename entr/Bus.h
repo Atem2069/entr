@@ -54,18 +54,18 @@ public:
 	uint32_t NDS9_readIO32(uint32_t address);
 	void NDS9_writeIO32(uint32_t address, uint32_t value);
 
+	//helper functions for reading/writing wide values etc.
+	static inline uint16_t getValue16(uint8_t* arr, int base, int mask);
+	static inline void setValue16(uint8_t* arr, int base, int mask, uint16_t val);
+
+	static inline uint32_t getValue32(uint8_t* arr, int base, int mask);
+	static inline void setValue32(uint8_t* arr, int base, int mask, uint32_t val);
+
 private:
 	std::shared_ptr<NDSMem> m_mem;
 	std::shared_ptr<PPU> m_ppu;
 	std::shared_ptr<Input> m_input;
 	std::shared_ptr<IPC> m_ipc;
-
-	//helper functions for reading/writing wide values etc.
-	uint16_t getValue16(uint8_t* arr, int base, int mask);
-	void setValue16(uint8_t* arr, int base, int mask, uint16_t val);
-
-	uint32_t getValue32(uint8_t* arr, int base, int mask);
-	void setValue32(uint8_t* arr, int base, int mask, uint32_t val);
 
 	void setByteInWord(uint32_t* word, uint8_t byte, int pos);
 	void setByteInHalfword(uint16_t* halfword, uint8_t byte, int pos);
