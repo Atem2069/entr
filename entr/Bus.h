@@ -11,7 +11,7 @@
 class Bus
 {
 public:
-	Bus(std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input);
+	Bus(std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input);
 	~Bus();
 
 	//NDS7 read/write handlers
@@ -55,14 +55,33 @@ public:
 	void NDS9_writeIO32(uint32_t address, uint32_t value);
 
 	//helper functions for reading/writing wide values etc.
-	static inline uint16_t getValue16(uint8_t* arr, int base, int mask);
-	static inline void setValue16(uint8_t* arr, int base, int mask, uint16_t val);
+	static inline uint16_t getValue16(uint8_t* arr, int base, int mask)
+	{
+		return (uint16_t)arr[base] | ((arr[(base + 1) & mask]) << 8);
+	}
 
-	static inline uint32_t getValue32(uint8_t* arr, int base, int mask);
-	static inline void setValue32(uint8_t* arr, int base, int mask, uint32_t val);
+	static inline void setValue16(uint8_t* arr, int base, int mask, uint16_t val)
+	{
+		arr[base] = val & 0xFF;
+		arr[(base + 1) & mask] = ((val >> 8) & 0xFF);
+	}
+
+	static inline uint32_t getValue32(uint8_t* arr, int base, int mask)
+	{
+		return (uint32_t)arr[base] | ((arr[(base + 1) & mask]) << 8) | ((arr[(base + 2) & mask]) << 16) | ((arr[(base + 3) & mask]) << 24);
+	}
+
+	static inline void setValue32(uint8_t* arr, int base, int mask, uint32_t val)
+	{
+		arr[base] = val & 0xFF;
+		arr[(base + 1) & mask] = ((val >> 8) & 0xFF);
+		arr[(base + 2) & mask] = ((val >> 16) & 0xFF);
+		arr[(base + 3) & mask] = ((val >> 24) & 0xFF);
+	}
 
 private:
 	std::shared_ptr<NDSMem> m_mem;
+	std::shared_ptr<InterruptManager> m_interruptManager;
 	std::shared_ptr<PPU> m_ppu;
 	std::shared_ptr<Input> m_input;
 	std::shared_ptr<IPC> m_ipc;

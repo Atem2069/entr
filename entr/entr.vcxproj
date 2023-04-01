@@ -145,6 +145,7 @@
     <ClCompile Include="Bus.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="InterruptManager.cpp" />
     <ClCompile Include="IPC.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />

@@ -84,6 +84,9 @@
     <ClCompile Include="IPC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InterruptManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">

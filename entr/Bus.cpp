@@ -1,7 +1,8 @@
 #include"Bus.h"
 
-Bus::Bus(std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input)
+Bus::Bus(std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input)
 {
+	m_interruptManager = interruptManager;
 	m_ppu = ppu;
 	m_input = input;
 	m_mem = std::make_shared<NDSMem>();
@@ -686,32 +687,6 @@ void Bus::NDS9_writeIO32(uint32_t address, uint32_t value)
 	}
 	NDS9_writeIO16(address, value & 0xFFFF);
 	NDS9_writeIO16(address + 2, ((value >> 16) & 0xFFFF));
-}
-
-//Handles reading/writing larger than byte sized values (the addresses should already be aligned so no issues there)
-//This is SOLELY for memory - IO is handled differently bc it's not treated as a flat mem space
-uint16_t Bus::getValue16(uint8_t* arr, int base, int mask)
-{
-	return (uint16_t)arr[base] | ((arr[(base + 1) & mask]) << 8);
-}
-
-void Bus::setValue16(uint8_t* arr, int base, int mask, uint16_t val)
-{
-	arr[base] = val & 0xFF;
-	arr[(base + 1) & mask] = ((val >> 8) & 0xFF);
-}
-
-uint32_t Bus::getValue32(uint8_t* arr, int base, int mask)
-{
-	return (uint32_t)arr[base] | ((arr[(base + 1) & mask]) << 8) | ((arr[(base + 2) & mask]) << 16) | ((arr[(base + 3) & mask]) << 24);
-}
-
-void Bus::setValue32(uint8_t* arr, int base, int mask, uint32_t val)
-{
-	arr[base] = val & 0xFF;
-	arr[(base + 1) & mask] = ((val >> 8) & 0xFF);
-	arr[(base + 2) & mask] = ((val >> 16) & 0xFF);
-	arr[(base + 3) & mask] = ((val >> 24) & 0xFF);
 }
 
 void Bus::setByteInWord(uint32_t* word, uint8_t byte, int pos)

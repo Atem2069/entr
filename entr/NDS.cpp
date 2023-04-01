@@ -61,8 +61,9 @@ void NDS::m_initialise()
 	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("ARM9 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM9Offs, ARM9Entry, ARM9LoadAddr, ARM9Size));
 	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
 
+	m_interruptManager = std::make_shared<InterruptManager>();
 	m_ppu = std::make_shared<PPU>(m_interruptManager, m_scheduler);
-	m_bus = std::make_shared<Bus>(m_ppu, m_input);
+	m_bus = std::make_shared<Bus>(m_interruptManager,m_ppu, m_input);
 	//load arm9/arm7 binaries
 	for (int i = 0; i < ARM9Size; i++)
 	{
