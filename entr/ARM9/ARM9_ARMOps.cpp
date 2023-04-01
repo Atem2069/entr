@@ -875,11 +875,42 @@ void ARM946E::ARM_CoprocessorRegisterTransfer()
 		case 0x0001:
 			setReg(srcDestRegIdx, CP15_CacheType);
 			break;
+		case 0x0100:
+			setReg(srcDestRegIdx, CP15_control);
+			break;
+		case 0x0910:
+			setReg(srcDestRegIdx, DTCM_Ctrl);
+			break;
+		case 0x0911:
+			setReg(srcDestRegIdx, ITCM_Ctrl);
+			break;
 		}
 	}
 	else
 	{
-		//todo
+		switch (regId)
+		{
+		case 0x0100:
+			CP15_control = getReg(srcDestRegIdx);
+			DTCM_enabled = (CP15_control >> 16) & 0b1;
+			DTCM_load = (CP15_control >> 17) & 0b1;
+			ITCM_enabled = (CP15_control >> 18) & 0b1;
+			ITCM_load = (CP15_control >> 19) & 0b1;
+			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Ctrl register write. DTCM enabled={}, load={}. ITCM enabled={}, load={}",DTCM_enabled,DTCM_load,ITCM_enabled,ITCM_load));
+			break;
+		case 0x0910:
+			DTCM_Ctrl = getReg(srcDestRegIdx);
+			DTCM_Size = 512 << ((DTCM_Ctrl >> 1) & 0b11111);
+			DTCM_Base = ((DTCM_Ctrl >> 12)) << 12;
+			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("New DTCM settings. base={:#x} size={:#x}", DTCM_Base, DTCM_Size));
+			break;
+		case 0x0911:
+			ITCM_Ctrl = getReg(srcDestRegIdx);
+			ITCM_Size = 512 << ((ITCM_Ctrl >> 1) & 0b11111);
+			ITCM_Base = ((ITCM_Ctrl >> 12)) << 12;
+			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("New ITCM settings. base={:#x} size={:#x}", ITCM_Base, ITCM_Size));
+			break;
+		}
 	}
 	
 }

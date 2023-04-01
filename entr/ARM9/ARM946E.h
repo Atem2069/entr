@@ -269,4 +269,17 @@ private:
 	//Coprocessor registers
 	uint32_t CP15_MainID = 0x41059461;
 	uint32_t CP15_CacheType = 0x0F0D2112;
+	uint32_t CP15_control = 0x00002078;		//these initial values are taken from running rockwrestler on a 3ds, could be wrong?
+	
+	bool ITCM_enabled = false;
+	bool ITCM_load = false;
+	uint32_t ITCM_Ctrl = 0x0000000C;
+	uint32_t ITCM_Base = 0x0;
+	uint32_t ITCM_Size = 0x8000;
+
+	bool DTCM_enabled = false;
+	bool DTCM_load = false;
+	uint32_t DTCM_Ctrl = 0x0080000A;
+	uint32_t DTCM_Base = 0x00800000;
+	uint32_t DTCM_Size = 0x4000;
 };
