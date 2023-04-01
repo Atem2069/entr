@@ -59,9 +59,9 @@ void ARM946E::run(int cycles)
 {
 	for (int i = 0; i < cycles; i++)
 	{
-		fetch();
-		if (dispatchInterrupt())	//if interrupt was dispatched then fetch new opcode (dispatchInterrupt already flushes pipeline !)
+		if (dispatchInterrupt())
 			return;
+		fetch();
 		switch (m_inThumbMode)
 		{
 		case 0:
@@ -111,9 +111,8 @@ void ARM946E::executeThumb()
 
 bool ARM946E::dispatchInterrupt()
 {
-	return false;
-	/*
-	if (((CPSR>>7)&0b1) || !m_interruptManager->getInterrupt() || !m_interruptManager->getInterruptsEnabled())
+	
+	if (((CPSR>>7)&0b1) || !m_interruptManager->NDS9_getInterrupt() || !m_interruptManager->NDS9_getInterruptsEnabled())
 		return false;	//only dispatch if pipeline full (or not about to flush)
 	//irq bits: 10010
 	uint32_t oldCPSR = CPSR;
@@ -126,10 +125,8 @@ bool ARM946E::dispatchInterrupt()
 	constexpr int pcOffsetAmount[2] = { 4,0 };
 	setSPSR(oldCPSR);
 	setReg(14, getReg(15) - pcOffsetAmount[wasThumb]);
-	setReg(15, 0x00000018);
-	flushPipeline();
-	refillPipeline();
-	return true;*/
+	setReg(15, 0xFFFF0018);	//ARM9 uses high interrupt vector?
+	return true;
 }
 
 

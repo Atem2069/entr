@@ -6,7 +6,7 @@ Bus::Bus(std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU
 	m_ppu = ppu;
 	m_input = input;
 	m_mem = std::make_shared<NDSMem>();
-	m_ipc = std::make_shared<IPC>();
+	m_ipc = std::make_shared<IPC>(m_interruptManager);
 
 	m_ppu->registerMemory(m_mem);
 

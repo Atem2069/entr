@@ -1,7 +1,9 @@
 #include"IPC.h"
 
-IPC::IPC()
+IPC::IPC(std::shared_ptr<InterruptManager> interruptManager)
 {
+	m_interruptManager = interruptManager;
+
 	NDS7_IPCData = 0;
 	NDS9_IPCData = 0;
 }
@@ -18,7 +20,7 @@ uint8_t IPC::NDS7_read8(uint32_t address)
 	case 0x04000180:
 		return NDS9_IPCData & 0xF;
 	case 0x04000181:
-		return NDS7_IPCData & 0xF;	//<--todo: IPCSYNC.13,14 (IRQ bits)
+		return NDS7_IPCData & 0x4F;	//<--todo: IPCSYNC.13,14 (IRQ bits)
 	case 0x04000184:
 		return (NDS7_IPCFIFO.IRQOnEmpty << 2) | ((NDS7_IPCFIFO.size == 16) << 1) | (NDS7_IPCFIFO.size == 0);
 	case 0x04000185:
@@ -31,7 +33,9 @@ void IPC::NDS7_write8(uint32_t address, uint8_t value)
 	switch (address)
 	{
 	case 0x04000181:
-		NDS7_IPCData = value & 0xF;
+		NDS7_IPCData = value & 0xFF;
+		if (((value >> 5) & 0b1) && ((NDS9_IPCData>>6)&0b1))
+			m_interruptManager->NDS9_requestInterrupt(InterruptType::IPCSync);
 		break;
 	case 0x04000184:
 		NDS7_IPCFIFO.IRQOnEmpty = ((value >> 2) & 0b1);
@@ -54,7 +58,7 @@ uint8_t IPC::NDS9_read8(uint32_t address)
 	case 0x04000180:
 		return NDS7_IPCData & 0xF;
 	case 0x04000181:
-		return NDS9_IPCData & 0xF;	//same as NDS7, need to impl IPCSYNC.13,14
+		return NDS9_IPCData & 0x4F;	//same as NDS7, need to impl IPCSYNC.13,14
 	case 0x04000184:
 		return (NDS9_IPCFIFO.IRQOnEmpty << 2) | ((NDS9_IPCFIFO.size == 16) << 1) | (NDS9_IPCFIFO.size == 0);
 	case 0x04000185:
@@ -67,7 +71,9 @@ void IPC::NDS9_write8(uint32_t address, uint8_t value)
 	switch (address)
 	{
 	case 0x04000181:
-		NDS9_IPCData = value & 0xF;
+		NDS9_IPCData = value & 0xFF;
+		if (((value >> 5) & 0b1) && ((NDS7_IPCData >> 6) & 0b1))
+			m_interruptManager->NDS7_requestInterrupt(InterruptType::IPCSync);
 		break;
 	case 0x04000184:
 		NDS9_IPCFIFO.IRQOnEmpty = ((value >> 2) & 0b1);
