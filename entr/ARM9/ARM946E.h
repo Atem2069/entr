@@ -45,6 +45,18 @@ private:
 
 	bool dispatchInterrupt();
 
+	//internal r/w functions
+	uint16_t m_fetch16(uint32_t address);
+	uint32_t m_fetch32(uint32_t address);
+
+	uint8_t m_read8(uint32_t address);
+	uint16_t m_read16(uint32_t address);
+	uint32_t m_read32(uint32_t address);
+
+	void m_write8(uint32_t address, uint8_t value);
+	void m_write16(uint32_t address, uint16_t value);
+	void m_write32(uint32_t address, uint32_t value);
+
 	uint32_t m_currentOpcode = 0;
 
 	//misc flag stuff

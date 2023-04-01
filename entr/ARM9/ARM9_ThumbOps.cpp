@@ -268,7 +268,7 @@ void ARM946E::Thumb_PCRelativeLoad()
 
 	uint8_t destRegIdx = ((m_currentOpcode >> 8) & 0b111);
 
-	uint32_t val = m_bus->NDS9_read32(PC + offset);
+	uint32_t val = m_read32(PC + offset);
 	R[destRegIdx] = val;
 }
 
@@ -287,12 +287,12 @@ void ARM946E::Thumb_LoadStoreRegisterOffset()
 	{
 		if (byteWord)
 		{
-			uint32_t val = m_bus->NDS9_read8(base);
+			uint32_t val = m_read8(base);
 			R[srcDestRegIdx] = val;
 		}
 		else
 		{
-			uint32_t val = m_bus->NDS9_read32(base);
+			uint32_t val = m_read32(base);
 			if (base & 3)
 				val = std::rotr(val, (base & 3) * 8);
 			R[srcDestRegIdx] = val;
@@ -303,12 +303,12 @@ void ARM946E::Thumb_LoadStoreRegisterOffset()
 		if (byteWord)
 		{
 			uint8_t val = R[srcDestRegIdx] & 0xFF;
-			m_bus->NDS9_write8(base, val);
+			m_write8(base, val);
 		}
 		else
 		{
 			uint32_t val = R[srcDestRegIdx];
-			m_bus->NDS9_write32(base, val);
+			m_write32(base, val);
 		}
 	}
 }
@@ -326,18 +326,18 @@ void ARM946E::Thumb_LoadStoreSignExtended()
 	if (op == 0)
 	{
 		uint16_t val = R[srcDestRegIdx] & 0xFFFF;
-		m_bus->NDS9_write16(addr, val);
+		m_write16(addr, val);
 	}
 	else if (op == 2)	//load halfword
 	{
-		uint32_t val = m_bus->NDS9_read16(addr);
+		uint32_t val = m_read16(addr);
 		if (addr & 0b1)
 			val = std::rotr(val, 8);
 		R[srcDestRegIdx] = val;
 	}
 	else if (op == 1)	//load sign extended byte
 	{
-		uint32_t val = m_bus->NDS9_read8(addr);
+		uint32_t val = m_read8(addr);
 		if (((val >> 7) & 0b1))
 			val |= 0xFFFFFF00;
 		R[srcDestRegIdx] = val;
@@ -347,13 +347,13 @@ void ARM946E::Thumb_LoadStoreSignExtended()
 		uint32_t val = 0;
 		if (!(addr & 0b1))
 		{
-			val = m_bus->NDS9_read16(addr);
+			val = m_read16(addr);
 			if (((val >> 15) & 0b1))
 				val |= 0xFFFF0000;
 		}
 		else
 		{
-			val = m_bus->NDS9_read8(addr);
+			val = m_read8(addr);
 			if (((val >> 7) & 0b1))
 				val |= 0xFFFFFF00;
 		}
@@ -378,10 +378,10 @@ void ARM946E::Thumb_LoadStoreImmediateOffset()
 	{
 		uint32_t val = 0;
 		if (byteWord)
-			val = m_bus->NDS9_read8(baseAddr);
+			val = m_read8(baseAddr);
 		else
 		{
-			val = m_bus->NDS9_read32(baseAddr);
+			val = m_read32(baseAddr);
 			if (baseAddr & 3)
 				val = std::rotr(val, (baseAddr & 3) * 8);
 		}
@@ -391,9 +391,9 @@ void ARM946E::Thumb_LoadStoreImmediateOffset()
 	{
 		uint32_t val = R[srcDestRegIdx];
 		if (byteWord)
-			m_bus->NDS9_write8(baseAddr, val & 0xFF);
+			m_write8(baseAddr, val & 0xFF);
 		else
-			m_bus->NDS9_write32(baseAddr, val);
+			m_write32(baseAddr, val);
 	}
 }
 
@@ -411,7 +411,7 @@ void ARM946E::Thumb_LoadStoreHalfword()
 
 	if (loadStore)
 	{
-		uint32_t val = m_bus->NDS9_read16(base);
+		uint32_t val = m_read16(base);
 		if (base & 0b1)
 			val = std::rotr(val, 8);
 		R[srcDestRegIdx] = val;
@@ -419,7 +419,7 @@ void ARM946E::Thumb_LoadStoreHalfword()
 	else
 	{
 		uint16_t val = R[srcDestRegIdx] & 0xFFFF;
-		m_bus->NDS9_write16(base, val);
+		m_write16(base, val);
 	}
 }
 
@@ -434,7 +434,7 @@ void ARM946E::Thumb_SPRelativeLoadStore()
 
 	if (loadStore)
 	{
-		uint32_t val = m_bus->NDS9_read32(addr);
+		uint32_t val = m_read32(addr);
 		if (addr & 3)
 			val = std::rotr(val, (addr & 3) * 8);
 		R[destRegIdx] = val;
@@ -442,7 +442,7 @@ void ARM946E::Thumb_SPRelativeLoadStore()
 	else
 	{
 		uint32_t val = R[destRegIdx];
-		m_bus->NDS9_write32(addr, val);
+		m_write32(addr, val);
 	}
 }
 
@@ -499,7 +499,7 @@ void ARM946E::Thumb_PushPopRegisters()
 			if (((regs >> i) & 0b1))
 			{
 				transferCount++;
-				uint32_t popVal = m_bus->NDS9_read32(SP);
+				uint32_t popVal = m_read32(SP);
 				R[i] = popVal;
 				SP += 4;
 				firstTransfer = false;
@@ -508,7 +508,7 @@ void ARM946E::Thumb_PushPopRegisters()
 
 		if (PCLR)
 		{
-			uint32_t newPC = m_bus->NDS9_read32(SP);
+			uint32_t newPC = m_read32(SP);
 			//setReg(15, newPC & ~0b1);
 			if (newPC & 0b1)	//stay in thumb mode, no change
 				setReg(15, newPC & ~0b1);
@@ -527,7 +527,7 @@ void ARM946E::Thumb_PushPopRegisters()
 		if (PCLR)
 		{
 			SP -= 4;
-			m_bus->NDS9_write32(SP, getReg(14));
+			m_write32(SP, getReg(14));
 			firstTransfer = false;
 		}
 
@@ -537,7 +537,7 @@ void ARM946E::Thumb_PushPopRegisters()
 			{
 				transferCount++;
 				SP -= 4;
-				m_bus->NDS9_write32(SP, R[i]);
+				m_write32(SP, R[i]);
 				firstTransfer = false;
 			}
 		}
@@ -576,7 +576,7 @@ void ARM946E::Thumb_MultipleLoadStore()
 		{
 			if (loadStore)
 			{
-				uint32_t val = m_bus->NDS9_read32(base);
+				uint32_t val = m_read32(base);
 				R[i] = val;
 				if (i == baseRegIdx)		//load with base included -> no writeback
 					writeback = false;
@@ -587,7 +587,7 @@ void ARM946E::Thumb_MultipleLoadStore()
 				uint32_t val = R[i];
 				if (i == baseRegIdx && !baseIsFirst)
 					val = finalBase;
-				m_bus->NDS9_write32(base, val);
+				m_write32(base, val);
 			}
 			firstAccess = false;
 			base += 4;
@@ -603,11 +603,11 @@ void ARM946E::Thumb_MultipleLoadStore()
 		if (loadStore)
 		{
 			//not sure about this timing.
-			setReg(15, m_bus->NDS9_read32(base));
+			setReg(15, m_read32(base));
 		}
 		else
 		{
-			m_bus->NDS9_write32(base, R[15] + 2);	//+2 for pipeline effect
+			m_write32(base, R[15] + 2);	//+2 for pipeline effect
 		}
 		R[baseRegIdx] = base + 0x40;
 		writeback = false;

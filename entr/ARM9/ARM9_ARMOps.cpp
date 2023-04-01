@@ -368,18 +368,18 @@ void ARM946E::ARM_SingleDataSwap()
 
 	if (byteWord)		//swap byte
 	{
-		uint8_t swapVal = m_bus->NDS9_read8(swapAddress);
-		m_bus->NDS9_write8(swapAddress, srcData & 0xFF);
+		uint8_t swapVal = m_read8(swapAddress);
+		m_write8(swapAddress, srcData & 0xFF);
 		setReg(destRegIdx, swapVal);
 
 	}
 
 	else				//swap word
 	{
-		uint32_t swapVal = m_bus->NDS9_read32(swapAddress);
+		uint32_t swapVal = m_read32(swapAddress);
 		if (swapAddress & 3)
 			swapVal = std::rotr(swapVal, (swapAddress & 3) * 8);
-		m_bus->NDS9_write32(swapAddress, srcData);
+		m_write32(swapAddress, srcData);
 		setReg(destRegIdx, swapVal);
 	}
 }
@@ -438,13 +438,13 @@ void ARM946E::ARM_HalfwordTransferRegisterOffset()
 			Logger::getInstance()->msg(LoggerSeverity::Error, "SWP called from halfword transfer - opcode decoding is invalid!!!");
 			break;
 		case 1:
-			val = m_bus->NDS9_read16(base);
+			val = m_read16(base);
 			if (base & 1)
 				val = std::rotr(val, 8);
 			setReg(srcDestRegIdx, val);
 			break;
 		case 2:
-			val = m_bus->NDS9_read8(base);
+			val = m_read8(base);
 			if (((val >> 7) & 0b1))
 				val |= 0xFFFFFF00;
 			setReg(srcDestRegIdx, val);
@@ -452,13 +452,13 @@ void ARM946E::ARM_HalfwordTransferRegisterOffset()
 		case 3:
 			if (!(base & 0b1))
 			{
-				val = m_bus->NDS9_read16(base);
+				val = m_read16(base);
 				if (((val >> 15) & 0b1))
 					val |= 0xFFFF0000;
 			}
 			else
 			{
-				val = m_bus->NDS9_read8(base);
+				val = m_read8(base);
 				if (((val >> 7) & 0b1))
 					val |= 0xFFFFFF00;
 			}
@@ -477,19 +477,19 @@ void ARM946E::ARM_HalfwordTransferRegisterOffset()
 			Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
 			break;
 		case 1:
-			m_bus->NDS9_write16(base, data & 0xFFFF);
+			m_write16(base, data & 0xFFFF);
 			break;
 		case 2:
 		{
-			uint32_t a = m_bus->NDS9_read32(base);
-			uint32_t b = m_bus->NDS9_read32(base + 4);
+			uint32_t a = m_read32(base);
+			uint32_t b = m_read32(base + 4);
 			setReg(srcDestRegIdx, a);
 			setReg(srcDestRegIdx + 1, b);
 			break;
 		}
 		case 3:
-			m_bus->NDS9_write32(base, getReg(srcDestRegIdx));
-			m_bus->NDS9_write32(base + 4, getReg(srcDestRegIdx + 1));
+			m_write32(base, getReg(srcDestRegIdx));
+			m_write32(base + 4, getReg(srcDestRegIdx + 1));
 			break;
 		}
 	}
@@ -539,13 +539,13 @@ void ARM946E::ARM_HalfwordTransferImmediateOffset()
 			Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
 			break;
 		case 1:
-			data = m_bus->NDS9_read16(base);
+			data = m_read16(base);
 			if (base & 1)
 				data = std::rotr(data, 8);
 			setReg(srcDestRegIdx, data);
 			break;
 		case 2:
-			data = m_bus->NDS9_read8(base);
+			data = m_read8(base);
 			if (((data >> 7) & 0b1))	//sign extend byte if bit 7 set
 				data |= 0xFFFFFF00;
 			setReg(srcDestRegIdx, data);
@@ -553,13 +553,13 @@ void ARM946E::ARM_HalfwordTransferImmediateOffset()
 		case 3:
 			if (!(base & 0b1))
 			{
-				data = m_bus->NDS9_read16(base);
+				data = m_read16(base);
 				if (((data >> 15) & 0b1))
 					data |= 0xFFFF0000;
 			}
 			else
 			{
-				data = m_bus->NDS9_read8(base);
+				data = m_read8(base);
 				if (((data >> 7) & 0b1))
 					data |= 0xFFFFFF00;
 			}
@@ -578,19 +578,19 @@ void ARM946E::ARM_HalfwordTransferImmediateOffset()
 			Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
 			break;
 		case 1:
-			m_bus->NDS9_write16(base, data & 0xFFFF);
+			m_write16(base, data & 0xFFFF);
 			break;
 		case 2:
 		{
-			uint32_t a = m_bus->NDS9_read32(base);
-			uint32_t b = m_bus->NDS9_read32(base + 4);
+			uint32_t a = m_read32(base);
+			uint32_t b = m_read32(base + 4);
 			setReg(srcDestRegIdx, a);
 			setReg(srcDestRegIdx + 1, b);
 			break;
 		}
 		case 3:
-			m_bus->NDS9_write32(base, getReg(srcDestRegIdx));
-			m_bus->NDS9_write32(base + 4, getReg(srcDestRegIdx + 1));
+			m_write32(base, getReg(srcDestRegIdx));
+			m_write32(base + 4, getReg(srcDestRegIdx + 1));
 			break;
 		}
 	}
@@ -662,11 +662,11 @@ void ARM946E::ARM_SingleDataTransfer()
 		uint32_t val = 0;
 		if (byteWord)
 		{
-			val = m_bus->NDS9_read8(base);
+			val = m_read8(base);
 		}
 		else
 		{
-			val = m_bus->NDS9_read32(base);
+			val = m_read32(base);
 			if (base & 3)
 				val = std::rotr(val, (base & 3) * 8);
 		}
@@ -693,11 +693,11 @@ void ARM946E::ARM_SingleDataTransfer()
 			val += 4;
 		if (byteWord)
 		{
-			m_bus->NDS9_write8(base, val & 0xFF);
+			m_write8(base, val & 0xFF);
 		}
 		else
 		{
-			m_bus->NDS9_write32(base, val);
+			m_write32(base, val);
 		}
 	}
 
@@ -770,7 +770,7 @@ void ARM946E::ARM_BlockDataTransfer()
 
 			uint32_t val = 0;
 			if (loadStore)
-				val = m_bus->NDS9_read32(base_addr);
+				val = m_read32(base_addr);
 			else
 			{
 				val = getReg(i);
@@ -807,7 +807,7 @@ void ARM946E::ARM_BlockDataTransfer()
 					setReg(i, val);
 			}
 			else
-				m_bus->NDS9_write32(base_addr, val);
+				m_write32(base_addr, val);
 
 			firstTransfer = false;
 

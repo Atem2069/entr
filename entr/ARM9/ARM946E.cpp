@@ -81,9 +81,9 @@ void ARM946E::run(int cycles)
 void ARM946E::fetch()
 {
 	if (m_inThumbMode)
-		m_currentOpcode = m_bus->NDS9_read16(R[15] - 4);
+		m_currentOpcode = m_fetch16(R[15] - 4);
 	else
-		m_currentOpcode = m_bus->NDS9_read32(R[15] - 8);
+		m_currentOpcode = m_fetch32(R[15] - 8);
 }
 
 void ARM946E::executeARM()
@@ -130,6 +130,48 @@ bool ARM946E::dispatchInterrupt()
 	flushPipeline();
 	refillPipeline();
 	return true;*/
+}
+
+
+//internal r/w functions
+uint16_t ARM946E::m_fetch16(uint32_t address)
+{
+	return m_bus->NDS9_read16(address);
+}
+
+uint32_t ARM946E::m_fetch32(uint32_t address)
+{
+	return m_bus->NDS9_read32(address);
+}
+
+uint8_t ARM946E::m_read8(uint32_t address)
+{
+	return m_bus->NDS9_read8(address);
+}
+
+uint16_t ARM946E::m_read16(uint32_t address)
+{
+	return m_bus->NDS9_read16(address);
+}
+
+uint32_t ARM946E::m_read32(uint32_t address)
+{
+	return m_bus->NDS9_read32(address);
+}
+
+void ARM946E::m_write8(uint32_t address, uint8_t value)
+{
+	m_bus->NDS9_write8(address, value);
+}
+
+void ARM946E::m_write16(uint32_t address, uint16_t value)
+{
+	m_bus->NDS9_write16(address, value);
+}
+
+void ARM946E::m_write32(uint32_t address, uint32_t value)
+{
+	m_bus->NDS9_write32(address, value);
 }
 
 
