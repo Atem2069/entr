@@ -524,6 +524,9 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return m_input->readIORegister(address);
 	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		return m_ipc->NDS7_read8(address);
+	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
+	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
+		return m_interruptManager->NDS7_readIO(address);
 	case 0x04000241:
 		return WRAMCNT;
 	}
@@ -540,6 +543,10 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 		break;
 	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		m_ipc->NDS7_write8(address, value);
+		break;
+	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
+	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
+		m_interruptManager->NDS7_writeIO(address,value);
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
@@ -594,6 +601,9 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 		return m_input->readIORegister(address);
 	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		return m_ipc->NDS9_read8(address);
+	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
+	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
+		return m_interruptManager->NDS9_readIO(address);
 	case 0x04000247:
 		return WRAMCNT;
 	}
@@ -615,6 +625,10 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		break;
 	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
 		m_ipc->NDS9_write8(address, value);
+		break;
+	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
+	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
+		m_interruptManager->NDS9_writeIO(address,value);
 		break;
 	case 0x04000247:
 	{
