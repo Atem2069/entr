@@ -168,7 +168,7 @@ private:
 		else if ((tempOpcode & 0b0000'1111'0000'0000'0000'0000'0001'0000) == 0b0000'1110'0000'0000'0000'0000'0000'0000)
 			table[i] = (instructionFn)&ARM946E::ARM_CoprocessorDataOperation;
 		else if ((tempOpcode & 0b0000'1111'0000'0000'0000'0000'0001'0000) == 0b0000'1110'0000'0000'0000'0000'0001'0000)
-			table[i] = (instructionFn)&ARM946E::ARM_CoprocessorDataTransfer;
+			table[i] = (instructionFn)&ARM946E::ARM_CoprocessorRegisterTransfer;
 		else if ((tempOpcode & 0b0000'1111'0000'0000'0000'0000'0000'0000) == 0b0000'1111'0000'0000'0000'0000'0000'0000)
 			table[i] = (instructionFn)&ARM946E::ARM_SoftwareInterrupt;
 
@@ -265,4 +265,8 @@ private:
 
 		return conditionCodeLUT;
 	}
+
+	//Coprocessor registers
+	uint32_t CP15_MainID = 0x41059461;
+	uint32_t CP15_CacheType = 0x0F0D2112;
 };

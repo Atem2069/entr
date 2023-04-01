@@ -844,26 +844,44 @@ void ARM946E::ARM_BlockDataTransfer()
 
 void ARM946E::ARM_CoprocessorDataTransfer()
 {
-	bool prePost = (m_currentOpcode >> 24) & 0b1;
-	bool upDown = (m_currentOpcode >> 23) & 0b1;
-	bool transferLength = (m_currentOpcode >> 22) & 0b1;
-	bool writeback = (m_currentOpcode >> 21) & 0b1;
-	bool loadStore = (m_currentOpcode >> 20) & 0b1;
-	uint8_t baseRegIdx = (m_currentOpcode >> 16) & 0xF;
-	uint8_t coprocessorSrcDestReg = (m_currentOpcode >> 12) & 0xF;
-	uint8_t coprocessorNumber = (m_currentOpcode >> 8) & 0xF;
-	uint8_t offset = m_currentOpcode & 0xFF;
-	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented transfer. Coprocessor={} (register={}), load? {} length bit={}", coprocessorNumber, coprocessorSrcDestReg, loadStore,transferLength));
+	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented. this shouldn't be executed!!");
 }
 
 void ARM946E::ARM_CoprocessorDataOperation()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");;
+	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented. this shoulldn't be executed");
 }
 
 void ARM946E::ARM_CoprocessorRegisterTransfer()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+	bool loadStore = (m_currentOpcode >> 20) & 0b1;
+	uint8_t CPOpc = (m_currentOpcode >> 21) & 0x7;
+	uint8_t Cn = (m_currentOpcode >> 16) & 0xF;
+	uint8_t srcDestRegIdx = (m_currentOpcode >> 12) & 0xF;
+	uint8_t coprocessorNumber = (m_currentOpcode >> 8) & 0xF;
+	uint8_t CP = (m_currentOpcode >> 5) & 0x7;
+	uint8_t Cm = m_currentOpcode & 0xF;
+
+	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Reg transfer- load={} ARM reg=R{} CP={}, {},C{},C{},{}", loadStore, srcDestRegIdx, coprocessorNumber, CPOpc, Cn, Cm, CP));
+
+	uint16_t regId = (CPOpc << 12) | (Cn << 8) | (Cm << 4) | CP;
+	if (loadStore)
+	{
+		switch (regId)
+		{
+		case 0x0000:
+			setReg(srcDestRegIdx, CP15_MainID);
+			break;
+		case 0x0001:
+			setReg(srcDestRegIdx, CP15_CacheType);
+			break;
+		}
+	}
+	else
+	{
+		//todo
+	}
+	
 }
 
 void ARM946E::ARM_SoftwareInterrupt()
