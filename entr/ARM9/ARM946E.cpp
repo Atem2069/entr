@@ -10,6 +10,13 @@ ARM946E::ARM946E(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<Inter
 	for (int i = 0; i < 16; i++)
 		R[i] = 0;
 
+	R[12] = entry; R[14] = entry;
+	R[13] = 0x03002F7C;
+	irqBankedRegisters[0] = 0x03003F80;
+	irqBankedRegisters[1] = 0;
+	svcBankedRegisters[0] = 0x03003FC0;
+	svcBankedRegisters[1] = 0;
+
 	R[15] = entry + 8;
 	m_pipelineFlushed = false;
 }

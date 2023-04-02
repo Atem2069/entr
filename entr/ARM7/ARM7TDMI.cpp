@@ -10,6 +10,13 @@ ARM7TDMI::ARM7TDMI(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<Int
 	for (int i = 0; i < 16; i++)
 		R[i] = 0;
 
+	R[12] = entry; R[14] = entry;
+	R[13] = 0x0380FD80;
+	irqBankedRegisters[0] = 0x0380FF80;
+	irqBankedRegisters[1] = 0;
+	svcBankedRegisters[0] = 0x0380FFC0;
+	svcBankedRegisters[1] = 0;
+
 	R[15] = entry;
 	flushPipeline();
 	refillPipeline();

@@ -862,7 +862,7 @@ void ARM946E::ARM_CoprocessorRegisterTransfer()
 	uint8_t CP = (m_currentOpcode >> 5) & 0x7;
 	uint8_t Cm = m_currentOpcode & 0xF;
 
-	//Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Reg transfer- load={} ARM reg=R{} CP={}, {},C{},C{},{}", loadStore, srcDestRegIdx, coprocessorNumber, CPOpc, Cn, Cm, CP));
+	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Reg transfer- load={} ARM reg=R{} CP={}, {},C{},C{},{}", loadStore, srcDestRegIdx, coprocessorNumber, CPOpc, Cn, Cm, CP));
 
 	uint16_t regId = (CPOpc << 12) | (Cn << 8) | (Cm << 4) | CP;
 	if (loadStore)
