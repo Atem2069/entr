@@ -625,8 +625,6 @@ void ARM7TDMI::Thumb_ConditionalBranch()
 
 void ARM7TDMI::Thumb_SoftwareInterrupt()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Unimplemented software interrupt");
-	return;
 	//std::cout << "thumb swi" << (int)(m_currentOpcode&0xFF) << '\n';
 	int swiId = m_currentOpcode & 0xFF;
 	//svc mode bits are 10011

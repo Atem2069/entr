@@ -529,6 +529,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 {
 	switch (address)
 	{
+	case 0x04000004: case 0x04000005: case 0x04000006: case 0x04000007:
+		return m_ppu->NDS7_readIO(address);
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
 	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
@@ -547,6 +549,9 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 {
 	switch (address)
 	{
+	case 0x04000004: case 0x04000005: case 0x04000006: case 0x04000007:
+		m_ppu->NDS7_writeIO(address, value);
+		break;
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
 		break;

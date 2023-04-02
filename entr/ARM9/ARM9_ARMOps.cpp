@@ -862,7 +862,7 @@ void ARM946E::ARM_CoprocessorRegisterTransfer()
 	uint8_t CP = (m_currentOpcode >> 5) & 0x7;
 	uint8_t Cm = m_currentOpcode & 0xF;
 
-	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Reg transfer- load={} ARM reg=R{} CP={}, {},C{},C{},{}", loadStore, srcDestRegIdx, coprocessorNumber, CPOpc, Cn, Cm, CP));
+	//Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Reg transfer- load={} ARM reg=R{} CP={}, {},C{},C{},{}", loadStore, srcDestRegIdx, coprocessorNumber, CPOpc, Cn, Cm, CP));
 
 	uint16_t regId = (CPOpc << 12) | (Cn << 8) | (Cm << 4) | CP;
 	if (loadStore)
@@ -917,8 +917,6 @@ void ARM946E::ARM_CoprocessorRegisterTransfer()
 
 void ARM946E::ARM_SoftwareInterrupt()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Software interrupt! Not handled..");
-	return;
 	uint32_t oldCPSR = CPSR;
 	uint32_t oldPC = R[15] - 4;	//-4 because it points to next instruction
 
@@ -928,7 +926,7 @@ void ARM946E::ARM_SoftwareInterrupt()
 
 	setSPSR(oldCPSR);			//set SPSR_svc
 	setReg(14, oldPC);			//Save old R15
-	setReg(15, 0x00000008);		//SWI entry point is 0x08
+	setReg(15, 0xFFFF0008);		//SWI entry point is 0x08
 }
 
 void ARM946E::ARM_CountLeadingZeros()

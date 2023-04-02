@@ -639,8 +639,6 @@ void ARM946E::Thumb_ConditionalBranch()
 
 void ARM946E::Thumb_SoftwareInterrupt()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Unimplemented software interrupt");
-	return;
 	//std::cout << "thumb swi" << (int)(m_currentOpcode&0xFF) << '\n';
 	int swiId = m_currentOpcode & 0xFF;
 	//svc mode bits are 10011
@@ -655,7 +653,7 @@ void ARM946E::Thumb_SoftwareInterrupt()
 
 	setSPSR(oldCPSR);			//set SPSR_svc
 	setReg(14, oldPC);			//Save old R15
-	setReg(15, 0x00000008);		//SWI entry point is 0x08
+	setReg(15, 0xFFFF0008);		//SWI entry point is 0x08
 }
 
 void ARM946E::Thumb_UnconditionalBranch()

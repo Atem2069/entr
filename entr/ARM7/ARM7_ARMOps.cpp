@@ -818,8 +818,6 @@ void ARM7TDMI::ARM_CoprocessorRegisterTransfer()
 
 void ARM7TDMI::ARM_SoftwareInterrupt()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Software interrupt! Not handled..");
-	return;
 	uint32_t oldCPSR = CPSR;
 	uint32_t oldPC = R[15] - 4;	//-4 because it points to next instruction
 

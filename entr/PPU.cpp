@@ -156,8 +156,42 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	case 0x04000003:
 		DISPCNT &= 0x00FFFFFF; DISPCNT |= (value << 24);
 		break;
+	case 0x04000004:
+		DISPSTAT &= 0xFF07; DISPSTAT |= (value & 0xF8);
+		break;
+	case 0x04000005:
+		DISPSTAT &= 0x00FF; DISPSTAT |= (value << 8);
+		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));
+	}
+}
+
+uint8_t PPU::NDS7_readIO(uint32_t address)
+{
+	switch (address)
+	{
+	case 0x04000004:
+		return NDS7_DISPSTAT & 0xFF;
+	case 0x04000005:
+		return ((NDS7_DISPSTAT >> 8) & 0xFF);
+	case 0x04000006:
+		return VCOUNT & 0xFF;
+	case 0x04000007:
+		return ((VCOUNT >> 8) & 0xFF);
+	}
+}
+
+void PPU::NDS7_writeIO(uint32_t address, uint8_t value)
+{
+	switch (address)
+	{
+	case 0x04000004:
+		NDS7_DISPSTAT &= 0xFF07; NDS7_DISPSTAT |= (value & 0xF8);
+		break;
+	case 0x04000005:
+		NDS7_DISPSTAT &= 0x00FF; NDS7_DISPSTAT |= (value << 8);
+		break;
 	}
 }
 
@@ -165,18 +199,24 @@ void PPU::setVBlankFlag(bool value)
 {
 	DISPSTAT &= ~0b1;
 	DISPSTAT |= value;
+	NDS7_DISPSTAT &= ~0b1;
+	NDS7_DISPSTAT |= value;
 }
 
 void PPU::setHBlankFlag(bool value)
 {
 	DISPSTAT &= ~0b10;
 	DISPSTAT |= (value << 1);
+	NDS7_DISPSTAT &= ~0b10;
+	NDS7_DISPSTAT |= (value << 1);
 }
 
 void PPU::setVCounterFlag(bool value)
 {
 	DISPSTAT &= ~0b100;
 	DISPSTAT |= (value << 2);
+	NDS7_DISPSTAT &= ~0b100;
+	NDS7_DISPSTAT |= (value << 2);
 }
 
 uint32_t PPU::col16to32(uint16_t col)

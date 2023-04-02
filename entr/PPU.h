@@ -25,6 +25,9 @@ public:
 	uint8_t readIO(uint32_t address);
 	void writeIO(uint32_t address, uint8_t value); 
 
+	uint8_t NDS7_readIO(uint32_t address);
+	void NDS7_writeIO(uint32_t address, uint8_t value);
+
 	static void onSchedulerEvent(void* context);
 
 	static uint32_t m_safeDisplayBuffer[256 * 384];
@@ -54,5 +57,6 @@ private:
 
 	uint32_t DISPCNT = {};
 	uint16_t DISPSTAT = {};
+	uint16_t NDS7_DISPSTAT = {};
 	uint16_t VCOUNT = {};
 };
