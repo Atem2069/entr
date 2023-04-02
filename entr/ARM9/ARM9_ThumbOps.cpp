@@ -670,6 +670,7 @@ void ARM946E::Thumb_UnconditionalBranch()
 
 void ARM946E::Thumb_LongBranchWithLink()
 {
+	bool isBLX = ((m_currentOpcode >> 11) & 0x1F) == 0b11101;
 	bool highLow = ((m_currentOpcode >> 11) & 0b1);
 	uint32_t offset = m_currentOpcode & 0b11111111111;
 	if (!highLow)	//H=0: leftshift offset by 12 and add to PC, then store in LR
@@ -685,6 +686,14 @@ void ARM946E::Thumb_LongBranchWithLink()
 		uint32_t LR = getReg(14);
 		LR += offset;
 		setReg(14, ((R[15] - 2) | 0b1));	//set LR to point to instruction after this one
+
+		if (isBLX)
+		{
+			CPSR &= 0xFFFFFFDF;	//unset T bit
+			m_inThumbMode = false;
+			LR &= ~0b11;	//align address properly
+		}
+
 		setReg(15, LR);				//set PC to old LR contents (plus the offset)
 	}
 }
