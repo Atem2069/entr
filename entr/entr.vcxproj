@@ -149,6 +149,7 @@
     <ClCompile Include="IPC.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Math.cpp" />
     <ClCompile Include="NDS.cpp" />
     <ClCompile Include="PPU.cpp" />
     <ClCompile Include="Scheduler.cpp" />
@@ -162,6 +163,7 @@
     <ClInclude Include="InterruptManager.h" />
     <ClInclude Include="IPC.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="Math.h" />
     <ClInclude Include="NDS.h" />
     <ClInclude Include="NDSMem.h" />
     <ClInclude Include="PPU.h" />

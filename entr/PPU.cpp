@@ -148,10 +148,13 @@ void PPU::renderLCDCMode()
 {
 	for (int i = 0; i < 256; i++)
 	{
+		uint8_t VRAMBlock = ((DISPCNT >> 18) & 0b11);
+		uint8_t* basePtr = m_mem->VRAM + (VRAMBlock * 0x20000);
 		uint32_t address = (VCOUNT * (256 * 2)) + (i * 2);
-		uint8_t* vramPtr = mapAddressToVRAM(0x06800000 + address);
-		uint8_t colLow = vramPtr[0];
-		uint8_t colHigh = vramPtr[1];
+		//uint32_t address = (VCOUNT * (256 * 2)) + (i * 2);
+		//uint8_t* vramPtr = mapAddressToVRAM(0x06800000 + address);
+		uint8_t colLow = basePtr[address];
+		uint8_t colHigh = basePtr[address + 1];
 		uint16_t col = ((colHigh << 8) | colLow);
 		m_renderBuffer[pageIdx][((VCOUNT * 256) + i)] = col16to32(col);
 	}
@@ -452,7 +455,7 @@ uint8_t* PPU::mapAddressToVRAM(uint32_t address)
 		return m_mem->VRAM_I.VRAMBase + address;
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Couldn't map address {:#x} into a VRAM bank.. ", address));
-	return nullptr;
+	return m_mem->VRAM;
 }
 
 uint8_t* PPU::NDS7_mapAddressToVRAM(uint32_t address)
@@ -468,7 +471,7 @@ uint8_t* PPU::NDS7_mapAddressToVRAM(uint32_t address)
 		return m_mem->VRAM_D.VRAMBase + address;
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Couldn't map address {:#x} into a VRAM bank.. ", address));
-	return nullptr;
+	return m_mem->VRAM;
 }
 
 void PPU::setVBlankFlag(bool value)

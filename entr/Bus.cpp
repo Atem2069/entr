@@ -7,6 +7,7 @@ Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::sh
 	m_input = input;
 	m_mem = std::make_shared<NDSMem>();
 	m_ipc = std::make_shared<IPC>(m_interruptManager);
+	m_math = std::make_shared<DSMath>();
 
 	m_ppu->registerMemory(m_mem);
 
@@ -585,6 +586,14 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 		return m_interruptManager->NDS9_readIO(address);
 	case 0x04000247:
 		return WRAMCNT;
+	case 0x04000280: case 0x04000281: case 0x04000290: case 0x04000291: case 0x04000292: case 0x04000293: case 0x04000294: case 0x04000295:
+	case 0x04000296: case 0x04000297: case 0x04000298: case 0x04000299: case 0x0400029A: case 0x0400029B: case 0x0400029C: case 0x0400029D:
+	case 0x0400029E: case 0x0400029F: case 0x040002A0: case 0x040002A1: case 0x040002A2: case 0x040002A3: case 0x040002A4: case 0x040002A5:
+	case 0x040002A6: case 0x040002A7: case 0x040002A8: case 0x040002A9: case 0x040002AA: case 0x040002AB: case 0x040002AC: case 0x040002AD:
+	case 0x040002AE: case 0x040002AF: case 0x040002B0: case 0x040002B1: case 0x040002B2: case 0x040002B3: case 0x040002B4: case 0x040002B5:
+	case 0x040002B6: case 0x040002B7: case 0x040002B8: case 0x040002B9: case 0x040002BA: case 0x040002BB: case 0x040002BC: case 0x040002BD:
+	case 0x040002BE: case 0x040002BF:
+		return m_math->readIO(address);
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
@@ -641,6 +650,15 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		}
 		break;
 	}
+	case 0x04000280: case 0x04000281: case 0x04000290: case 0x04000291: case 0x04000292: case 0x04000293: case 0x04000294: case 0x04000295:
+	case 0x04000296: case 0x04000297: case 0x04000298: case 0x04000299: case 0x0400029A: case 0x0400029B: case 0x0400029C: case 0x0400029D:
+	case 0x0400029E: case 0x0400029F: case 0x040002A0: case 0x040002A1: case 0x040002A2: case 0x040002A3: case 0x040002A4: case 0x040002A5:
+	case 0x040002A6: case 0x040002A7: case 0x040002A8: case 0x040002A9: case 0x040002AA: case 0x040002AB: case 0x040002AC: case 0x040002AD:
+	case 0x040002AE: case 0x040002AF: case 0x040002B0: case 0x040002B1: case 0x040002B2: case 0x040002B3: case 0x040002B4: case 0x040002B5:
+	case 0x040002B6: case 0x040002B7: case 0x040002B8: case 0x040002B9: case 0x040002BA: case 0x040002BB: case 0x040002BC: case 0x040002BD:
+	case 0x040002BE: case 0x040002BF:
+		m_math->writeIO(address, value);
+		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
 	}

@@ -5,6 +5,7 @@
 #include"PPU.h"
 #include"Input.h"
 #include"IPC.h"
+#include"Math.h"
 
 #include<format>
 
@@ -85,6 +86,7 @@ private:
 	std::shared_ptr<PPU> m_ppu;
 	std::shared_ptr<Input> m_input;
 	std::shared_ptr<IPC> m_ipc;
+	std::shared_ptr<DSMath> m_math;
 
 	uint8_t WRAMCNT = 0;
 
