@@ -164,6 +164,24 @@ uint8_t PPU::readIO(uint32_t address)
 {
 	switch (address)
 	{
+	case 0x04000240:
+		return VRAMCNT_A;
+	case 0x04000241:
+		return VRAMCNT_B;
+	case 0x04000242:
+		return VRAMCNT_C;
+	case 0x04000243:
+		return VRAMCNT_D;
+	case 0x04000244:
+		return VRAMCNT_E;
+	case 0x04000245:
+		return VRAMCNT_F;
+	case 0x04000246:
+		return VRAMCNT_G;
+	case 0x04000248:
+		return VRAMCNT_H;
+	case 0x04000249:
+		return VRAMCNT_I;
 	case 0x04000000:
 		return DISPCNT & 0xFF;
 	case 0x04000001:
@@ -192,6 +210,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		//vram banking.. aaa
 	case 0x04000240:
 	{
+		VRAMCNT_A = value;
 		uint8_t MST = value & 0b11;
 		uint8_t OFS = (value >> 3) & 0b11;
 		switch (MST)
@@ -210,6 +229,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	}
 	case 0x04000241:
 	{
+		VRAMCNT_B = value;
 		uint8_t MST = value & 0b11;
 		uint8_t OFS = (value >> 3) & 0b11;
 		switch (MST)
@@ -228,6 +248,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	}
 	case 0x04000242:
 	{
+		VRAMCNT_C = value;
 		uint8_t MST = value & 0b111;
 		uint8_t OFS = (value >> 3) & 0b11;
 		m_mem->VRAM_C.ARM7 = false;
@@ -251,6 +272,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	}
 	case 0x04000243:
 	{
+		VRAMCNT_D = value;
 		uint8_t MST = value & 0b111;
 		uint8_t OFS = (value >> 3) & 0b11;
 		m_mem->VRAM_D.ARM7 = false;
@@ -274,6 +296,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	}
 	case 0x04000244:
 	{
+		VRAMCNT_E = value;
 		uint8_t MST = value & 0b111;
 		switch (MST)
 		{
@@ -291,6 +314,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	}
 	case 0x04000245:
 	{
+		VRAMCNT_F = value;
 		uint8_t MST = value & 0b111;
 		uint8_t OFS = (value >> 3) & 0b11;
 		switch (MST)
@@ -309,6 +333,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	}
 	case 0x04000246:
 	{
+		VRAMCNT_G = value;
 		uint8_t MST = value & 0b111;
 		uint8_t OFS = (value >> 3) & 0b11;
 		switch (MST)
@@ -327,6 +352,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	}
 	case 0x04000248:
 	{
+		VRAMCNT_H = value;
 		uint8_t MST = value & 0b11;
 		switch (MST)
 		{
@@ -341,6 +367,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	}
 	case 0x04000249:
 	{
+		VRAMCNT_I = value;
 		uint8_t MST = value & 0b11;
 		switch (MST)
 		{

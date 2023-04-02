@@ -62,4 +62,16 @@ private:
 	uint16_t DISPSTAT = {};
 	uint16_t NDS7_DISPSTAT = {};
 	uint16_t VCOUNT = {};
+
+
+	//dumb vram stuff
+	uint8_t VRAMCNT_A = {};
+	uint8_t VRAMCNT_B = {};
+	uint8_t VRAMCNT_C = {};
+	uint8_t VRAMCNT_D = {};
+	uint8_t VRAMCNT_E = {};
+	uint8_t VRAMCNT_F = {};
+	uint8_t VRAMCNT_G = {};
+	uint8_t VRAMCNT_H = {};
+	uint8_t VRAMCNT_I = {};
 };
