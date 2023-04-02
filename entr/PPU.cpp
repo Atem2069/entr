@@ -28,6 +28,36 @@ void PPU::registerMemory(std::shared_ptr<NDSMem> mem)
 {
 	Logger::getInstance()->msg(LoggerSeverity::Info, "Registered memory with PPU!");
 	m_mem = mem;
+
+	//setup vram banks
+
+	//128k banks
+	m_mem->VRAM_A.VRAMBase = m_mem->VRAM;
+	m_mem->VRAM_A.size = 0x20000;
+	m_mem->VRAM_B.VRAMBase = m_mem->VRAM_A.VRAMBase + 0x20000;
+	m_mem->VRAM_B.size = 0x20000;
+	m_mem->VRAM_C.VRAMBase = m_mem->VRAM_B.VRAMBase + 0x20000;
+	m_mem->VRAM_C.size = 0x20000;
+	m_mem->VRAM_D.VRAMBase = m_mem->VRAM_C.VRAMBase + 0x20000;
+	m_mem->VRAM_D.size = 0x20000;
+
+	//64k
+	m_mem->VRAM_E.VRAMBase = m_mem->VRAM_D.VRAMBase + 0x20000;
+	m_mem->VRAM_E.size = 0x10000;
+
+	//16k
+	m_mem->VRAM_F.VRAMBase = m_mem->VRAM_E.VRAMBase + 0x10000;
+	m_mem->VRAM_F.size = 0x4000;
+	m_mem->VRAM_G.VRAMBase = m_mem->VRAM_F.VRAMBase + 0x4000;
+	m_mem->VRAM_G.size = 0x4000;
+
+	//32k
+	m_mem->VRAM_H.VRAMBase = m_mem->VRAM_G.VRAMBase + 0x4000;
+	m_mem->VRAM_H.size = 0x8000;
+
+	//16k
+	m_mem->VRAM_I.VRAMBase = m_mem->VRAM_H.VRAMBase + 0x8000;
+	m_mem->VRAM_I.size = 0x4000;
 }
 
 void PPU::eventHandler()
@@ -119,8 +149,9 @@ void PPU::renderLCDCMode()
 	for (int i = 0; i < 256; i++)
 	{
 		uint32_t address = (VCOUNT * (256 * 2)) + (i * 2);
-		uint8_t colLow = m_mem->VRAM[address];
-		uint8_t colHigh = m_mem->VRAM[address + 1];
+		uint8_t* vramPtr = mapAddressToVRAM(0x06800000 + address);
+		uint8_t colLow = vramPtr[0];
+		uint8_t colHigh = vramPtr[1];
 		uint16_t col = ((colHigh << 8) | colLow);
 		m_renderBuffer[pageIdx][((VCOUNT * 256) + i)] = col16to32(col);
 	}
@@ -155,6 +186,173 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 {
 	switch (address)
 	{
+		//vram banking.. aaa
+	case 0x04000240:
+	{
+		uint8_t MST = value & 0b11;
+		uint8_t OFS = (value >> 3) & 0b11;
+		switch (MST)
+		{
+		case 0:
+			m_mem->VRAM_A.memBase = 0x06800000;
+			break;
+		case 1:
+			m_mem->VRAM_A.memBase = 0x06000000 + (0x20000 * OFS);
+			break;
+		case 2:
+			m_mem->VRAM_A.memBase = 0x06400000 + (0x20000 * (OFS & 0b1));
+			break;
+		}
+		break;
+	}
+	case 0x04000241:
+	{
+		uint8_t MST = value & 0b11;
+		uint8_t OFS = (value >> 3) & 0b11;
+		switch (MST)
+		{
+		case 0:
+			m_mem->VRAM_B.memBase = 0x06820000;
+			break;
+		case 1:
+			m_mem->VRAM_B.memBase = 0x06000000 + (0x20000 * OFS);
+			break;
+		case 2:
+			m_mem->VRAM_B.memBase = 0x06400000 + (0x20000 * (OFS & 0b1));
+			break;
+		}
+		break;
+	}
+	case 0x04000242:
+	{
+		uint8_t MST = value & 0b111;
+		uint8_t OFS = (value >> 3) & 0b11;
+		m_mem->VRAM_C.ARM7 = false;
+		switch (MST)
+		{
+		case 0:
+			m_mem->VRAM_C.memBase = 0x06840000;
+			break;
+		case 1:
+			m_mem->VRAM_C.memBase = 0x06000000 + (0x20000 * OFS);
+			break;
+		case 2:
+			m_mem->VRAM_C.memBase = 0x06000000 + (0x20000 * (OFS&0b1));
+			m_mem->VRAM_C.ARM7 = true;
+			break;
+		case 4:
+			m_mem->VRAM_C.memBase = 0x06200000;
+			break;
+		}
+		break;
+	}
+	case 0x04000243:
+	{
+		uint8_t MST = value & 0b111;
+		uint8_t OFS = (value >> 3) & 0b11;
+		m_mem->VRAM_D.ARM7 = false;
+		switch (MST)
+		{
+		case 0:
+			m_mem->VRAM_D.memBase = 0x06860000;
+			break;
+		case 1:
+			m_mem->VRAM_D.memBase = 0x06000000 + (0x20000 * OFS);
+			break;
+		case 2:
+			m_mem->VRAM_D.memBase = 0x06000000 + (0x20000 * (OFS & 0b1));
+			m_mem->VRAM_D.ARM7 = true;
+			break;
+		case 4:
+			m_mem->VRAM_D.memBase = 0x06600000;
+			break;
+		}
+		break;
+	}
+	case 0x04000244:
+	{
+		uint8_t MST = value & 0b111;
+		switch (MST)
+		{
+		case 0:
+			m_mem->VRAM_E.memBase = 0x06880000;
+			break;
+		case 1:
+			m_mem->VRAM_E.memBase = 0x06000000;
+			break;
+		case 2:
+			m_mem->VRAM_E.memBase = 0x06400000;
+			break;
+		}
+		break;
+	}
+	case 0x04000245:
+	{
+		uint8_t MST = value & 0b111;
+		uint8_t OFS = (value >> 3) & 0b11;
+		switch (MST)
+		{
+		case 0:
+			m_mem->VRAM_F.memBase = 0x06890000;
+			break;
+		case 1:
+			m_mem->VRAM_F.memBase = 0x06000000 + (0x4000 * (OFS & 0b1)) + (0x10000 * ((OFS >> 1) & 0b1));
+			break;
+		case 2:
+			m_mem->VRAM_F.memBase = 0x06400000 + (0x4000 * (OFS & 0b1)) + (0x10000 * ((OFS >> 1) & 0b1));
+			break;
+		}
+		break;
+	}
+	case 0x04000246:
+	{
+		uint8_t MST = value & 0b111;
+		uint8_t OFS = (value >> 3) & 0b11;
+		switch (MST)
+		{
+		case 0:
+			m_mem->VRAM_G.memBase = 0x06894000;
+			break;
+		case 1:
+			m_mem->VRAM_G.memBase = 0x06000000 + (0x4000 * (OFS & 0b1)) + (0x10000 * ((OFS >> 1) & 0b1));
+			break;
+		case 2:
+			m_mem->VRAM_G.memBase = 0x06400000 + (0x4000 * (OFS & 0b1)) + (0x10000 * ((OFS >> 1) & 0b1));
+			break;
+		}
+		break;
+	}
+	case 0x04000248:
+	{
+		uint8_t MST = value & 0b11;
+		switch (MST)
+		{
+		case 0:
+			m_mem->VRAM_H.memBase = 0x06898000;
+			break;
+		case 1:
+			m_mem->VRAM_H.memBase = 0x06200000;
+			break;
+		}
+		break;
+	}
+	case 0x04000249:
+	{
+		uint8_t MST = value & 0b11;
+		switch (MST)
+		{
+		case 0:
+			m_mem->VRAM_I.memBase = 0x068A0000;
+			break;
+		case 1:
+			m_mem->VRAM_I.memBase = 0x06208000;
+			break;
+		case 2:
+			m_mem->VRAM_I.memBase = 0x06600000;
+			break;
+		}
+		break;
+	}
 	case 0x04000000:
 		DISPCNT &= 0xFFFFFF00; DISPCNT |= value;
 		break;
@@ -204,6 +402,73 @@ void PPU::NDS7_writeIO(uint32_t address, uint8_t value)
 		NDS7_DISPSTAT &= 0x00FF; NDS7_DISPSTAT |= (value << 8);
 		break;
 	}
+}
+
+uint8_t* PPU::mapAddressToVRAM(uint32_t address)
+{
+	if (address >= m_mem->VRAM_A.memBase && address < (m_mem->VRAM_A.memBase + m_mem->VRAM_A.size))
+	{
+		address &= (m_mem->VRAM_A.size - 1);
+		return m_mem->VRAM_A.VRAMBase + address;
+	}
+	if (address >= m_mem->VRAM_B.memBase && address < (m_mem->VRAM_B.memBase + m_mem->VRAM_B.size))
+	{
+		address &= (m_mem->VRAM_B.size - 1);
+		return m_mem->VRAM_B.VRAMBase + address;
+	}
+	if (address >= m_mem->VRAM_C.memBase && address < (m_mem->VRAM_C.memBase + m_mem->VRAM_C.size) && !m_mem->VRAM_C.ARM7)
+	{
+		address &= (m_mem->VRAM_C.size - 1);
+		return m_mem->VRAM_C.VRAMBase + address;
+	}
+	if (address >= m_mem->VRAM_D.memBase && address < (m_mem->VRAM_D.memBase + m_mem->VRAM_D.size) && !m_mem->VRAM_D.ARM7)
+	{
+		address &= (m_mem->VRAM_D.size - 1);
+		return m_mem->VRAM_D.VRAMBase + address;
+	}
+	if (address >= m_mem->VRAM_E.memBase && address < (m_mem->VRAM_E.memBase + m_mem->VRAM_E.size))
+	{
+		address &= (m_mem->VRAM_E.size - 1);
+		return m_mem->VRAM_E.VRAMBase + address;
+	}
+	if (address >= m_mem->VRAM_F.memBase && address < (m_mem->VRAM_F.memBase + m_mem->VRAM_F.size))
+	{
+		address &= (m_mem->VRAM_F.size - 1);
+		return m_mem->VRAM_F.VRAMBase + address;
+	}
+	if (address >= m_mem->VRAM_G.memBase && address < (m_mem->VRAM_G.memBase + m_mem->VRAM_G.size))
+	{
+		address &= (m_mem->VRAM_G.size - 1);
+		return m_mem->VRAM_G.VRAMBase + address;
+	}
+	if (address >= m_mem->VRAM_H.memBase && address < (m_mem->VRAM_H.memBase + m_mem->VRAM_H.size))
+	{
+		address &= (m_mem->VRAM_H.size - 1);
+		return m_mem->VRAM_H.VRAMBase + address;
+	}
+	if (address >= m_mem->VRAM_I.memBase && address < (m_mem->VRAM_I.memBase + m_mem->VRAM_I.size))
+	{
+		address &= (m_mem->VRAM_I.size - 1);
+		return m_mem->VRAM_I.VRAMBase + address;
+	}
+	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Couldn't map address {:#x} into a VRAM bank.. ", address));
+	return nullptr;
+}
+
+uint8_t* PPU::NDS7_mapAddressToVRAM(uint32_t address)
+{
+	if (address >= m_mem->VRAM_C.memBase && address < (m_mem->VRAM_C.memBase + m_mem->VRAM_C.size) && m_mem->VRAM_C.ARM7)
+	{
+		address &= (m_mem->VRAM_C.size - 1);
+		return m_mem->VRAM_C.VRAMBase + address;
+	}
+	if (address >= m_mem->VRAM_D.memBase && address < (m_mem->VRAM_D.memBase + m_mem->VRAM_D.size) && m_mem->VRAM_D.ARM7)
+	{
+		address &= (m_mem->VRAM_D.size - 1);
+		return m_mem->VRAM_D.VRAMBase + address;
+	}
+	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Couldn't map address {:#x} into a VRAM bank.. ", address));
+	return nullptr;
 }
 
 void PPU::setVBlankFlag(bool value)

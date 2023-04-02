@@ -46,8 +46,10 @@ uint8_t Bus::NDS7_read8(uint32_t address)
 	case 4:
 		return NDS7_readIO8(address);
 	case 6:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM read!");
-		return 0;
+	{
+		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		return addr[0];
+	}
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
@@ -76,8 +78,11 @@ void Bus::NDS7_write8(uint32_t address, uint8_t value)
 		NDS7_writeIO8(address,value);
 		break;
 	case 6:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM write!");
+	{
+		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		addr[0] = value;
 		break;
+	}
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
@@ -105,8 +110,10 @@ uint16_t Bus::NDS7_read16(uint32_t address)
 	case 4:
 		return NDS7_readIO16(address);
 	case 6:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM read!");
-		return 0;
+	{
+		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		return getValue16(addr, 0, 0xFFFF);
+	}
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
@@ -136,8 +143,11 @@ void Bus::NDS7_write16(uint32_t address, uint16_t value)
 		NDS7_writeIO16(address, value);
 		break;
 	case 6:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM write!");
+	{
+		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		setValue16(addr, 0, 0xFFFF, value);
 		break;
+	}
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
@@ -165,8 +175,10 @@ uint32_t Bus::NDS7_read32(uint32_t address)
 	case 4:
 		return NDS7_readIO32(address);
 	case 6:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM read!");
-		return 0;
+	{
+		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		return getValue32(addr, 0, 0xFFFF);
+	}
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
@@ -196,8 +208,11 @@ void Bus::NDS7_write32(uint32_t address, uint32_t value)
 		NDS7_writeIO32(address, value);
 		break;
 	case 6:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented VRAM-allocated WRAM write!");
+	{
+		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		setValue16(addr, 0, 0xFFFF, value);
 		break;
+	}
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
@@ -226,17 +241,8 @@ uint8_t Bus::NDS9_read8(uint32_t address)
 		return m_mem->PAL[address & 0x7FF];
 	case 6:
 	{
-		uint8_t subPage = (address >> 20) & 0xF;
-		if (subPage == 8)
-		{
-			address &= 0xFFFFF;
-			return m_mem->VRAM[std::min(address, (uint32_t)0xA3FFF)];	//maybe not safe/right, shrug
-		}
-		else
-		{
-			Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented VRAM read! addr={:#x}", address));
-			return 0;
-		}
+		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		return addr[0];
 	}
 	case 7:
 		return m_mem->OAM[address & 0x7FF];
@@ -281,16 +287,8 @@ void Bus::NDS9_write8(uint32_t address, uint8_t value)
 		break;
 	case 6:
 	{
-		uint8_t subPage = (address >> 20) & 0xF;
-		if (subPage == 8)
-		{
-			address &= 0xFFFFF;
-			m_mem->VRAM[std::min(address, (uint32_t)0xA3FFF)] = value;	//maybe not safe/right, shrug
-		}
-		else
-		{
-			Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented VRAM write! addr={:#x}", address));
-		}
+		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		addr[0] = value;
 		break;
 	}
 	case 7:
@@ -333,17 +331,8 @@ uint16_t Bus::NDS9_read16(uint32_t address)
 		return getValue16(m_mem->PAL,address & 0x7FF,0x7FF);
 	case 6:
 	{
-		uint8_t subPage = (address >> 20) & 0xF;
-		if (subPage == 8)
-		{
-			address &= 0xFFFFF;
-			return getValue16(m_mem->VRAM,std::min(address, (uint32_t)0xA3FFF),0xFFFFFFFF);	//maybe not safe/right, shrug
-		}
-		else
-		{
-			Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented VRAM read! addr={:#x}", address));
-			return 0;
-		}
+		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		return getValue16(addr, 0, 0xFFFF);
 	}
 	case 7:
 		return getValue16(m_mem->OAM,address & 0x7FF,0x7FF);
@@ -389,16 +378,8 @@ void Bus::NDS9_write16(uint32_t address, uint16_t value)
 		break;
 	case 6:
 	{
-		uint8_t subPage = (address >> 20) & 0xF;
-		if (subPage == 8)
-		{
-			address &= 0xFFFFF;
-			setValue16(m_mem->VRAM, std::min(address, (uint32_t)0xA3FFF), 0xFFFFFFFF, value);
-		}
-		else
-		{
-			Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented VRAM write! addr={:#x}", address));
-		}
+		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		setValue16(addr, 0, 0xFFFF,value);
 		break;
 	}
 	case 7:
@@ -441,17 +422,8 @@ uint32_t Bus::NDS9_read32(uint32_t address)
 		return getValue32(m_mem->PAL, address & 0x7FF, 0x7FF);
 	case 6:
 	{
-		uint8_t subPage = (address >> 20) & 0xF;
-		if (subPage == 8)
-		{
-			address &= 0xFFFFF;
-			return getValue32(m_mem->VRAM, std::min(address, (uint32_t)0xA3FFF), 0xFFFFFFFF);	//maybe not safe/right, shrug
-		}
-		else
-		{
-			Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented VRAM read! addr={:#x}", address));
-			return 0;
-		}
+		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		return getValue32(addr, 0, 0xFFFF);
 	}
 	case 7:
 		return getValue32(m_mem->OAM, address & 0x7FF, 0x7FF);
@@ -497,17 +469,8 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 		break;
 	case 6:
 	{
-		uint8_t subPage = (address >> 20) & 0xF;
-		if (subPage == 8)
-		{
-			address &= 0xFFFFF;
-			setValue32(m_mem->VRAM, std::min(address, (uint32_t)0xA3FFF), 0xFFFFFFFF, value);
-		}
-		else
-		{
-			Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented VRAM write! addr={:#x}", address));
-		}
-		break;
+		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		setValue32(addr, 0, 0xFFFF,value);
 	}
 	case 7:
 		setValue32(m_mem->OAM, address & 0x7FF, 0x7FF, value);
@@ -538,6 +501,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
 		return m_interruptManager->NDS7_readIO(address);
+	case 0x04000240:
+		return (m_mem->VRAM_C.ARM7) | (m_mem->VRAM_D.ARM7 << 1);
 	case 0x04000241:
 		return WRAMCNT;
 	}
@@ -627,7 +592,7 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 
 void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 {
-	if (address >= 0x04000000 && address <= 0x04000058)
+	if ((address >= 0x04000000 && address <= 0x04000058) || (address >= 0x04000240 && address <= 0x04000249 && address!=0x04000247))
 	{
 		m_ppu->writeIO(address, value);
 		return;

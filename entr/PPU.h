@@ -28,6 +28,9 @@ public:
 	uint8_t NDS7_readIO(uint32_t address);
 	void NDS7_writeIO(uint32_t address, uint8_t value);
 
+	uint8_t* mapAddressToVRAM(uint32_t address);
+	uint8_t* NDS7_mapAddressToVRAM(uint32_t address);
+
 	static void onSchedulerEvent(void* context);
 
 	static uint32_t m_safeDisplayBuffer[256 * 384];
