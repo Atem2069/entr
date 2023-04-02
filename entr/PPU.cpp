@@ -55,6 +55,11 @@ void PPU::HDraw()
 	setHBlankFlag(true);
 	m_state = PPUState::HBlank;
 	m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 523);
+
+	if (((DISPSTAT >> 4) & 0b1))
+		m_interruptManager->NDS9_requestInterrupt(InterruptType::HBlank);
+	if (((NDS7_DISPSTAT >> 4) & 0b1))
+		m_interruptManager->NDS7_requestInterrupt(InterruptType::HBlank);
 }
 
 void PPU::HBlank()
@@ -66,6 +71,12 @@ void PPU::HBlank()
 	if (VCOUNT == 192)
 	{
 		//set vblank flag here, request vblank interrupt
+
+		if (((DISPSTAT >> 3) & 0b1))
+			m_interruptManager->NDS9_requestInterrupt(InterruptType::VBlank);
+		if (((NDS7_DISPSTAT >> 3) & 0b1))
+			m_interruptManager->NDS7_requestInterrupt(InterruptType::VBlank);
+
 		setVBlankFlag(true);
 		m_state = PPUState::VBlank;
 
