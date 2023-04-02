@@ -59,9 +59,11 @@ void ARM946E::run(int cycles)
 {
 	for (int i = 0; i < cycles; i++)
 	{
-		if (dispatchInterrupt())
-			return;
 		fetch();
+
+		if (dispatchInterrupt())
+			continue;
+
 		switch (m_inThumbMode)
 		{
 		case 0:
@@ -111,9 +113,9 @@ void ARM946E::executeThumb()
 
 bool ARM946E::dispatchInterrupt()
 {
-	
 	if (((CPSR>>7)&0b1) || !m_interruptManager->NDS9_getInterrupt() || !m_interruptManager->NDS9_getInterruptsEnabled())
 		return false;	//only dispatch if pipeline full (or not about to flush)
+
 	//irq bits: 10010
 	uint32_t oldCPSR = CPSR;
 	CPSR &= ~0x3F;

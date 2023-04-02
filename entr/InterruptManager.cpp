@@ -60,7 +60,7 @@ void InterruptManager::NDS7_writeIO(uint32_t address, uint8_t value)
 		NDS7_IE &= 0xFFFF00FF; NDS7_IE |= (value << 8);
 		break;
 	case 0x04000212:
-		NDS7_IE &= 0xFF00FFFFF; NDS7_IE |= (value << 16);
+		NDS7_IE &= 0xFF00FFFF; NDS7_IE |= (value << 16);
 		break;
 	case 0x04000213:
 		NDS7_IE &= 0x00FFFFFF; NDS7_IE |= (value << 24);
@@ -129,7 +129,7 @@ void InterruptManager::NDS9_writeIO(uint32_t address, uint8_t value)
 		NDS9_IE &= 0xFFFF00FF; NDS9_IE |= (value << 8);
 		break;
 	case 0x04000212:
-		NDS9_IE &= 0xFF00FFFFF; NDS9_IE |= (value << 16);
+		NDS9_IE &= 0xFF00FFFF; NDS9_IE |= (value << 16);
 		break;
 	case 0x04000213:
 		NDS9_IE &= 0x00FFFFFF; NDS9_IE |= (value << 24);

@@ -63,7 +63,7 @@ void ARM7TDMI::run(int cycles)
 	{
 		fetch();
 		if (dispatchInterrupt())	//if interrupt was dispatched then fetch new opcode (dispatchInterrupt already flushes pipeline !)
-			return;
+			continue;
 
 		int exPipelinePtr = m_pipelinePtr + 1;
 		if (exPipelinePtr == 3)			//seems faster than using modulus
@@ -125,7 +125,6 @@ void ARM7TDMI::executeThumb()
 
 bool ARM7TDMI::dispatchInterrupt()
 {
-	
 	if (((CPSR>>7)&0b1) || !m_interruptManager->NDS7_getInterrupt() || !m_interruptManager->NDS7_getInterruptsEnabled())
 		return false;	//only dispatch if pipeline full (or not about to flush)
 	//irq bits: 10010
