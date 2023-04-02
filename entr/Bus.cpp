@@ -497,7 +497,7 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return m_ppu->NDS7_readIO(address);
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
-	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
+	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
 		return m_ipc->NDS7_read8(address);
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
@@ -521,12 +521,15 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
 		break;
-	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
+	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
 		m_ipc->NDS7_write8(address, value);
 		break;
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
 		m_interruptManager->NDS7_writeIO(address,value);
+		break;
+	case 0x04000301:
+		//halt
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
@@ -579,7 +582,7 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 	{
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
-	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
+	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
 		return m_ipc->NDS9_read8(address);
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
@@ -611,7 +614,7 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
 		break;
-	case 0x04000180: case 0x04000181: case 0x04000184: case 0x04000185:
+	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
 		m_ipc->NDS9_write8(address, value);
 		break;
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
