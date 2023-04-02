@@ -1,6 +1,6 @@
 #include"Bus.h"
 
-Bus::Bus(std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input)
+Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input)
 {
 	m_interruptManager = interruptManager;
 	m_ppu = ppu;
@@ -15,6 +15,9 @@ Bus::Bus(std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU
 	m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[1];
 	m_mem->NDS7_sharedWRAMPtrs[0] = nullptr;
 	m_mem->NDS7_sharedWRAMPtrs[1] = nullptr;
+
+	memcpy(m_mem->NDS7_BIOS, &NDS7_BIOS[0], NDS7_BIOS.size());
+	memcpy(m_mem->NDS9_BIOS, &NDS9_BIOS[0], NDS9_BIOS.size());
 }
 
 Bus::~Bus()
@@ -28,8 +31,9 @@ uint8_t Bus::NDS7_read8(uint32_t address)
 	switch (page)
 	{
 	case 0:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented BIOS read!");
-		return 0;
+		if (address > 0x3FFF)
+			return 0;
+		return m_mem->NDS7_BIOS[address];
 	case 2:
 		return m_mem->RAM[address & 0x3FFFFF];
 	case 3:
@@ -86,8 +90,9 @@ uint16_t Bus::NDS7_read16(uint32_t address)
 	switch (page)
 	{
 	case 0:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented BIOS read!");
-		return 0;
+		if (address > 0x3FFF)
+			return 0;
+		return getValue16(m_mem->NDS7_BIOS, address, 0x3FFF);
 	case 2:
 		return getValue16(m_mem->RAM,address & 0x3FFFFF,0x3FFFFF);
 	case 3:
@@ -145,8 +150,9 @@ uint32_t Bus::NDS7_read32(uint32_t address)
 	switch (page)
 	{
 	case 0:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented BIOS read!");
-		return 0;
+		if (address > 0x3FFF)
+			return 0;
+		return getValue32(m_mem->NDS7_BIOS, address, 0x3FFF);
 	case 2:
 		return getValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF);
 	case 3:
@@ -238,8 +244,9 @@ uint8_t Bus::NDS9_read8(uint32_t address)
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
 		return 0;
 	case 0xFF:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS read!!");
-		return 0;
+		if ((address & 0xFFFF) > 0x7FFF)
+			return 0;
+		return m_mem->NDS9_BIOS[address & 0x7FFF];
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
@@ -344,8 +351,9 @@ uint16_t Bus::NDS9_read16(uint32_t address)
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
 		return 0;
 	case 0xFF:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS read!!");
-		return 0;
+		if ((address & 0xFFFF) > 0x7FFF)
+			return 0;
+		return getValue16(m_mem->NDS9_BIOS, address & 0x7FFF, 0x7FFF);
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
@@ -451,8 +459,9 @@ uint32_t Bus::NDS9_read32(uint32_t address)
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
 		return 0;
 	case 0xFF:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS read!!");
-		return 0;
+		if ((address & 0xFFFF) > 0x7FFF)
+			return 0;
+		return getValue32(m_mem->NDS9_BIOS, address & 0x7FFF, 0x7FFF);
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;

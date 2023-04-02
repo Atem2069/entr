@@ -4,6 +4,9 @@
 
 struct NDSMem
 {
+	uint8_t NDS7_BIOS[16384];
+	uint8_t NDS9_BIOS[32768];	//<--in reality, only like 3-4k of this is used
+
 	uint8_t RAM[4194304];
 	uint8_t WRAM[2][16384];
 	uint8_t VRAM[671744];			//<---this is bad, just to get lcdc mode working..
