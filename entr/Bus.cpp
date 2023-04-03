@@ -224,9 +224,6 @@ uint8_t Bus::NDS9_read8(uint32_t address)
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 0: case 1:
-		//return m_mem->ITCM[address & 0x7FFF];	//not sure about mirroring yet. would have to add CP15 first
-		break;
 	case 2:
 		return m_mem->RAM[address & 0x3FFFFF];
 	case 3:
@@ -267,9 +264,6 @@ void Bus::NDS9_write8(uint32_t address, uint8_t value)
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 0: case 1:
-		//m_mem->ITCM[address & 0x7FFF]=value;	//not sure about mirroring yet. would have to add CP15 first
-		break;
 	case 2:
 		m_mem->RAM[address & 0x3FFFFF] = value;
 		break;
@@ -314,9 +308,6 @@ uint16_t Bus::NDS9_read16(uint32_t address)
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 0: case 1:
-		//return getValue16(m_mem->ITCM,address & 0x7FFF,0x7FFF);	//not sure about mirroring yet. would have to add CP15 first
-		break;
 	case 2:
 		return getValue16(m_mem->RAM,address & 0x3FFFFF,0x3FFFFF);
 	case 3:
@@ -358,9 +349,6 @@ void Bus::NDS9_write16(uint32_t address, uint16_t value)
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 0: case 1:
-		//setValue16(m_mem->ITCM, address & 0x7FFF, 0x7FFF, value);
-		break;
 	case 2:
 		setValue16(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF, value);
 		break;
@@ -405,9 +393,6 @@ uint32_t Bus::NDS9_read32(uint32_t address)
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 0: case 1:
-		//return getValue32(m_mem->ITCM, address & 0x7FFF, 0x7FFF);	//not sure about mirroring yet. would have to add CP15 first
-		break;
 	case 2:
 		return getValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF);
 	case 3:
@@ -449,9 +434,6 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 0: case 1:
-		//setValue32(m_mem->ITCM, address & 0x7FFF, 0x7FFF, value);
-		break;
 	case 2:
 		setValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF, value);
 		break;
