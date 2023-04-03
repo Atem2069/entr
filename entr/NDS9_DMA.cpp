@@ -98,7 +98,7 @@ void Bus::NDS9_writeDMAReg(uint32_t address, uint8_t value)
 		{
 			m_NDS9Channels[0].internalSrc = m_NDS9Channels[0].src;
 			m_NDS9Channels[0].internalDest = m_NDS9Channels[0].dest;
-			m_NDS9Channels[0].internalWordCount = m_NDS9Channels[0].wordCount;
+			m_NDS9Channels[0].internalWordCount = m_NDS9Channels[0].wordCount | ((m_NDS9Channels[0].control & 0x1F) << 16);
 		}
 		m_NDS9Channels[0].control &= 0x00FF; m_NDS9Channels[0].control |= (value << 8);
 		NDS9_checkDMAChannel(0);
@@ -143,7 +143,7 @@ void Bus::NDS9_writeDMAReg(uint32_t address, uint8_t value)
 		{
 			m_NDS9Channels[1].internalSrc = m_NDS9Channels[1].src;
 			m_NDS9Channels[1].internalDest = m_NDS9Channels[1].dest;
-			m_NDS9Channels[1].internalWordCount = m_NDS9Channels[1].wordCount;
+			m_NDS9Channels[1].internalWordCount = m_NDS9Channels[1].wordCount | ((m_NDS9Channels[1].control & 0x1F) << 16);
 		}
 		m_NDS9Channels[1].control &= 0x00FF; m_NDS9Channels[1].control |= (value << 8);
 		NDS9_checkDMAChannel(1);
@@ -188,7 +188,7 @@ void Bus::NDS9_writeDMAReg(uint32_t address, uint8_t value)
 		{
 			m_NDS9Channels[2].internalSrc = m_NDS9Channels[2].src;
 			m_NDS9Channels[2].internalDest = m_NDS9Channels[2].dest;
-			m_NDS9Channels[2].internalWordCount = m_NDS9Channels[2].wordCount;
+			m_NDS9Channels[2].internalWordCount = m_NDS9Channels[2].wordCount | ((m_NDS9Channels[2].control & 0x1F) << 16);
 		}
 		m_NDS9Channels[2].control &= 0x00FF; m_NDS9Channels[2].control |= (value << 8);
 		NDS9_checkDMAChannel(2);
@@ -233,7 +233,7 @@ void Bus::NDS9_writeDMAReg(uint32_t address, uint8_t value)
 		{
 			m_NDS9Channels[3].internalSrc = m_NDS9Channels[3].src;
 			m_NDS9Channels[3].internalDest = m_NDS9Channels[3].dest;
-			m_NDS9Channels[3].internalWordCount = m_NDS9Channels[3].wordCount;
+			m_NDS9Channels[3].internalWordCount = m_NDS9Channels[3].wordCount | ((m_NDS9Channels[3].control & 0x1F) << 16);
 		}
 		m_NDS9Channels[3].control &= 0x00FF; m_NDS9Channels[3].control |= (value << 8);
 		NDS9_checkDMAChannel(3);
@@ -295,7 +295,7 @@ void Bus::NDS9_writeDMAReg(uint32_t address, uint8_t value)
 void Bus::NDS9_checkDMAChannel(int channel)
 {
 	bool channelEnabled = (m_NDS9Channels[channel].control >> 15) & 0b1;
-	uint8_t startTiming = (m_NDS9Channels[channel].control >> 12) & 0b11;
+	uint8_t startTiming = (m_NDS9Channels[channel].control >> 11) & 0b111;
 	if (channelEnabled && (startTiming == 0))
 	{
 		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Channel {} immediate DMA. src={:#x} dest={:#x} words={:#x}", channel, m_NDS9Channels[channel].internalSrc, m_NDS9Channels[channel].internalDest, m_NDS9Channels[channel].internalWordCount));
@@ -305,6 +305,79 @@ void Bus::NDS9_checkDMAChannel(int channel)
 
 void Bus::NDS9_doDMATransfer(int channel)
 {
-	m_NDS9Channels[channel].control &= 0x7FFF;
-	//todo
+	uint32_t srcAddressMask = 0x0FFFFFFF;
+	uint32_t destAddressMask = 0x0FFFFFFF;
+
+	uint32_t src = m_NDS9Channels[channel].internalSrc & srcAddressMask;
+	uint32_t dest = m_NDS9Channels[channel].internalDest & destAddressMask;
+
+	int numWords = m_NDS9Channels[channel].internalWordCount;
+	if (numWords == 0)
+		numWords = 0x20000;
+
+	uint8_t srcAddressControl = (m_NDS9Channels[channel].control >> 7) & 0b11;
+	uint8_t destAddressControl = (m_NDS9Channels[channel].control >> 5) & 0b11;
+	bool repeat = (m_NDS9Channels[channel].control >> 9) & 0b1;
+	bool wordTransfer = (m_NDS9Channels[channel].control >> 10) & 0b1;
+	uint8_t startTiming = (m_NDS9Channels[channel].control >> 11) & 0b111;
+	bool IRQ = (m_NDS9Channels[channel].control >> 14) & 0b1;
+	bool reloadDest = false;
+	static constexpr int offsetLUT[2] = { 2,4 };
+
+	for (int i = 0; i < numWords; i++)
+	{
+		if (wordTransfer)
+		{
+			uint32_t val = NDS9_read32(src);
+			NDS9_write32(dest, val);
+		}
+		else
+		{
+			uint16_t val = NDS9_read16(src);
+			NDS9_write16(dest, val);
+		}
+
+		switch (srcAddressControl)
+		{
+		case 0:
+			src += offsetLUT[wordTransfer];
+			break;
+		case 1:
+			src -= offsetLUT[wordTransfer];
+			break;
+		}
+
+		switch (destAddressControl)
+		{
+		case 0:
+			dest += offsetLUT[wordTransfer];
+			break;
+		case 1:
+			dest -= offsetLUT[wordTransfer];
+			break;
+		case 3:
+			dest += offsetLUT[wordTransfer];
+			reloadDest = true;
+			break;
+		}
+	}
+
+	m_NDS9Channels[channel].internalSrc = src;
+	m_NDS9Channels[channel].internalDest = dest;
+	m_NDS9Channels[channel].internalWordCount = 0;	//maybe -1?
+
+	if (IRQ)
+	{
+		static constexpr InterruptType interruptLUT[4] = { InterruptType::DMA0, InterruptType::DMA1, InterruptType::DMA2, InterruptType::DMA3 };
+		m_interruptManager->NDS9_requestInterrupt(interruptLUT[channel]);
+	}
+
+	if (repeat && startTiming != 0)
+	{
+		if (reloadDest)
+			m_NDS9Channels[channel].internalDest = m_NDS9Channels[channel].dest;
+		m_NDS9Channels[channel].internalWordCount = m_NDS9Channels[channel].wordCount;
+	}
+	else
+		m_NDS9Channels[channel].control &= 0x7FFF;
 }

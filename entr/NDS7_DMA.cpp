@@ -222,5 +222,85 @@ void Bus::NDS7_checkDMAChannel(int channel)
 
 void Bus::NDS7_doDMATransfer(int channel)
 {
-	m_NDS7Channels[channel].control &= 0x7FFF;
+	uint32_t srcAddressMask = 0x0FFFFFFF;
+	if (channel == 0)
+		srcAddressMask = 0x07FFFFFF;
+	uint32_t destAddressMask = 0x07FFFFFF;
+	if (channel == 3)
+		destAddressMask = 0x0FFFFFFF;
+	uint32_t src = m_NDS7Channels[channel].internalSrc & srcAddressMask;
+	uint32_t dest = m_NDS7Channels[channel].internalDest & destAddressMask;
+
+	int numWords = m_NDS7Channels[channel].internalWordCount;
+	if (numWords == 0)
+	{
+		numWords = 0x4000;
+		if (channel == 3)
+			numWords = 0x10000;
+	}
+	uint8_t srcAddressControl = (m_NDS7Channels[channel].control >> 7) & 0b11;
+	uint8_t destAddressControl = (m_NDS7Channels[channel].control >> 5) & 0b11;
+	bool repeat = (m_NDS7Channels[channel].control >> 9) & 0b1;
+	bool wordTransfer = (m_NDS7Channels[channel].control >> 10) & 0b1;
+	uint8_t startTiming = (m_NDS7Channels[channel].control >> 12) & 0b11;
+	bool IRQ = (m_NDS7Channels[channel].control >> 14) & 0b1;
+	bool reloadDest = false;
+	static constexpr int offsetLUT[2] = { 2,4 };
+
+	for (int i = 0; i < numWords; i++)
+	{
+		if (wordTransfer)
+		{
+			uint32_t val = NDS7_read32(src);
+			NDS7_write32(dest, val);
+		}
+		else
+		{
+			uint16_t val = NDS7_read16(src);
+			NDS7_write16(dest, val);
+		}
+
+		switch (srcAddressControl)
+		{
+		case 0:
+			src += offsetLUT[wordTransfer];
+			break;
+		case 1:
+			src -= offsetLUT[wordTransfer];
+			break;
+		}
+
+		switch (destAddressControl)
+		{
+		case 0:
+			dest += offsetLUT[wordTransfer];
+			break;
+		case 1:
+			dest -= offsetLUT[wordTransfer];
+			break;
+		case 3:
+			dest += offsetLUT[wordTransfer];
+			reloadDest = true;
+			break;
+		}
+	}
+
+	m_NDS7Channels[channel].internalSrc = src;
+	m_NDS7Channels[channel].internalDest = dest;
+	m_NDS7Channels[channel].internalWordCount = 0;	//maybe -1?
+
+	if (IRQ)
+	{
+		static constexpr InterruptType interruptLUT[4] = { InterruptType::DMA0, InterruptType::DMA1, InterruptType::DMA2, InterruptType::DMA3 };
+		m_interruptManager->NDS7_requestInterrupt(interruptLUT[channel]);
+	}
+
+	if (repeat && startTiming != 0)
+	{
+		if (reloadDest)
+			m_NDS7Channels[channel].internalDest = m_NDS7Channels[channel].dest;
+		m_NDS7Channels[channel].internalWordCount = m_NDS7Channels[channel].wordCount;
+	}
+	else
+		m_NDS7Channels[channel].control &= 0x7FFF;
 }
