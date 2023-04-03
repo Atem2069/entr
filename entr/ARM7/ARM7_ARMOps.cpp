@@ -668,8 +668,18 @@ void ARM7TDMI::ARM_SingleDataTransfer()
 
 void ARM7TDMI::ARM_Undefined()
 {
-	//Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
-	throw std::runtime_error("unimplemented");
+	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Undefined instruction!! PC={}",getReg(15)-4));
+	uint32_t oldCPSR = CPSR;
+	uint32_t oldPC = R[15] - 4;	
+
+	CPSR &= 0xFFFFFFE0;	//clear mode bits (0-4)
+	CPSR |= 0b0011011;	//set und bits (11011)
+	swapBankedRegisters();
+
+	setSPSR(oldCPSR);			//set SPSR_svc
+	setReg(14, oldPC);			//Save old R15
+	setReg(15, 0x00000004);		//UND entry point=0x00000004
+
 }
 
 void ARM7TDMI::ARM_BlockDataTransfer()
