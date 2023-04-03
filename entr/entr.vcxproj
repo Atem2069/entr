@@ -151,6 +151,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="NDS.cpp" />
+    <ClCompile Include="NDS7_DMA.cpp" />
+    <ClCompile Include="NDS9_DMA.cpp" />
     <ClCompile Include="PPU.cpp" />
     <ClCompile Include="Scheduler.cpp" />
   </ItemGroup>

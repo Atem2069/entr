@@ -9,6 +9,24 @@
 
 #include<format>
 
+struct DMAChannel
+{
+	//vals CPU writes to dma registers
+	uint32_t src;
+	uint32_t dest;
+	uint16_t wordCount;
+
+	//latched regs at dma start or repeat
+	uint32_t internalSrc;
+	uint32_t internalDest;
+	uint16_t internalWordCount;
+
+	uint16_t control;
+
+	//only for NDS9 DMAs
+	uint32_t scratchpad;
+};
+
 class Bus
 {
 public:
@@ -87,6 +105,19 @@ private:
 	std::shared_ptr<Input> m_input;
 	std::shared_ptr<IPC> m_ipc;
 	std::shared_ptr<DSMath> m_math;
+
+	DMAChannel m_NDS7Channels[4] = {};
+	DMAChannel m_NDS9Channels[4] = {};
+
+	uint8_t NDS7_readDMAReg(uint32_t address);
+	void NDS7_writeDMAReg(uint32_t address, uint8_t value);
+	void NDS7_checkDMAChannel(int channel);
+	void NDS7_doDMATransfer(int channel);
+
+	uint8_t NDS9_readDMAReg(uint32_t address);
+	void NDS9_writeDMAReg(uint32_t address, uint8_t value);
+	void NDS9_checkDMAChannel(int channel);
+	void NDS9_doDMATransfer(int channel);
 
 	uint8_t WRAMCNT = 0;
 

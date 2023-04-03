@@ -477,6 +477,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	{
 	case 0x04000004: case 0x04000005: case 0x04000006: case 0x04000007:
 		return m_ppu->NDS7_readIO(address);
+	case 0x040000BA: case 0x040000BB: case 0x040000C6: case 0x040000C7: case 0x040000D2: case 0x040000D3: case 0x040000DE: case 0x040000DF:
+		return NDS7_readDMAReg(address);
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
 	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
@@ -499,6 +501,14 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	{
 	case 0x04000004: case 0x04000005: case 0x04000006: case 0x04000007:
 		m_ppu->NDS7_writeIO(address, value);
+		break;
+	case 0x040000B0: case 0x040000B1: case 0x040000B2: case 0x040000B3: case 0x040000B4: case 0x040000B5: case 0x040000B6: case 0x040000B7:
+	case 0x040000B8: case 0x040000B9: case 0x040000BA: case 0x040000BB: case 0x040000BC: case 0x040000BD: case 0x040000BE: case 0x040000BF:
+	case 0x040000C0: case 0x040000C1: case 0x040000C2: case 0x040000C3: case 0x040000C4: case 0x040000C5: case 0x040000C6: case 0x040000C7:
+	case 0x040000C8: case 0x040000C9: case 0x040000CA: case 0x040000CB: case 0x040000CC: case 0x040000CD: case 0x040000CE: case 0x040000CF:
+	case 0x040000D0: case 0x040000D1: case 0x040000D2: case 0x040000D3: case 0x040000D4: case 0x040000D5: case 0x040000D6: case 0x040000D7:
+	case 0x040000D8: case 0x040000D9: case 0x040000DA: case 0x040000DB: case 0x040000DC: case 0x040000DD: case 0x040000DE: case 0x040000DF:
+		NDS7_writeDMAReg(address, value);
 		break;
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
@@ -562,6 +572,10 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 		return m_ppu->readIO(address);
 	switch (address)
 	{
+	case 0x040000BA: case 0x040000BB: case 0x040000C6: case 0x040000C7: case 0x040000D2: case 0x040000D3: case 0x040000DE: case 0x040000DF:
+	case 0x040000E0: case 0x040000E1: case 0x040000E2: case 0x040000E3: case 0x040000E4: case 0x040000E5: case 0x040000E6: case 0x040000E7:
+	case 0x040000E8: case 0x040000E9: case 0x040000EA: case 0x040000EB: case 0x040000EC: case 0x040000ED: case 0x040000EE: case 0x040000EF:
+		return NDS9_readDMAReg(address);
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
 	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
@@ -593,6 +607,16 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	}
 	switch (address)
 	{
+	case 0x040000B0: case 0x040000B1: case 0x040000B2: case 0x040000B3: case 0x040000B4: case 0x040000B5: case 0x040000B6: case 0x040000B7:
+	case 0x040000B8: case 0x040000B9: case 0x040000BA: case 0x040000BB: case 0x040000BC: case 0x040000BD: case 0x040000BE: case 0x040000BF:
+	case 0x040000C0: case 0x040000C1: case 0x040000C2: case 0x040000C3: case 0x040000C4: case 0x040000C5: case 0x040000C6: case 0x040000C7:
+	case 0x040000C8: case 0x040000C9: case 0x040000CA: case 0x040000CB: case 0x040000CC: case 0x040000CD: case 0x040000CE: case 0x040000CF:
+	case 0x040000D0: case 0x040000D1: case 0x040000D2: case 0x040000D3: case 0x040000D4: case 0x040000D5: case 0x040000D6: case 0x040000D7:
+	case 0x040000D8: case 0x040000D9: case 0x040000DA: case 0x040000DB: case 0x040000DC: case 0x040000DD: case 0x040000DE: case 0x040000DF:
+	case 0x040000E0: case 0x040000E1: case 0x040000E2: case 0x040000E3: case 0x040000E4: case 0x040000E5: case 0x040000E6: case 0x040000E7:
+	case 0x040000E8: case 0x040000E9: case 0x040000EA: case 0x040000EB: case 0x040000EC: case 0x040000ED: case 0x040000EE: case 0x040000EF:
+		NDS9_writeDMAReg(address, value);
+		break;
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
 		break;

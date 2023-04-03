@@ -90,6 +90,12 @@
     <ClCompile Include="Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NDS7_DMA.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NDS9_DMA.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
