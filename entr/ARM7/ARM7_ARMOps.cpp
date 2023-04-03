@@ -822,8 +822,14 @@ void ARM7TDMI::ARM_CoprocessorDataOperation()
 
 void ARM7TDMI::ARM_CoprocessorRegisterTransfer()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
-	throw std::runtime_error("unimplemented");
+	uint8_t coprocessorNumber = (m_currentOpcode >> 8) & 0xF;
+	if (coprocessorNumber == 14)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Warn, "Ignoring ARM7 CP14 access..");
+		return;
+	}
+	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Undefined attempt to access CP{}", coprocessorNumber));
+	ARM_Undefined();
 }
 
 void ARM7TDMI::ARM_SoftwareInterrupt()

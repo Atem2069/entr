@@ -172,7 +172,7 @@ private:
 		else if ((tempOpcode & 0b0000'1111'0000'0000'0000'0000'0001'0000) == 0b0000'1110'0000'0000'0000'0000'0000'0000)
 			table[i] = (instructionFn)&ARM7TDMI::ARM_CoprocessorDataOperation;
 		else if ((tempOpcode & 0b0000'1111'0000'0000'0000'0000'0001'0000) == 0b0000'1110'0000'0000'0000'0000'0001'0000)
-			table[i] = (instructionFn)&ARM7TDMI::ARM_CoprocessorDataTransfer;
+			table[i] = (instructionFn)&ARM7TDMI::ARM_CoprocessorRegisterTransfer;
 		else if ((tempOpcode & 0b0000'1111'0000'0000'0000'0000'0000'0000) == 0b0000'1111'0000'0000'0000'0000'0000'0000)
 			table[i] = (instructionFn)&ARM7TDMI::ARM_SoftwareInterrupt;
 
