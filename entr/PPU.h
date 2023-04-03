@@ -12,6 +12,11 @@ enum class PPUState
 	VBlank
 };
 
+struct PPURegisters
+{
+	uint16_t BG0CNT;
+};
+
 class PPU
 {
 public:
@@ -51,6 +56,7 @@ private:
 	bool vblank_setHblankBit = false;
 
 	void renderLCDCMode();
+	void renderMode0();
 
 	void setVBlankFlag(bool value);
 	void setHBlankFlag(bool value);
@@ -62,6 +68,8 @@ private:
 	uint16_t DISPSTAT = {};
 	uint16_t NDS7_DISPSTAT = {};
 	uint16_t VCOUNT = {};
+
+	PPURegisters m_engineARegisters = {};
 
 
 	//dumb vram stuff
