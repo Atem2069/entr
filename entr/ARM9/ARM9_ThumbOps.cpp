@@ -331,8 +331,6 @@ void ARM946E::Thumb_LoadStoreSignExtended()
 	else if (op == 2)	//load halfword
 	{
 		uint32_t val = m_read16(addr);
-		if (addr & 0b1)
-			val = std::rotr(val, 8);
 		R[srcDestRegIdx] = val;
 	}
 	else if (op == 1)	//load sign extended byte
@@ -412,8 +410,6 @@ void ARM946E::Thumb_LoadStoreHalfword()
 	if (loadStore)
 	{
 		uint32_t val = m_read16(base);
-		if (base & 0b1)
-			val = std::rotr(val, 8);
 		R[srcDestRegIdx] = val;
 	}
 	else

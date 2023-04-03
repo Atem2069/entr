@@ -296,10 +296,15 @@ void Bus::NDS9_checkDMAChannel(int channel)
 {
 	bool channelEnabled = (m_NDS9Channels[channel].control >> 15) & 0b1;
 	uint8_t startTiming = (m_NDS9Channels[channel].control >> 11) & 0b111;
-	if (channelEnabled && (startTiming == 0))
+	if (channelEnabled)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Channel {} immediate DMA. src={:#x} dest={:#x} words={:#x}", channel, m_NDS9Channels[channel].internalSrc, m_NDS9Channels[channel].internalDest, m_NDS9Channels[channel].internalWordCount));
-		NDS9_doDMATransfer(channel);
+		if (startTiming == 0)
+		{
+			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Channel {} immediate DMA. src={:#x} dest={:#x} words={:#x}", channel, m_NDS9Channels[channel].internalSrc, m_NDS9Channels[channel].internalDest, m_NDS9Channels[channel].internalWordCount));
+			NDS9_doDMATransfer(channel);
+		}
+		else
+			m_NDS9Channels[channel].control &= 0x7FFF;	//dumb, remove when properly impl. other dma types
 	}
 }
 

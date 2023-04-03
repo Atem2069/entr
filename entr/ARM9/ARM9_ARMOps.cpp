@@ -439,8 +439,6 @@ void ARM946E::ARM_HalfwordTransferRegisterOffset()
 			break;
 		case 1:
 			val = m_read16(base);
-			if (base & 1)
-				val = std::rotr(val, 8);
 			setReg(srcDestRegIdx, val);
 			break;
 		case 2:
@@ -540,8 +538,6 @@ void ARM946E::ARM_HalfwordTransferImmediateOffset()
 			break;
 		case 1:
 			data = m_read16(base);
-			if (base & 1)
-				data = std::rotr(data, 8);
 			setReg(srcDestRegIdx, data);
 			break;
 		case 2:
