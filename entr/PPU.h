@@ -24,6 +24,13 @@ enum class Engine
 	B=1
 };
 
+struct BackgroundLayer
+{
+	uint8_t priority;
+	bool enabled;
+	uint16_t lineBuffer[256];
+};
+
 class PPU
 {
 public:
@@ -57,6 +64,9 @@ private:
 	std::shared_ptr<InterruptManager> m_interruptManager;
 	std::shared_ptr<Scheduler> m_scheduler;
 
+	BackgroundLayer m_engineABgLayers[4] = {};
+	BackgroundLayer m_engineBBgLayers[4] = {};
+
 	uint32_t m_renderBuffer[2][256 * 384];
 	bool pageIdx = false;
 
@@ -70,6 +80,7 @@ private:
 	template <Engine engine> void renderMode0();
 
 	template<Engine engine, int bg> void renderBackground();
+	template<Engine engine> void composeLayers();
 
 	template<Engine engine> uint8_t ppuReadBg(uint32_t address)
 	{

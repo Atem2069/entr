@@ -63,6 +63,7 @@ void PPU::HDraw()
 			renderMode0<Engine::A>();
 			break;
 		}
+		composeLayers<Engine::A>();
 	}
 
 	displayMode = (m_engineBRegisters.DISPCNT >> 16) & 0b11;
@@ -75,6 +76,7 @@ void PPU::HDraw()
 			renderMode0<Engine::B>();
 			break;
 		}
+		composeLayers<Engine::B>();
 	}
 
 	//line=2130 cycles. hdraw=1606 cycles? hblank=524 cycles
@@ -158,16 +160,61 @@ void PPU::renderLCDCMode()
 
 template<Engine engine>void PPU::renderMode0()
 {
+	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	if (engine == Engine::B)
+		m_backgroundLayers = m_engineBBgLayers;
+
+	//hack :)
+	for (int i = 0; i < 4; i++)
+		m_backgroundLayers[i].priority = 255;
+
+	//todo: rest of background layers, lol.
+
 	renderBackground<engine, 0>();
+}
+
+template<Engine engine> void PPU::composeLayers()
+{
+	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	if (engine == Engine::B)
+		m_backgroundLayers = m_engineBBgLayers;
+
+	uint16_t backdrop = (engine == Engine::A) ? *(uint16_t*)m_mem->PAL : *(uint16_t*)(m_mem->PAL + 0x400);
+
+	for (int i = 0; i < 256; i++)
+	{
+		uint16_t finalCol = backdrop;
+		uint8_t bestPriority = 255;
+		for (int j = 3; j >= 0; j--)
+		{
+			if (m_backgroundLayers[j].enabled)
+			{
+				uint16_t colAtLayer = m_backgroundLayers[j].lineBuffer[i];
+				if ((!(colAtLayer >> 15)) && m_backgroundLayers[j].priority <= bestPriority)
+				{
+					bestPriority = m_backgroundLayers[j].priority;
+					finalCol = colAtLayer;
+				}
+			}
+		}
+
+
+		uint32_t renderBase = (engine == Engine::A) ? EngineA_RenderBase : EngineB_RenderBase;
+		m_renderBuffer[pageIdx][renderBase + (256 * VCOUNT) + i] = col16to32(finalCol);
+	}
 }
 
 template<Engine engine, int bg> void PPU::renderBackground()
 {
 	PPURegisters m_regs = {};
+	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
 	if (engine == Engine::A)
 		m_regs = m_engineARegisters;
 	else
+	{
+		m_backgroundLayers = m_engineBBgLayers;
 		m_regs = m_engineBRegisters;
+	}
 	uint16_t ctrlReg = m_regs.BG0CNT;
 	uint32_t xScroll = 0, yScroll = 0;
 	int mosaicHorizontal = 0;// (MOSAIC & 0xF) + 1;
@@ -176,6 +223,7 @@ template<Engine engine, int bg> void PPU::renderBackground()
 	bool mosaicEnabled = false;//  ((ctrlReg >> 6) & 0b1);
 
 	uint8_t bgPriority = ctrlReg & 0b11;
+	m_backgroundLayers[bg].priority = bgPriority;
 	uint32_t tileDataBaseBlock = ((ctrlReg >> 2) & 0b11);
 	bool hiColor = ((ctrlReg >> 7) & 0b1);
 	uint32_t bgMapBaseBlock = ((ctrlReg >> 8) & 0x1F);
@@ -250,7 +298,7 @@ template<Engine engine, int bg> void PPU::renderBackground()
 				if (engine == Engine::B)
 					paletteMemoryAddr += 0x400;
 
-				//if (paletteEntry)
+				if (paletteEntry)
 				{
 					uint8_t colLow = m_mem->PAL[paletteMemoryAddr];
 					uint8_t colHigh = m_mem->PAL[paletteMemoryAddr + 1];
@@ -275,12 +323,7 @@ template<Engine engine, int bg> void PPU::renderBackground()
 			}
 
 			if (screenX < 256)
-			{
-				uint32_t renderAddr = (256 * VCOUNT) + screenX;
-				uint32_t renderBase = (engine == Engine::A) ? EngineA_RenderBase : EngineB_RenderBase;
-				m_renderBuffer[pageIdx][renderBase+renderAddr] = col16to32(col);
-			}
-			//m_backgroundLayers[bg].lineBuffer[screenX] = col;
+				m_backgroundLayers[bg].lineBuffer[screenX] = col;
 			screenX++;
 
 			if (!mosaicEnabled)
@@ -419,6 +462,12 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		break;
 	case 0x04000001:
 		m_engineARegisters.DISPCNT &= 0xFFFF00FF; m_engineARegisters.DISPCNT |= (value << 8);
+		for (int i = 8; i < 12; i++)
+		{
+			m_engineABgLayers[i-8].enabled = false;
+			if ((m_engineARegisters.DISPCNT >> i) & 0b1)
+				m_engineABgLayers[i-8].enabled = true;
+		}
 		break;
 	case 0x04000002:
 		m_engineARegisters.DISPCNT &= 0xFF00FFFF; m_engineARegisters.DISPCNT |= (value << 16);
@@ -443,6 +492,12 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		break;
 	case 0x04001001:
 		m_engineBRegisters.DISPCNT &= 0xFFFF00FF; m_engineBRegisters.DISPCNT |= (value << 8);
+		for (int i = 8; i < 12; i++)
+		{
+			m_engineBBgLayers[i-8].enabled = false;
+			if ((m_engineBRegisters.DISPCNT >> i) & 0b1)
+				m_engineBBgLayers[i-8].enabled = true;
+		}
 		break;
 	case 0x04001002:
 		m_engineBRegisters.DISPCNT &= 0xFF00FFFF; m_engineBRegisters.DISPCNT |= (value << 16);
