@@ -164,13 +164,20 @@ template<Engine engine>void PPU::renderMode0()
 	if (engine == Engine::B)
 		m_backgroundLayers = m_engineBBgLayers;
 
-	//hack :)
-	for (int i = 0; i < 4; i++)
-		m_backgroundLayers[i].priority = 255;
+	//bit messy, don't like too much..
+	m_backgroundLayers[0].priority = 255;
+	if (m_backgroundLayers[0].enabled)
+		renderBackground<engine, 0>();
+	m_backgroundLayers[1].priority = 255;
+	if (m_backgroundLayers[1].enabled)
+		renderBackground<engine, 1>();
+	m_backgroundLayers[2].priority = 255;
+	if (m_backgroundLayers[2].enabled)
+		renderBackground<engine, 2>();
+	m_backgroundLayers[3].priority = 255;
+	if (m_backgroundLayers[3].enabled)
+		renderBackground<engine, 3>();
 
-	//todo: rest of background layers, lol.
-
-	renderBackground<engine, 0>();
 }
 
 template<Engine engine> void PPU::composeLayers()
@@ -215,8 +222,25 @@ template<Engine engine, int bg> void PPU::renderBackground()
 		m_backgroundLayers = m_engineBBgLayers;
 		m_regs = m_engineBRegisters;
 	}
-	uint16_t ctrlReg = m_regs.BG0CNT;
+	uint16_t ctrlReg = 0;
 	uint32_t xScroll = 0, yScroll = 0;
+
+	switch (bg)
+	{
+	case 0:
+		ctrlReg = m_regs.BG0CNT;
+		break;
+	case 1:
+		ctrlReg = m_regs.BG1CNT;
+		break;
+	case 2:
+		ctrlReg = m_regs.BG2CNT;
+		break;
+	case 3:
+		ctrlReg = m_regs.BG3CNT;
+		break;
+	}
+
 	int mosaicHorizontal = 0;// (MOSAIC & 0xF) + 1;
 	int mosaicVertical = 0;// ((MOSAIC >> 4) & 0xF) + 1;
 
@@ -382,6 +406,18 @@ uint8_t PPU::readIO(uint32_t address)
 		return m_engineARegisters.BG0CNT & 0xFF;
 	case 0x04000009:
 		return ((m_engineARegisters.BG0CNT >> 8) & 0xFF);
+	case 0x0400000A:
+		return m_engineARegisters.BG1CNT & 0xFF;
+	case 0x0400000B:
+		return ((m_engineARegisters.BG1CNT >> 8) & 0xFF);
+	case 0x0400000C:
+		return m_engineARegisters.BG2CNT & 0xFF;
+	case 0x0400000D:
+		return ((m_engineARegisters.BG2CNT >> 8) & 0xFF);
+	case 0x0400000E:
+		return m_engineARegisters.BG3CNT & 0xFF;
+	case 0x0400000F:
+		return ((m_engineARegisters.BG3CNT >> 8) & 0xFF);
 	case 0x04001000:
 		return m_engineBRegisters.DISPCNT & 0xFF;
 	case 0x04001001:
@@ -394,6 +430,18 @@ uint8_t PPU::readIO(uint32_t address)
 		return m_engineBRegisters.BG0CNT & 0xFF;
 	case 0x04001009:
 		return ((m_engineBRegisters.BG0CNT >> 8) & 0xFF);
+	case 0x0400100A:
+		return m_engineBRegisters.BG1CNT & 0xFF;
+	case 0x0400100B:
+		return ((m_engineBRegisters.BG1CNT >> 8) & 0xFF);
+	case 0x0400100C:
+		return m_engineBRegisters.BG2CNT & 0xFF;
+	case 0x0400100D:
+		return ((m_engineBRegisters.BG2CNT >> 8) & 0xFF);
+	case 0x0400100E:
+		return m_engineBRegisters.BG3CNT & 0xFF;
+	case 0x0400100F:
+		return ((m_engineBRegisters.BG3CNT >> 8) & 0xFF);
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO read! addr={:#x}", address));
 	return 0;
@@ -487,6 +535,24 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	case 0x04000009:
 		m_engineARegisters.BG0CNT &= 0x00FF; m_engineARegisters.BG0CNT |= (value << 8);
 		break;
+	case 0x0400000A:
+		m_engineARegisters.BG1CNT &= 0xFF00; m_engineARegisters.BG1CNT |= value;
+		break;
+	case 0x0400000B:
+		m_engineARegisters.BG1CNT &= 0x00FF; m_engineARegisters.BG1CNT |= (value << 8);
+		break;
+	case 0x0400000C:
+		m_engineARegisters.BG2CNT &= 0xFF00; m_engineARegisters.BG2CNT |= value;
+		break;
+	case 0x0400000D:
+		m_engineARegisters.BG2CNT &= 0x00FF; m_engineARegisters.BG2CNT |= (value << 8);
+		break;
+	case 0x0400000E:
+		m_engineARegisters.BG3CNT &= 0xFF00; m_engineARegisters.BG3CNT |= value;
+		break;
+	case 0x0400000F:
+		m_engineARegisters.BG3CNT &= 0x00FF; m_engineARegisters.BG3CNT |= (value << 8);
+		break;
 	case 0x04001000:
 		m_engineBRegisters.DISPCNT &= 0xFFFFFF00; m_engineBRegisters.DISPCNT |= value;
 		break;
@@ -510,6 +576,24 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		break;
 	case 0x04001009:
 		m_engineBRegisters.BG0CNT &= 0x00FF; m_engineBRegisters.BG0CNT |= (value << 8);
+		break;
+	case 0x0400100A:
+		m_engineBRegisters.BG1CNT &= 0xFF00; m_engineBRegisters.BG1CNT |= value;
+		break;
+	case 0x0400100B:
+		m_engineBRegisters.BG1CNT &= 0x00FF; m_engineBRegisters.BG1CNT |= (value << 8);
+		break;
+	case 0x0400100C:
+		m_engineBRegisters.BG2CNT &= 0xFF00; m_engineBRegisters.BG2CNT |= value;
+		break;
+	case 0x0400100D:
+		m_engineBRegisters.BG2CNT &= 0x00FF; m_engineBRegisters.BG2CNT |= (value << 8);
+		break;
+	case 0x0400100E:
+		m_engineBRegisters.BG3CNT &= 0xFF00; m_engineBRegisters.BG3CNT |= value;
+		break;
+	case 0x0400100F:
+		m_engineBRegisters.BG3CNT &= 0x00FF; m_engineBRegisters.BG3CNT |= (value << 8);
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));

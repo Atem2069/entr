@@ -16,6 +16,9 @@ struct PPURegisters
 {
 	uint32_t DISPCNT;
 	uint16_t BG0CNT;
+	uint16_t BG1CNT;
+	uint16_t BG2CNT;
+	uint16_t BG3CNT;
 };
 
 enum class Engine
