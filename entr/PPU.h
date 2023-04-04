@@ -91,6 +91,9 @@ private:
 	PPURegisters m_engineARegisters = {};
 	PPURegisters m_engineBRegisters = {};
 
+	uint16_t POWCNT1 = {};
+	uint32_t EngineA_RenderBase = 0;
+	uint32_t EngineB_RenderBase = 256 * 192;
 
 	//dumb vram stuff
 	uint8_t VRAMCNT_A = {};

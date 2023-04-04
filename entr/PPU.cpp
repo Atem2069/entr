@@ -247,6 +247,8 @@ template<Engine engine, int bg> void PPU::renderBackground()
 			{
 				int paletteEntry = ppuReadBg<engine>(tileMapBaseAddress + pixelOffset);
 				uint32_t paletteMemoryAddr = paletteEntry << 1;
+				if (engine == Engine::B)
+					paletteMemoryAddr += 0x400;
 
 				//if (paletteEntry)
 				{
@@ -264,6 +266,8 @@ template<Engine engine, int bg> void PPU::renderBackground()
 				{
 					uint32_t paletteMemoryAddr = paletteNumber * 32;
 					paletteMemoryAddr += (colorId * 2);
+					if (engine == Engine::B)
+						paletteMemoryAddr += 0x400;
 					uint8_t colLow = m_mem->PAL[paletteMemoryAddr];
 					uint8_t colHigh = m_mem->PAL[paletteMemoryAddr + 1];
 					col = ((colHigh << 8) | colLow) & 0x7FFF;
@@ -273,9 +277,8 @@ template<Engine engine, int bg> void PPU::renderBackground()
 			if (screenX < 256)
 			{
 				uint32_t renderAddr = (256 * VCOUNT) + screenX;
-				if (engine == Engine::B)
-					renderAddr += 256 * 192;
-				m_renderBuffer[pageIdx][renderAddr] = col16to32(col);
+				uint32_t renderBase = (engine == Engine::A) ? EngineA_RenderBase : EngineB_RenderBase;
+				m_renderBuffer[pageIdx][renderBase+renderAddr] = col16to32(col);
 			}
 			//m_backgroundLayers[bg].lineBuffer[screenX] = col;
 			screenX++;
@@ -294,6 +297,10 @@ uint8_t PPU::readIO(uint32_t address)
 {
 	switch (address)
 	{
+	case 0x04000304:
+		return POWCNT1 & 0xFF;
+	case 0x04000305:
+		return ((POWCNT1 >> 8) & 0xFF);
 	case 0x04000240:
 		return VRAMCNT_A;
 	case 0x04000241:
@@ -353,6 +360,23 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 {
 	switch (address)
 	{
+		//POWCNT1
+	case 0x04000304:
+		POWCNT1 &= 0xFF00; POWCNT1 |= value;
+		break;
+	case 0x04000305:
+		POWCNT1 &= 0x00FF; POWCNT1 |= (value << 8);
+		if (!(POWCNT1 >> 15))
+		{
+			EngineA_RenderBase = 256 * 192;
+			EngineB_RenderBase = 0;
+		}
+		else
+		{
+			EngineA_RenderBase = 0;
+			EngineB_RenderBase = 256 * 192;
+		}
+		break;
 		//vram banking.. aaa
 	case 0x04000240:
 		VRAMCNT_A = value;
