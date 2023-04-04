@@ -48,7 +48,7 @@ uint8_t Bus::NDS7_read8(uint32_t address)
 		return NDS7_readIO8(address);
 	case 6:
 	{
-		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		uint8_t* addr = m_ppu->mapARM7Address(address);
 		return addr[0];
 	}
 	default:
@@ -80,7 +80,7 @@ void Bus::NDS7_write8(uint32_t address, uint8_t value)
 		break;
 	case 6:
 	{
-		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		uint8_t* addr = m_ppu->mapARM7Address(address);
 		addr[0] = value;
 		break;
 	}
@@ -112,7 +112,7 @@ uint16_t Bus::NDS7_read16(uint32_t address)
 		return NDS7_readIO16(address);
 	case 6:
 	{
-		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		uint8_t* addr = m_ppu->mapARM7Address(address);
 		return getValue16(addr, 0, 0xFFFF);
 	}
 	default:
@@ -145,7 +145,7 @@ void Bus::NDS7_write16(uint32_t address, uint16_t value)
 		break;
 	case 6:
 	{
-		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		uint8_t* addr = m_ppu->mapARM7Address(address);
 		setValue16(addr, 0, 0xFFFF, value);
 		break;
 	}
@@ -177,7 +177,7 @@ uint32_t Bus::NDS7_read32(uint32_t address)
 		return NDS7_readIO32(address);
 	case 6:
 	{
-		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		uint8_t* addr = m_ppu->mapARM7Address(address);
 		return getValue32(addr, 0, 0xFFFF);
 	}
 	default:
@@ -210,7 +210,7 @@ void Bus::NDS7_write32(uint32_t address, uint32_t value)
 		break;
 	case 6:
 	{
-		uint8_t* addr = m_ppu->NDS7_mapAddressToVRAM(address);
+		uint8_t* addr = m_ppu->mapARM7Address(address);
 		setValue16(addr, 0, 0xFFFF, value);
 		break;
 	}
@@ -239,7 +239,7 @@ uint8_t Bus::NDS9_read8(uint32_t address)
 		return m_mem->PAL[address & 0x7FF];
 	case 6:
 	{
-		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		uint8_t* addr = getVRAMAddr(address);
 		return addr[0];
 	}
 	case 7:
@@ -282,7 +282,7 @@ void Bus::NDS9_write8(uint32_t address, uint8_t value)
 		break;
 	case 6:
 	{
-		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		uint8_t* addr = getVRAMAddr(address);
 		addr[0] = value;
 		break;
 	}
@@ -323,7 +323,7 @@ uint16_t Bus::NDS9_read16(uint32_t address)
 		return getValue16(m_mem->PAL,address & 0x7FF,0x7FF);
 	case 6:
 	{
-		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		uint8_t* addr = getVRAMAddr(address);
 		return getValue16(addr, 0, 0xFFFF);
 	}
 	case 7:
@@ -367,7 +367,7 @@ void Bus::NDS9_write16(uint32_t address, uint16_t value)
 		break;
 	case 6:
 	{
-		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		uint8_t* addr = getVRAMAddr(address);
 		setValue16(addr, 0, 0xFFFF,value);
 		break;
 	}
@@ -408,7 +408,7 @@ uint32_t Bus::NDS9_read32(uint32_t address)
 		return getValue32(m_mem->PAL, address & 0x7FF, 0x7FF);
 	case 6:
 	{
-		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		uint8_t* addr = getVRAMAddr(address);
 		return getValue32(addr, 0, 0xFFFF);
 	}
 	case 7:
@@ -452,7 +452,7 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 		break;
 	case 6:
 	{
-		uint8_t* addr = m_ppu->mapAddressToVRAM(address);
+		uint8_t* addr = getVRAMAddr(address);
 		setValue32(addr, 0, 0xFFFF,value);
 	}
 	case 7:
@@ -487,7 +487,7 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
 		return m_interruptManager->NDS7_readIO(address);
 	case 0x04000240:
-		return (m_mem->VRAM_C.ARM7) | (m_mem->VRAM_D.ARM7 << 1);
+		return (m_mem->VRAM_C_ARM7) | (m_mem->VRAM_D_ARM7 << 1);
 	case 0x04000241:
 		return WRAMCNT;
 	}

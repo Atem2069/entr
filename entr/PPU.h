@@ -33,8 +33,12 @@ public:
 	uint8_t NDS7_readIO(uint32_t address);
 	void NDS7_writeIO(uint32_t address, uint8_t value);
 
-	uint8_t* mapAddressToVRAM(uint32_t address);
-	uint8_t* NDS7_mapAddressToVRAM(uint32_t address);
+	uint8_t* mapLCDCAddress(uint32_t address);
+	uint8_t* mapABgAddress(uint32_t address);
+	uint8_t* mapAObjAddress(uint32_t address);
+	uint8_t* mapBBgAddress(uint32_t address);
+	uint8_t* mapBObjAddress(uint32_t address);
+	uint8_t* mapARM7Address(uint32_t address);
 
 	static void onSchedulerEvent(void* context);
 
@@ -82,4 +86,6 @@ private:
 	uint8_t VRAMCNT_G = {};
 	uint8_t VRAMCNT_H = {};
 	uint8_t VRAMCNT_I = {};
+
+	void rebuildPageTables();
 };

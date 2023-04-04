@@ -98,6 +98,30 @@ public:
 		arr[(base + 3) & mask] = ((val >> 24) & 0xFF);
 	}
 
+	inline uint8_t* getVRAMAddr(uint32_t address)
+	{
+		uint8_t* addr = nullptr;
+		switch ((address >> 20) & 0xF)
+		{
+		case 0: case 1:
+			addr = m_ppu->mapABgAddress(address);
+			break;
+		case 2: case 3:
+			addr = m_ppu->mapBBgAddress(address);
+			break;
+		case 4: case 5:
+			addr = m_ppu->mapAObjAddress(address);
+			break;
+		case 6: case 7:
+			addr = m_ppu->mapBObjAddress(address);
+			break;
+		case 8: case 9: case 0xA: case 0xB: case 0xC: case 0xD: case 0xE: case 0xF:
+			addr = m_ppu->mapLCDCAddress(address);
+			break;
+		}
+		return addr;
+	}
+
 private:
 	std::shared_ptr<NDSMem> m_mem;
 	std::shared_ptr<InterruptManager> m_interruptManager;

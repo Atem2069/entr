@@ -17,7 +17,7 @@ struct NDSMem
 
 	uint8_t RAM[4194304];
 	uint8_t WRAM[2][16384];
-	uint8_t VRAM[671744];			//<---this is bad, just to get lcdc mode working..
+	uint8_t VRAM[671744];		
 	uint8_t PAL[2048];
 	uint8_t OAM[2048];
 
@@ -26,5 +26,13 @@ struct NDSMem
 	uint8_t* NDS7_sharedWRAMPtrs[2];		//dealing with shared wram banking
 	uint8_t* NDS9_sharedWRAMPtrs[2];
 
-	VRAMBank VRAM_A = {}, VRAM_B = {}, VRAM_C = {}, VRAM_D = {}, VRAM_E = {}, VRAM_F = {}, VRAM_G = {}, VRAM_H = {}, VRAM_I = {};
+	uint8_t* LCDCPageTable[0x29];
+	uint8_t* ABGPageTable[32];
+	uint8_t* AObjPageTable[16];
+	uint8_t* BBGPageTable[8];
+	uint8_t* BObjPageTable[8];
+	uint8_t* ARM7VRAMPageTable[2];	//2 128KB regions
+
+	bool VRAM_C_ARM7 = false;
+	bool VRAM_D_ARM7 = false;
 };

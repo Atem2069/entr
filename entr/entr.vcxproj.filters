@@ -96,6 +96,9 @@
     <ClCompile Include="NDS9_DMA.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PPU_VRAM.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
