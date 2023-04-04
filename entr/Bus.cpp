@@ -568,7 +568,7 @@ void Bus::NDS7_writeIO32(uint32_t address, uint32_t value)
 //Handle NDS9 IO
 uint8_t Bus::NDS9_readIO8(uint32_t address)
 {
-	if (address >= 0x04000000 && address <= 0x04000058 || (address >= 0x04000240 && address <= 0x04000249 && address != 0x04000247))
+	if (address >= 0x04000000 && address <= 0x04000058 || (address >= 0x04000240 && address <= 0x04000249 && address != 0x04000247) || (address >= 0x04001000 && address <= 0x04001058))
 		return m_ppu->readIO(address);
 	switch (address)
 	{
@@ -600,7 +600,7 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 
 void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 {
-	if ((address >= 0x04000000 && address <= 0x04000058) || (address >= 0x04000240 && address <= 0x04000249 && address!=0x04000247))
+	if ((address >= 0x04000000 && address <= 0x04000058) || (address >= 0x04000240 && address <= 0x04000249 && address!=0x04000247) || (address >= 0x04001000 && address <= 0x04001058))
 	{
 		m_ppu->writeIO(address, value);
 		return;

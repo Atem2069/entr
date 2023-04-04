@@ -17,6 +17,9 @@ ARM7TDMI::ARM7TDMI(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<Int
 	svcBankedRegisters[0] = 0x0380FFC0;
 	svcBankedRegisters[1] = 0;
 
+	//27FFE34h/27FFE24h
+	m_bus->NDS7_write32(0x027FFE34, entry);
+
 	R[15] = entry;
 	flushPipeline();
 	refillPipeline();

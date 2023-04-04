@@ -51,16 +51,28 @@ void PPU::HDraw()
 	//this is a hack, should fix!
 	//renderLCDCMode();
 
-	uint8_t displayMode = (DISPCNT >> 16) & 0b11;
+	uint8_t displayMode = (m_engineARegisters.DISPCNT >> 16) & 0b11;
 	if (displayMode == 2)
 		renderLCDCMode();
-	else
+	else if(displayMode==1)
 	{
-		uint8_t mode = DISPCNT & 0b111;
+		uint8_t mode = m_engineARegisters.DISPCNT & 0b111;
 		switch (mode)
 		{
 		case 0:
-			renderMode0();
+			renderMode0<Engine::A>();
+			break;
+		}
+	}
+
+	displayMode = (m_engineBRegisters.DISPCNT >> 16) & 0b11;
+	if (displayMode == 1)
+	{
+		uint8_t mode = m_engineBRegisters.DISPCNT & 0b111;
+		switch (mode)
+		{
+		case 0:
+			renderMode0<Engine::B>();
 			break;
 		}
 	}
@@ -132,7 +144,7 @@ void PPU::renderLCDCMode()
 {
 	for (int i = 0; i < 256; i++)
 	{
-		uint8_t VRAMBlock = ((DISPCNT >> 18) & 0b11);
+		uint8_t VRAMBlock = ((m_engineARegisters.DISPCNT >> 18) & 0b11);
 		uint8_t* basePtr = m_mem->VRAM + (VRAMBlock * 0x20000);
 		uint32_t address = (VCOUNT * (256 * 2)) + (i * 2);
 		//uint32_t address = (VCOUNT * (256 * 2)) + (i * 2);
@@ -144,9 +156,19 @@ void PPU::renderLCDCMode()
 	}
 }
 
-void PPU::renderMode0()
+template<Engine engine>void PPU::renderMode0()
 {
-	uint16_t ctrlReg = m_engineARegisters.BG0CNT;
+	renderBackground<engine, 0>();
+}
+
+template<Engine engine, int bg> void PPU::renderBackground()
+{
+	PPURegisters m_regs = {};
+	if (engine == Engine::A)
+		m_regs = m_engineARegisters;
+	else
+		m_regs = m_engineBRegisters;
+	uint16_t ctrlReg = m_regs.BG0CNT;
 	uint32_t xScroll = 0, yScroll = 0;
 	int mosaicHorizontal = 0;// (MOSAIC & 0xF) + 1;
 	int mosaicVertical = 0;// ((MOSAIC >> 4) & 0xF) + 1;
@@ -193,8 +215,8 @@ void PPU::renderMode0()
 		uint32_t bgMapBaseAddress = ((bgMapBaseBlock + baseBlockOffset) * 2048) + bgMapYIdx;
 		bgMapBaseAddress += ((normalizedTileFetchIdx >> 3) * 2);
 
-		uint8_t tileLower = m_mem->VRAM[bgMapBaseAddress];
-		uint8_t tileHigher = m_mem->VRAM[bgMapBaseAddress + 1];
+		uint8_t tileLower = ppuReadBg<engine>(bgMapBaseAddress);
+		uint8_t tileHigher = ppuReadBg<engine>(bgMapBaseAddress + 1);
 		uint16_t tile = ((uint16_t)tileHigher << 8) | tileLower;
 
 		uint32_t tileNumber = tile & 0x3FF;
@@ -223,7 +245,7 @@ void PPU::renderMode0()
 			uint16_t col = 0x8000;
 			if (hiColor)
 			{
-				int paletteEntry = m_mem->VRAM[tileMapBaseAddress + pixelOffset];
+				int paletteEntry = ppuReadBg<engine>(tileMapBaseAddress + pixelOffset);
 				uint32_t paletteMemoryAddr = paletteEntry << 1;
 
 				//if (paletteEntry)
@@ -235,7 +257,7 @@ void PPU::renderMode0()
 			}
 			else
 			{
-				uint8_t tileData = m_mem->VRAM[tileMapBaseAddress + (pixelOffset >> 1)];
+				uint8_t tileData = ppuReadBg<engine>(tileMapBaseAddress + (pixelOffset >> 1));
 				int stepTile = ((pixelOffset & 0b1)) << 2;
 				int colorId = ((tileData >> stepTile) & 0xf);
 				if (colorId)
@@ -249,8 +271,13 @@ void PPU::renderMode0()
 			}
 
 			if (screenX < 256)
-				m_renderBuffer[pageIdx][(256 * VCOUNT) + screenX] = col16to32(col);
-				//m_backgroundLayers[bg].lineBuffer[screenX] = col;
+			{
+				uint32_t renderAddr = (256 * VCOUNT) + screenX;
+				if (engine == Engine::B)
+					renderAddr += 256 * 192;
+				m_renderBuffer[pageIdx][renderAddr] = col16to32(col);
+			}
+			//m_backgroundLayers[bg].lineBuffer[screenX] = col;
 			screenX++;
 
 			if (!mosaicEnabled)
@@ -286,13 +313,13 @@ uint8_t PPU::readIO(uint32_t address)
 	case 0x04000249:
 		return VRAMCNT_I;
 	case 0x04000000:
-		return DISPCNT & 0xFF;
+		return m_engineARegisters.DISPCNT & 0xFF;
 	case 0x04000001:
-		return ((DISPCNT >> 8) & 0xFF);
+		return ((m_engineARegisters.DISPCNT >> 8) & 0xFF);
 	case 0x04000002:
-		return ((DISPCNT >> 16) & 0xFF);
+		return ((m_engineARegisters.DISPCNT >> 16) & 0xFF);
 	case 0x04000003:
-		return ((DISPCNT >> 24) & 0xFF);
+		return ((m_engineARegisters.DISPCNT >> 24) & 0xFF);
 	case 0x04000004:
 		return DISPSTAT & 0xFF;
 	case 0x04000005:
@@ -305,6 +332,18 @@ uint8_t PPU::readIO(uint32_t address)
 		return m_engineARegisters.BG0CNT & 0xFF;
 	case 0x04000009:
 		return ((m_engineARegisters.BG0CNT >> 8) & 0xFF);
+	case 0x04001000:
+		return m_engineBRegisters.DISPCNT & 0xFF;
+	case 0x04001001:
+		return ((m_engineBRegisters.DISPCNT >> 8) & 0xFF);
+	case 0x04001002:
+		return ((m_engineBRegisters.DISPCNT >> 16) & 0xFF);
+	case 0x04001003:
+		return ((m_engineBRegisters.DISPCNT >> 24) & 0xFF);
+	case 0x04001008:
+		return m_engineBRegisters.BG0CNT & 0xFF;
+	case 0x04001009:
+		return ((m_engineBRegisters.BG0CNT >> 8) & 0xFF);
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO read! addr={:#x}", address));
 	return 0;
@@ -352,16 +391,16 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		rebuildPageTables();
 		break;
 	case 0x04000000:
-		DISPCNT &= 0xFFFFFF00; DISPCNT |= value;
+		m_engineARegisters.DISPCNT &= 0xFFFFFF00; m_engineARegisters.DISPCNT |= value;
 		break;
 	case 0x04000001:
-		DISPCNT &= 0xFFFF00FF; DISPCNT |= (value << 8);
+		m_engineARegisters.DISPCNT &= 0xFFFF00FF; m_engineARegisters.DISPCNT |= (value << 8);
 		break;
 	case 0x04000002:
-		DISPCNT &= 0xFF00FFFF; DISPCNT |= (value << 16);
+		m_engineARegisters.DISPCNT &= 0xFF00FFFF; m_engineARegisters.DISPCNT |= (value << 16);
 		break;
 	case 0x04000003:
-		DISPCNT &= 0x00FFFFFF; DISPCNT |= (value << 24);
+		m_engineARegisters.DISPCNT &= 0x00FFFFFF; m_engineARegisters.DISPCNT |= (value << 24);
 		break;
 	case 0x04000004:
 		DISPSTAT &= 0xFF07; DISPSTAT |= (value & 0xF8);
@@ -374,6 +413,24 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		break;
 	case 0x04000009:
 		m_engineARegisters.BG0CNT &= 0x00FF; m_engineARegisters.BG0CNT |= (value << 8);
+		break;
+	case 0x04001000:
+		m_engineBRegisters.DISPCNT &= 0xFFFFFF00; m_engineBRegisters.DISPCNT |= value;
+		break;
+	case 0x04001001:
+		m_engineBRegisters.DISPCNT &= 0xFFFF00FF; m_engineBRegisters.DISPCNT |= (value << 8);
+		break;
+	case 0x04001002:
+		m_engineBRegisters.DISPCNT &= 0xFF00FFFF; m_engineBRegisters.DISPCNT |= (value << 16);
+		break;
+	case 0x04001003:
+		m_engineBRegisters.DISPCNT &= 0x00FFFFFF; m_engineBRegisters.DISPCNT |= (value << 24);
+		break;
+	case 0x04001008:
+		m_engineBRegisters.BG0CNT &= 0xFF00; m_engineBRegisters.BG0CNT |= value;
+		break;
+	case 0x04001009:
+		m_engineBRegisters.BG0CNT &= 0x00FF; m_engineBRegisters.BG0CNT |= (value << 8);
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));

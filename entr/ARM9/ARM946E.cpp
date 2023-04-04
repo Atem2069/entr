@@ -17,6 +17,9 @@ ARM946E::ARM946E(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<Inter
 	svcBankedRegisters[0] = 0x03003FC0;
 	svcBankedRegisters[1] = 0;
 
+	//27FFE34h/27FFE24h
+	m_bus->NDS9_write32(0x027FFE24, entry);
+
 	R[15] = entry + 8;
 	m_pipelineFlushed = false;
 }

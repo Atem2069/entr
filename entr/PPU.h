@@ -14,7 +14,14 @@ enum class PPUState
 
 struct PPURegisters
 {
+	uint32_t DISPCNT;
 	uint16_t BG0CNT;
+};
+
+enum class Engine
+{
+	A=0,
+	B=1
 };
 
 class PPU
@@ -60,7 +67,16 @@ private:
 	bool vblank_setHblankBit = false;
 
 	void renderLCDCMode();
-	void renderMode0();
+	template <Engine engine> void renderMode0();
+
+	template<Engine engine, int bg> void renderBackground();
+
+	template<Engine engine> uint8_t ppuReadBg(uint32_t address)
+	{
+		if (engine == Engine::A)
+			return *mapABgAddress(address);
+		return *mapBBgAddress(address);
+	}
 
 	void setVBlankFlag(bool value);
 	void setHBlankFlag(bool value);
@@ -68,12 +84,12 @@ private:
 
 	uint32_t col16to32(uint16_t col);
 
-	uint32_t DISPCNT = {};
 	uint16_t DISPSTAT = {};
 	uint16_t NDS7_DISPSTAT = {};
 	uint16_t VCOUNT = {};
 
 	PPURegisters m_engineARegisters = {};
+	PPURegisters m_engineBRegisters = {};
 
 
 	//dumb vram stuff
