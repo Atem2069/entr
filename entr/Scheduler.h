@@ -10,7 +10,11 @@ typedef void(*callbackFn)(void*);
 enum class Event
 {
 	Frame = 0,
-	PPU = 1
+	PPU = 1,
+	TIMER0=2,
+	TIMER1=3,
+	TIMER2=4,
+	TIMER3=5
 };
 
 struct SchedulerEntry

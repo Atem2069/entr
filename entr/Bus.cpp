@@ -1,13 +1,16 @@
 #include"Bus.h"
 
-Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input)
+Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::shared_ptr<Scheduler> scheduler, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input)
 {
 	m_interruptManager = interruptManager;
+	m_scheduler = scheduler;
 	m_ppu = ppu;
 	m_input = input;
 	m_mem = std::make_shared<NDSMem>();
 	m_ipc = std::make_shared<IPC>(m_interruptManager);
 	m_math = std::make_shared<DSMath>();
+	m_NDS9Timer = std::make_shared<Timer>(true, m_interruptManager, m_scheduler);
+	m_NDS7Timer = std::make_shared<Timer>(false, m_interruptManager, m_scheduler);
 	m_cartridge = std::make_shared<Cartridge>(m_interruptManager);
 
 	m_ppu->registerMemory(m_mem);
@@ -481,6 +484,9 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return m_ppu->NDS7_readIO(address);
 	case 0x040000BA: case 0x040000BB: case 0x040000C6: case 0x040000C7: case 0x040000D2: case 0x040000D3: case 0x040000DE: case 0x040000DF:
 		return NDS7_readDMAReg(address);
+	case 0x04000100: case 0x04000101: case 0x04000102: case 0x04000103: case 0x04000104: case 0x04000105: case 0x04000106: case 0x04000107:
+	case 0x04000108: case 0x04000109: case 0x0400010A: case 0x0400010B: case 0x0400010C: case 0x0400010D: case 0x0400010E: case 0x0400010F:
+		return m_NDS7Timer->readIO(address);
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
 	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
@@ -513,6 +519,10 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	case 0x040000D0: case 0x040000D1: case 0x040000D2: case 0x040000D3: case 0x040000D4: case 0x040000D5: case 0x040000D6: case 0x040000D7:
 	case 0x040000D8: case 0x040000D9: case 0x040000DA: case 0x040000DB: case 0x040000DC: case 0x040000DD: case 0x040000DE: case 0x040000DF:
 		NDS7_writeDMAReg(address, value);
+		break;
+	case 0x04000100: case 0x04000101: case 0x04000102: case 0x04000103: case 0x04000104: case 0x04000105: case 0x04000106: case 0x04000107:
+	case 0x04000108: case 0x04000109: case 0x0400010A: case 0x0400010B: case 0x0400010C: case 0x0400010D: case 0x0400010E: case 0x0400010F:
+		m_NDS7Timer->writeIO(address, value);
 		break;
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
@@ -587,6 +597,9 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 	case 0x040000E0: case 0x040000E1: case 0x040000E2: case 0x040000E3: case 0x040000E4: case 0x040000E5: case 0x040000E6: case 0x040000E7:
 	case 0x040000E8: case 0x040000E9: case 0x040000EA: case 0x040000EB: case 0x040000EC: case 0x040000ED: case 0x040000EE: case 0x040000EF:
 		return NDS9_readDMAReg(address);
+	case 0x04000100: case 0x04000101: case 0x04000102: case 0x04000103: case 0x04000104: case 0x04000105: case 0x04000106: case 0x04000107:
+	case 0x04000108: case 0x04000109: case 0x0400010A: case 0x0400010B: case 0x0400010C: case 0x0400010D: case 0x0400010E: case 0x0400010F:
+		return m_NDS9Timer->readIO(address);
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
 	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
@@ -628,6 +641,10 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	case 0x040000E0: case 0x040000E1: case 0x040000E2: case 0x040000E3: case 0x040000E4: case 0x040000E5: case 0x040000E6: case 0x040000E7:
 	case 0x040000E8: case 0x040000E9: case 0x040000EA: case 0x040000EB: case 0x040000EC: case 0x040000ED: case 0x040000EE: case 0x040000EF:
 		NDS9_writeDMAReg(address, value);
+		break;
+	case 0x04000100: case 0x04000101: case 0x04000102: case 0x04000103: case 0x04000104: case 0x04000105: case 0x04000106: case 0x04000107:
+	case 0x04000108: case 0x04000109: case 0x0400010A: case 0x0400010B: case 0x0400010C: case 0x0400010D: case 0x0400010E: case 0x0400010F:
+		m_NDS9Timer->writeIO(address, value);
 		break;
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);

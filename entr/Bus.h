@@ -6,6 +6,7 @@
 #include"Input.h"
 #include"IPC.h"
 #include"Math.h"
+#include"Timer.h"
 #include"Cartridge.h"
 
 #include<format>
@@ -31,7 +32,7 @@ struct DMAChannel
 class Bus
 {
 public:
-	Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input);
+	Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::shared_ptr<Scheduler> scheduler, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input);
 	~Bus();
 
 	//NDS7 read/write handlers
@@ -125,11 +126,14 @@ public:
 
 private:
 	std::shared_ptr<NDSMem> m_mem;
+	std::shared_ptr<Scheduler> m_scheduler;
 	std::shared_ptr<InterruptManager> m_interruptManager;
 	std::shared_ptr<PPU> m_ppu;
 	std::shared_ptr<Input> m_input;
 	std::shared_ptr<IPC> m_ipc;
 	std::shared_ptr<DSMath> m_math;
+	std::shared_ptr<Timer> m_NDS7Timer;
+	std::shared_ptr<Timer> m_NDS9Timer;
 	std::shared_ptr<Cartridge> m_cartridge;
 
 	DMAChannel m_NDS7Channels[4] = {};

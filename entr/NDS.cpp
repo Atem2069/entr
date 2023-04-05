@@ -47,7 +47,7 @@ void NDS::registerInput(std::shared_ptr<InputState> inp)
 
 void NDS::m_initialise()
 {
-	std::vector<uint8_t> romData = readFile("rom\\tetris.nds");
+	std::vector<uint8_t> romData = readFile("rom\\rockwrestler.nds");
 	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
 	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
@@ -65,7 +65,7 @@ void NDS::m_initialise()
 
 	m_interruptManager = std::make_shared<InterruptManager>();
 	m_ppu = std::make_shared<PPU>(m_interruptManager, m_scheduler);
-	m_bus = std::make_shared<Bus>(nds7bios,nds9bios,m_interruptManager,m_ppu, m_input);
+	m_bus = std::make_shared<Bus>(nds7bios,nds9bios,m_scheduler,m_interruptManager,m_ppu, m_input);
 	//load arm9/arm7 binaries
 	for (int i = 0; i < ARM9Size; i++)
 	{
