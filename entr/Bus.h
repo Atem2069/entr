@@ -150,6 +150,7 @@ private:
 	void NDS9_doDMATransfer(int channel);
 
 	uint8_t WRAMCNT = 0;
+	uint16_t EXMEMCNT = {};
 
 	void setByteInWord(uint32_t* word, uint8_t byte, int pos);
 	void setByteInHalfword(uint16_t* halfword, uint8_t byte, int pos);

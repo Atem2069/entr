@@ -243,8 +243,8 @@ void ARM7TDMI::setReg(uint8_t reg, uint32_t value)
 	R[reg] = value;
 	if (reg == 15)
 	{
-		static constexpr uint32_t maskLUT[2] = { 0xFFFFFFFC,0xFFFFFFFE };
-		R[15] &= maskLUT[m_inThumbMode];
+		//static constexpr uint32_t maskLUT[2] = { 0xFFFFFFFC,0xFFFFFFFE };
+		//R[15] &= maskLUT[m_inThumbMode];
 		flushPipeline();
 	}
 }

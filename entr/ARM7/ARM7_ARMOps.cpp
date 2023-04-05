@@ -195,7 +195,10 @@ void ARM7TDMI::ARM_DataProcessing()
 			if ((CPSR >> 5) & 0b1)
 			{
 				m_inThumbMode = true;
-				setReg(15, getReg(15) & ~0b1);
+				if (realign)
+					setReg(15, result & ~0b1);
+				else
+					setReg(15, getReg(15) & ~0b1);
 			}
 		}
 

@@ -619,6 +619,10 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 	case 0x040002B6: case 0x040002B7: case 0x040002B8: case 0x040002B9: case 0x040002BA: case 0x040002BB: case 0x040002BC: case 0x040002BD:
 	case 0x040002BE: case 0x040002BF:
 		return m_math->readIO(address);
+	case 0x04000204:
+		return EXMEMCNT & 0xFF;
+	case 0x04000205:
+		return ((EXMEMCNT >> 8) & 0xFF);
 	case 0x04000300:
 		return 1;
 	}
@@ -700,6 +704,12 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	case 0x040002B6: case 0x040002B7: case 0x040002B8: case 0x040002B9: case 0x040002BA: case 0x040002BB: case 0x040002BC: case 0x040002BD:
 	case 0x040002BE: case 0x040002BF:
 		m_math->writeIO(address, value);
+		break;
+	case 0x04000204:
+		EXMEMCNT &= 0xFF00; EXMEMCNT |= value;
+		break;
+	case 0x04000205:
+		EXMEMCNT &= 0xFF; EXMEMCNT |= (value << 8);
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
