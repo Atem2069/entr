@@ -500,6 +500,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return (m_mem->VRAM_C_ARM7) | (m_mem->VRAM_D_ARM7 << 1);
 	case 0x04000241:
 		return WRAMCNT;
+	case 0x04000300:
+		return 1;
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
@@ -617,6 +619,8 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 	case 0x040002B6: case 0x040002B7: case 0x040002B8: case 0x040002B9: case 0x040002BA: case 0x040002BB: case 0x040002BC: case 0x040002BD:
 	case 0x040002BE: case 0x040002BF:
 		return m_math->readIO(address);
+	case 0x04000300:
+		return 1;
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;

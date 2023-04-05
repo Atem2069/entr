@@ -218,6 +218,11 @@ void Bus::NDS7_checkDMAChannel(int channel)
 		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Channel {} immediate DMA. src={:#x} dest={:#x} words={:#x}", channel, m_NDS7Channels[channel].internalSrc, m_NDS7Channels[channel].internalDest, m_NDS7Channels[channel].internalWordCount));
 		NDS7_doDMATransfer(channel);
 	}
+	else
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Channel {} DMA, start timing={} src={:#x} dest={:#x}", channel, startTiming, m_NDS7Channels[channel].internalSrc, m_NDS7Channels[channel].internalDest));
+		m_NDS7Channels[channel].control &= 0x7FFF;
+	}
 }
 
 void Bus::NDS7_doDMATransfer(int channel)

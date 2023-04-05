@@ -304,7 +304,10 @@ void Bus::NDS9_checkDMAChannel(int channel)
 			NDS9_doDMATransfer(channel);
 		}
 		else
+		{
+			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Channel {} DMA, start timing={} src={:#x} dest={:#x}", channel, startTiming, m_NDS9Channels[channel].internalSrc, m_NDS9Channels[channel].internalDest));
 			m_NDS9Channels[channel].control &= 0x7FFF;	//dumb, remove when properly impl. other dma types
+		}
 	}
 }
 
