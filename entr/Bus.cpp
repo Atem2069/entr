@@ -8,6 +8,7 @@ Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::sh
 	m_mem = std::make_shared<NDSMem>();
 	m_ipc = std::make_shared<IPC>(m_interruptManager);
 	m_math = std::make_shared<DSMath>();
+	m_cartridge = std::make_shared<Cartridge>(m_interruptManager);
 
 	m_ppu->registerMemory(m_mem);
 
@@ -454,6 +455,7 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 	{
 		uint8_t* addr = getVRAMAddr(address);
 		setValue32(addr, 0, 0xFFFF,value);
+		break;
 	}
 	case 7:
 		setValue32(m_mem->OAM, address & 0x7FF, 0x7FF, value);
@@ -486,6 +488,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
 		return m_interruptManager->NDS7_readIO(address);
+	case 0x040001A0: case 0x040001A1: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x04100010: case 0x04100011: case 0x04100012: case 0x04100013:
+		return m_cartridge->read(address);
 	case 0x04000240:
 		return (m_mem->VRAM_C_ARM7) | (m_mem->VRAM_D_ARM7 << 1);
 	case 0x04000241:
@@ -516,6 +520,9 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
 		m_ipc->NDS7_write8(address, value);
 		break;
+	case 0x040001A0: case 0x040001A1: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x04100010: case 0x04100011: case 0x04100012: case 0x04100013:
+		m_cartridge->write(address, value);
+		break;
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
 		m_interruptManager->NDS7_writeIO(address,value);
@@ -543,10 +550,13 @@ void Bus::NDS7_writeIO16(uint32_t address, uint16_t value)
 
 uint32_t Bus::NDS7_readIO32(uint32_t address)
 {
-	//special case: read ipcfifo
-	if (address == 0x04100000)
+	switch (address)
+	{
+	case 0x04100000:
 		return m_ipc->NDS7_read32(address);
-
+	case 0x04100010:
+		return m_cartridge->readGamecard();
+	}
 	uint16_t lower = NDS7_readIO16(address);
 	uint16_t upper = NDS7_readIO16(address + 2);
 	return (upper << 16) | lower;

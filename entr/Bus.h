@@ -6,6 +6,7 @@
 #include"Input.h"
 #include"IPC.h"
 #include"Math.h"
+#include"Cartridge.h"
 
 #include<format>
 
@@ -129,6 +130,7 @@ private:
 	std::shared_ptr<Input> m_input;
 	std::shared_ptr<IPC> m_ipc;
 	std::shared_ptr<DSMath> m_math;
+	std::shared_ptr<Cartridge> m_cartridge;
 
 	DMAChannel m_NDS7Channels[4] = {};
 	DMAChannel m_NDS9Channels[4] = {};

@@ -20,7 +20,8 @@ enum class InterruptType
 	GBASlot = (1 << 13),
 	IPCSync = (1 << 16),
 	IPCSend = (1 << 17),
-	IPCReceive = (1 << 18)
+	IPCReceive = (1 << 18),
+	GamecardTransferComplete = (1<<19)
 	//todo: more interrupt sources
 };
 

@@ -143,6 +143,7 @@
     <ClCompile Include="ARM9\ARM9_Flags.cpp" />
     <ClCompile Include="ARM9\ARM9_ThumbOps.cpp" />
     <ClCompile Include="Bus.cpp" />
+    <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="InterruptManager.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="ARM7\ARM7TDMI.h" />
     <ClInclude Include="ARM9\ARM946E.h" />
     <ClInclude Include="Bus.h" />
+    <ClInclude Include="Cartridge.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="InterruptManager.h" />
