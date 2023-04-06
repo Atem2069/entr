@@ -255,7 +255,7 @@ void ARM946E::Thumb_HiRegisterOperations()
 		}
 		bool link = ((m_currentOpcode >> 7) & 0b1);
 		if (link)
-			setReg(14, oldPC - 1);
+			setReg(14, (oldPC&~0b1)-1);
 		break;
 	}
 	}

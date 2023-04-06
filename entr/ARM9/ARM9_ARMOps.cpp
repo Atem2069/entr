@@ -204,11 +204,12 @@ void ARM946E::ARM_DataProcessing()
 			CPSR = newPSR;
 			swapBankedRegisters();
 
-			if ((CPSR >> 5) & 0b1)
+			if (((CPSR >> 5) & 0b1)&&realign)
 			{
 				m_inThumbMode = true;
-				if (realign)
-					setReg(15, result & ~0b1);	//ehh... not sure about this
+				setReg(15, result & ~0b1);
+				//std::cout << "opcode: " << std::hex << (int)operation << " result " << result << " r15 " << getReg(15) << '\n';
+				//std::cout << "test\n" << '\n'
 			}
 		}
 
@@ -264,7 +265,8 @@ void ARM946E::ARM_PSRTransfer()
 			{
 				// Switch to THUMB
 				m_inThumbMode = true;
-				setReg(15, getReg(15) & ~0x1); // also flushes pipeline
+				m_pipelineFlushed = true;
+				//setReg(15, getReg(15) & ~0x1); // also flushes pipeline
 			}
 		}
 	}
@@ -728,6 +730,9 @@ void ARM946E::ARM_BlockDataTransfer()
 	uint32_t old_base = base_addr;
 
 	uint32_t oldCPSR = CPSR;
+	bool loadSPSR = (r_list >> 15) && psr;
+	if (loadSPSR)
+		psr = false;
 	if (psr)
 	{
 		//force user mode
@@ -836,6 +841,14 @@ void ARM946E::ARM_BlockDataTransfer()
 
 		if (upDown)
 			setReg(baseReg, old_base + 0x40);	//use old_base bc 'base_addr' might have been offset by 4h already
+	}
+
+	if (loadSPSR)
+	{
+		CPSR = getSPSR();
+		swapBankedRegisters();
+		if ((CPSR >> 5) & 0b1)
+			std::cout << "oh no" << '\n';
 	}
 }
 

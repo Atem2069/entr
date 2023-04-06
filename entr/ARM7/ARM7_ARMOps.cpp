@@ -184,7 +184,7 @@ void ARM7TDMI::ARM_DataProcessing()
 		break;
 	}
 
-	if (destRegIdx == 15)
+	if ((destRegIdx == 15))
 	{
 		if (setCPSR)
 		{
@@ -192,13 +192,10 @@ void ARM7TDMI::ARM_DataProcessing()
 			CPSR = newPSR;
 			swapBankedRegisters();
 
-			if ((CPSR >> 5) & 0b1)
+			if (((CPSR >> 5) & 0b1)&&realign)
 			{
 				m_inThumbMode = true;
-				if (realign)
-					setReg(15, result & ~0b1);
-				else
-					setReg(15, getReg(15) & ~0b1);
+				setReg(15, getReg(15) & ~0b1);
 			}
 		}
 

@@ -302,8 +302,8 @@ void ARM946E::setReg(uint8_t reg, uint32_t value)
 	{
 		m_pipelineFlushed = true;
 		R[reg] += (incrAmountLUT[m_inThumbMode] << 1);
-		static constexpr int maskLUT[2] = { 0xFFFFFFFC,0xFFFFFFFE };
-		R[reg] &= maskLUT[m_inThumbMode];
+		//static constexpr int maskLUT[2] = { 0xFFFFFFFC,0xFFFFFFFE };
+		//R[reg] &= maskLUT[m_inThumbMode];
 	}
 }
 
