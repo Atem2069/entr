@@ -71,9 +71,6 @@ void ARM946E::run(int cycles)
 	{
 		fetch();
 
-		if (dispatchInterrupt())
-			continue;
-
 		switch (m_inThumbMode)
 		{
 		case 0:
@@ -87,6 +84,7 @@ void ARM946E::run(int cycles)
 			R[15] += incrAmountLUT[m_inThumbMode];
 		}
 		m_pipelineFlushed = false;
+		dispatchInterrupt();
 	}
 }
 
@@ -134,10 +132,11 @@ bool ARM946E::dispatchInterrupt()
 	swapBankedRegisters();
 
 	bool wasThumb = ((oldCPSR >> 5) & 0b1);
-	constexpr int pcOffsetAmount[2] = { 4,2 };
+	constexpr int pcOffsetAmount[2] = { 8,4 };
 	setSPSR(oldCPSR);
 	setReg(14, getReg(15) - pcOffsetAmount[wasThumb]);
 	setReg(15, 0xFFFF0018);	//ARM9 uses high interrupt vector?
+	m_pipelineFlushed = false;
 	return true;
 }
 
