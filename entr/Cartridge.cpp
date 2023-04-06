@@ -10,6 +10,71 @@ Cartridge::~Cartridge()
 
 }
 
+uint8_t Cartridge::NDS7_read(uint32_t address)
+{
+	if (!NDS7HasAccess)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
+		return 0;
+	}
+	return read(address);
+}
+
+void Cartridge::NDS7_write(uint32_t address, uint8_t value)
+{
+	if (!NDS7HasAccess)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to write gamecard registers without access!!");
+		return;
+	}
+	write(address, value);
+}
+
+uint32_t Cartridge::NDS7_readGamecard()
+{
+	if (!NDS7HasAccess)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
+		return 0;
+	}
+	return readGamecard();
+}
+
+uint8_t Cartridge::NDS9_read(uint32_t address)
+{
+	if (NDS7HasAccess)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
+		return 0;
+	}
+	return read(address);
+}
+
+void Cartridge::NDS9_write(uint32_t address, uint8_t value)
+{
+	if (NDS7HasAccess)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to write gamecard registers without access!!");
+		return;
+	}
+	write(address, value);
+}
+
+uint32_t Cartridge::NDS9_readGamecard()
+{
+	if (NDS7HasAccess)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
+		return 0;
+	}
+	return readGamecard();
+}
+
+void Cartridge::setNDS7AccessRights(bool val)
+{
+	NDS7HasAccess = val;
+}
+
 uint8_t Cartridge::read(uint32_t address)
 {
 	//std::cout << "read " << std::hex << address << '\n';
@@ -68,6 +133,16 @@ void Cartridge::write(uint32_t address, uint8_t value)
 		}
 		break;
 	}
+	case 0x040001A8: case 0x040001A9: case 0x040001AA: case 0x040001AB: case 0x040001AC: case 0x040001AD: case 0x040001AE: case 0x040001AF:
+	{
+		std::cout << "cmd write: " << std::hex << (int)value << '\n';
+		int shiftOffs = 56 - ((address & 0b111) << 3);
+		cartCommand &= ~(((uint64_t)0xFF) << shiftOffs);
+		cartCommand |= ((uint64_t)(value) << shiftOffs);
+		if ((address & 0b111) == 7)
+			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Cartridge command: {:#x}",cartCommand));
+		break;
+	}
 	}
 }
 
@@ -83,7 +158,12 @@ uint32_t Cartridge::readGamecard()
 			transferInProgress = false;
 			ROMCTRL &= 0x7FFFFFFF;
 			if ((AUXSPICNT >> 14) & 0b1)
-				m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
+			{
+				if (NDS7HasAccess)
+					m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
+				else
+					m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
+			}
 			ROMCTRL &= ~(1 << 23);
 		}
 	}
