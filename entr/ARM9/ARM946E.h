@@ -278,6 +278,8 @@ private:
 		return conditionCodeLUT;
 	}
 
+	bool m_halted = false;
+
 	//Coprocessor registers
 	uint32_t CP15_MainID = 0x41059461;
 	uint32_t CP15_CacheType = 0x0F0D2112;

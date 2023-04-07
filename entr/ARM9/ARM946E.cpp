@@ -69,6 +69,13 @@ void ARM946E::run(int cycles)
 {
 	for (int i = 0; i < cycles; i++)
 	{
+		if (m_halted)
+		{
+			if (m_interruptManager->NDS9_getInterrupt() && m_interruptManager->NDS9_getInterruptsEnabled())
+				m_halted = false;
+			else
+				return;
+		}
 		fetch();
 
 		switch (m_inThumbMode)
