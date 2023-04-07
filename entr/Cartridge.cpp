@@ -121,22 +121,11 @@ void Cartridge::write(uint32_t address, uint8_t value)
 		bool start = (!(ROMCTRL >> 31) && (value >> 7));
 		ROMCTRL &= 0x00FFFFFF; ROMCTRL |= (value << 24);
 		if (start)
-		{
-			bytesTransferred = 0;
-			uint8_t transferBlockSize = ((ROMCTRL >> 24) & 0b111);
-			if (transferBlockSize == 7)
-				transferLength = 4;
-			else
-				transferLength = 0x100 << transferBlockSize;
-			transferInProgress = true;
-			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Transfer started. length={}", transferLength));
-			ROMCTRL |= (1 << 23);
-		}
+			startTransfer();
 		break;
 	}
 	case 0x040001A8: case 0x040001A9: case 0x040001AA: case 0x040001AB: case 0x040001AC: case 0x040001AD: case 0x040001AE: case 0x040001AF:
 	{
-		std::cout << "cmd write: " << std::hex << (int)value << '\n';
 		int shiftOffs = 56 - ((address & 0b111) << 3);
 		cartCommand &= ~(((uint64_t)0xFF) << shiftOffs);
 		cartCommand |= ((uint64_t)(value) << shiftOffs);
@@ -149,9 +138,10 @@ void Cartridge::write(uint32_t address, uint8_t value)
 
 uint32_t Cartridge::readGamecard()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Transferring word {}", bytesTransferred>>2));
+	uint32_t result = 0;
 	if (transferInProgress)
 	{
+		result = readBuffer[bytesTransferred] | (readBuffer[bytesTransferred+1] << 8) | (readBuffer[bytesTransferred + 2] << 16) | (readBuffer[bytesTransferred + 3] << 24);
 		bytesTransferred += 4;
 		if (bytesTransferred == transferLength)
 		{
@@ -168,5 +158,48 @@ uint32_t Cartridge::readGamecard()
 			ROMCTRL &= ~(1 << 23);
 		}
 	}
-	return 0xFFFFFFFF;	//should send data according to command :)
+	return result;
+	//return 0xFFFFFFFF;	//should send data according to command :)
+}
+
+void Cartridge::startTransfer()
+{
+	bytesTransferred = 0;
+	uint8_t transferBlockSize = ((ROMCTRL >> 24) & 0b111);
+	if (transferBlockSize == 7)
+		transferLength = 4;
+	else
+		transferLength = 0x100 << transferBlockSize;
+
+	uint8_t commandId = ((cartCommand >> 56) & 0xFF);
+	switch (commandId)
+	{
+	case 0xB7:
+	{
+		uint32_t baseAddr = ((cartCommand >> 24) & 0xFFFFFFFF);
+		for (int i = 0; i < transferLength; i++)
+			readBuffer[i] = m_cartData[baseAddr + i];
+		//memcpy(readBuffer, &m_cartData[baseAddr], transferLength);
+		break;
+	}
+	case 0xB8:
+	{
+		// 0x00001FC2
+		readBuffer[0] = 0xC2;
+		readBuffer[1] = 0x1F;
+		readBuffer[2] = 0;
+		readBuffer[3] = 0;
+		break;
+	}
+	default:
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown cartridge command {:#x}",commandId));
+		memset(readBuffer, 0xFF, transferLength);
+		break;
+	}
+	}
+
+	transferInProgress = true;
+	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Gamecard transfer started. length={}", transferLength));
+	ROMCTRL |= (1 << 23);
 }

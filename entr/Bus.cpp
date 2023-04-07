@@ -497,6 +497,10 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	case 0x040001A0: case 0x040001A1: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x040001A8: case 0x040001A9:
 	case 0x040001AA: case 0x040001AB: case 0x040001AC: case 0x040001AD: case 0x040001AE: case 0x040001AF: case 0x04100010: case 0x04100011: case 0x04100012: case 0x04100013:
 		return m_cartridge->NDS7_read(address);
+	case 0x04000204:
+		return (EXMEMCNT & 0xFF);
+	case 0x04000205:
+		return ((EXMEMCNT >> 8) & 0xFF);
 	case 0x04000240:
 		return (m_mem->VRAM_C_ARM7) | (m_mem->VRAM_D_ARM7 << 1);
 	case 0x04000241:
@@ -540,6 +544,9 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
 		m_interruptManager->NDS7_writeIO(address,value);
+		break;
+	case 0x04000204:
+		EXMEMCNT &= 0xFF00; EXMEMCNT |= value;
 		break;
 	case 0x04000301:
 		//halt

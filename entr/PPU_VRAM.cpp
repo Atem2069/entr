@@ -212,7 +212,11 @@ uint8_t* PPU::mapLCDCAddress(uint32_t address)
 	address &= 0xFFFFF;
 	uint8_t page = (address >> 14);
 	uint32_t offset = address & 0x3FFF;
-	return m_mem->LCDCPageTable[page] + offset;
+	//return m_mem->LCDCPageTable[page] + offset;
+	uint8_t* pagePtr = m_mem->LCDCPageTable[page];
+	if (!pagePtr)
+		return m_mem->VRAM;
+	return pagePtr + offset;
 }
 
 uint8_t* PPU::mapABgAddress(uint32_t address)
@@ -220,7 +224,10 @@ uint8_t* PPU::mapABgAddress(uint32_t address)
 	address &= 0x7FFFF;
 	uint8_t page = (address >> 14);
 	uint32_t offset = address & 0x3FFF;
-	return m_mem->ABGPageTable[page] + offset;
+	uint8_t* pagePtr = m_mem->ABGPageTable[page];
+	if (!pagePtr)
+		return m_mem->VRAM;
+	return pagePtr + offset;
 }
 
 uint8_t* PPU::mapAObjAddress(uint32_t address)
@@ -228,7 +235,10 @@ uint8_t* PPU::mapAObjAddress(uint32_t address)
 	address &= 0x3FFFF;
 	uint8_t page = (address >> 14);
 	uint32_t offset = address & 0x3FFF;
-	return m_mem->AObjPageTable[page] + offset;
+	uint8_t* pagePtr = m_mem->AObjPageTable[page];
+	if (!pagePtr)
+		return m_mem->VRAM;
+	return pagePtr + offset;
 
 }
 
@@ -237,7 +247,10 @@ uint8_t* PPU::mapBBgAddress(uint32_t address)
 	address &= 0x1FFFF;
 	uint8_t page = (address >> 14);
 	uint32_t offset = address & 0x3FFF;
-	return m_mem->BBGPageTable[page] + offset;
+	uint8_t* pagePtr = m_mem->BBGPageTable[page];
+	if (!pagePtr)
+		return m_mem->VRAM;
+	return pagePtr + offset;
 }
 
 uint8_t* PPU::mapBObjAddress(uint32_t address)
@@ -245,7 +258,10 @@ uint8_t* PPU::mapBObjAddress(uint32_t address)
 	address &= 0x1FFFF;
 	uint8_t page = (address >> 14);
 	uint32_t offset = address & 0x3FFF;
-	return m_mem->BObjPageTable[page] + offset;
+	uint8_t* pagePtr = m_mem->BObjPageTable[page];
+	if (!pagePtr)
+		return m_mem->VRAM;
+	return pagePtr + offset;
 }
 
 uint8_t* PPU::mapARM7Address(uint32_t address)
@@ -253,5 +269,8 @@ uint8_t* PPU::mapARM7Address(uint32_t address)
 	address &= 0x3ffff;
 	uint8_t page = (address >> 17);
 	uint32_t offset = address & 0x1FFFF;
-	return m_mem->ARM7VRAMPageTable[page] + offset;
+	uint8_t* pagePtr = m_mem->ARM7VRAMPageTable[page];
+	if (!pagePtr)
+		return m_mem->VRAM;
+	return pagePtr + offset;
 }

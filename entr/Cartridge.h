@@ -19,6 +19,7 @@ public:
 
 	void setNDS7AccessRights(bool val);
 private:
+	void startTransfer();
 	std::vector<uint8_t> m_cartData;	//vector probably sucks, but oh well
 	uint8_t read(uint32_t address);
 	void write(uint32_t address, uint8_t value);
@@ -29,6 +30,7 @@ private:
 	uint16_t AUXSPICNT = {};
 	uint32_t ROMCTRL = {};
 
+	uint8_t readBuffer[0x2000];
 	int transferLength = 0, bytesTransferred = 0;
 	bool transferInProgress = false;
 	bool NDS7HasAccess = false;
