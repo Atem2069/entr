@@ -99,7 +99,12 @@ private:
 
 	void setVBlankFlag(bool value);
 	void setHBlankFlag(bool value);
-	void setVCounterFlag(bool value);
+	void NDS7_setVCounterFlag(bool value);
+	void NDS9_setVCounterFlag(bool value);
+
+	void checkVCOUNTInterrupt();
+	bool nds7_vcountIRQLine = false;
+	bool nds9_vcountIRQLine = false;
 
 	uint32_t col16to32(uint16_t col);
 

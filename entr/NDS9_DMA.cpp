@@ -4,18 +4,98 @@ uint8_t Bus::NDS9_readDMAReg(uint32_t address)
 {
 	switch (address)
 	{
+	case 0x040000B0:
+		return m_NDS9Channels[0].src & 0xFF;
+	case 0x040000B1:
+		return ((m_NDS9Channels[0].src >> 8) & 0xFF);
+	case 0x040000B2:
+		return ((m_NDS9Channels[0].src >> 16) & 0xFF);
+	case 0x040000B3:
+		return ((m_NDS9Channels[0].src >> 24) & 0xFF);
+	case 0x040000B4:
+		return ((m_NDS9Channels[0].dest) & 0xFF);
+	case 0x040000B5:
+		return ((m_NDS9Channels[0].dest >> 8) & 0xFF);
+	case 0x040000B6:
+		return ((m_NDS9Channels[0].dest >> 16) & 0xFF);
+	case 0x040000B7:
+		return ((m_NDS9Channels[0].dest >> 24) & 0xFF);
+	case 0x040000B8:
+		return m_NDS9Channels[0].wordCount & 0xFF;
+	case 0x040000B9:
+		return ((m_NDS9Channels[0].wordCount >> 8) & 0xFF);
 	case 0x040000BA:
 		return m_NDS9Channels[0].control & 0xFF;
 	case 0x040000BB:
 		return ((m_NDS9Channels[0].control >> 8) & 0xFF);
+	case 0x040000BC:
+		return m_NDS9Channels[1].src & 0xFF;
+	case 0x040000BD:
+		return ((m_NDS9Channels[1].src >> 8) & 0xFF);
+	case 0x040000BE:
+		return ((m_NDS9Channels[1].src >> 16) & 0xFF);
+	case 0x040000BF:
+		return ((m_NDS9Channels[1].src >> 24) & 0xFF);
+	case 0x040000C0:
+		return ((m_NDS9Channels[1].dest) & 0xFF);
+	case 0x040000C1:
+		return ((m_NDS9Channels[1].dest >> 8) & 0xFF);
+	case 0x040000C2:
+		return ((m_NDS9Channels[1].dest >> 16) & 0xFF);
+	case 0x040000C3:
+		return ((m_NDS9Channels[1].dest >> 24) & 0xFF);
+	case 0x040000C4:
+		return m_NDS9Channels[1].wordCount & 0xFF;
+	case 0x040000C5:
+		return ((m_NDS9Channels[1].wordCount >> 8) & 0xFF);
 	case 0x040000C6:
 		return m_NDS9Channels[1].control & 0xFF;
 	case 0x040000C7:
 		return ((m_NDS9Channels[1].control >> 8) & 0xFF);
+	case 0x040000C8:
+		return m_NDS9Channels[2].src & 0xFF;
+	case 0x040000C9:
+		return ((m_NDS9Channels[2].src >> 8) & 0xFF);
+	case 0x040000CA:
+		return ((m_NDS9Channels[2].src >> 16) & 0xFF);
+	case 0x040000CB:
+		return ((m_NDS9Channels[2].src >> 24) & 0xFF);
+	case 0x040000CC:
+		return m_NDS9Channels[2].dest & 0xFF;
+	case 0x040000CD:
+		return ((m_NDS9Channels[2].dest >> 8) & 0xFF);
+	case 0x040000CE:
+		return ((m_NDS9Channels[2].dest >> 16) & 0xFF);
+	case 0x040000CF:
+		return ((m_NDS9Channels[2].dest >> 24) & 0xFF);
+	case 0x040000D0:
+		return m_NDS9Channels[2].wordCount & 0xFF;
+	case 0x040000D1:
+		return ((m_NDS9Channels[2].wordCount >> 8) & 0xFF);
 	case 0x040000D2:
 		return m_NDS9Channels[2].control & 0xFF;
 	case 0x040000D3:
 		return ((m_NDS9Channels[2].control >> 8) & 0xFF);
+	case 0x040000D4:
+		return m_NDS9Channels[3].src & 0xFF;
+	case 0x040000D5:
+		return ((m_NDS9Channels[3].src >> 8) & 0xFF);
+	case 0x040000D6:
+		return ((m_NDS9Channels[3].src >> 16) & 0xFF);
+	case 0x040000D7:
+		return ((m_NDS9Channels[3].src >> 24) & 0xFF);
+	case 0x040000D8:
+		return m_NDS9Channels[3].dest & 0xFF;
+	case 0x040000D9:
+		return ((m_NDS9Channels[3].dest >> 8) & 0xFF);
+	case 0x040000DA:
+		return ((m_NDS9Channels[3].dest >> 16) & 0xFF);
+	case 0x040000DB:
+		return ((m_NDS9Channels[3].dest >> 24) & 0xFF);
+	case 0x040000DC:
+		return m_NDS9Channels[3].wordCount & 0xFF;
+	case 0x040000DD:
+		return ((m_NDS9Channels[3].wordCount >> 8) & 0xFF);
 	case 0x040000DE:
 		return m_NDS9Channels[3].control & 0xFF;
 	case 0x040000DF:
@@ -336,11 +416,15 @@ void Bus::NDS9_doDMATransfer(int channel)
 	{
 		if (wordTransfer)
 		{
+			src &= 0xFFFFFFFC;
+			dest &= 0xFFFFFFFE;
 			uint32_t val = NDS9_read32(src);
 			NDS9_write32(dest, val);
 		}
 		else
 		{
+			src &= 0xFFFFFFFE;
+			dest &= 0xFFFFFFFE;
 			uint16_t val = NDS9_read16(src);
 			NDS9_write16(dest, val);
 		}

@@ -46,11 +46,6 @@ void SPI::write(uint32_t address, uint8_t value)
 		enabled = ((SPICNT >> 15) & 0b1);
 		chipSelectHold = ((SPICNT >> 11) & 0b1);
 		deviceSelect = ((SPICNT >> 8) & 0b11);
-		if (enabled && !enable_old || (enabled && !enable_old) || (deviceSelect!=oldDeviceSelect))
-		{
-			if (deviceSelect == 1)
-				m_firmware->deselect();
-		}
 		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("New SPI settings. enabled={} irq={} chipselect hold = {} device={}", enabled, irq, chipSelectHold, deviceSelect));
 		break;
 	}

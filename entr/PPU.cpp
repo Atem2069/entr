@@ -98,7 +98,7 @@ void PPU::HBlank()
 {
 	setHBlankFlag(false);
 	VCOUNT++;
-	//check vcount interrupt
+	checkVCOUNTInterrupt();
 
 	if (VCOUNT == 192)
 	{
@@ -139,7 +139,14 @@ void PPU::VBlank()
 	{
 		setVBlankFlag(false);
 		VCOUNT = 0;
+		checkVCOUNTInterrupt();
 		m_state = PPUState::HDraw;
+	}
+	else
+	{
+		if (VCOUNT == 261)
+			setVBlankFlag(false);
+		checkVCOUNTInterrupt();
 	}
 	//todo: weird behaviour of last line in vblank (same as in gba)
 
@@ -256,7 +263,7 @@ template<Engine engine, int bg> void PPU::renderBackground()
 
 	uint8_t bgPriority = ctrlReg & 0b11;
 	m_backgroundLayers[bg].priority = bgPriority;
-	uint32_t tileDataBaseBlock = ((ctrlReg >> 2) & 0b11);
+	uint32_t tileDataBaseBlock = ((ctrlReg >> 2) & 0b1111);
 	bool hiColor = ((ctrlReg >> 7) & 0b1);
 	uint32_t bgMapBaseBlock = ((ctrlReg >> 8) & 0x1F);
 	int screenSize = ((ctrlReg >> 14) & 0b11);
@@ -536,6 +543,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		break;
 	case 0x04000005:
 		DISPSTAT &= 0x00FF; DISPSTAT |= (value << 8);
+		checkVCOUNTInterrupt();
 		break;
 	case 0x04000008:
 		m_engineARegisters.BG0CNT &= 0xFF00; m_engineARegisters.BG0CNT |= value;
@@ -632,6 +640,7 @@ void PPU::NDS7_writeIO(uint32_t address, uint8_t value)
 		break;
 	case 0x04000005:
 		NDS7_DISPSTAT &= 0x00FF; NDS7_DISPSTAT |= (value << 8);
+		checkVCOUNTInterrupt();
 		break;
 	}
 }
@@ -652,12 +661,32 @@ void PPU::setHBlankFlag(bool value)
 	NDS7_DISPSTAT |= (value << 1);
 }
 
-void PPU::setVCounterFlag(bool value)
+void PPU::NDS7_setVCounterFlag(bool value)
+{
+	NDS7_DISPSTAT &= ~0b100;
+	NDS7_DISPSTAT |= (value << 2);
+}
+
+void PPU::NDS9_setVCounterFlag(bool value)
 {
 	DISPSTAT &= ~0b100;
 	DISPSTAT |= (value << 2);
-	NDS7_DISPSTAT &= ~0b100;
-	NDS7_DISPSTAT |= (value << 2);
+}
+
+void PPU::checkVCOUNTInterrupt()
+{
+	uint16_t vcountCompare = ((DISPSTAT >> 8) & 0xFF) | (((DISPSTAT >> 7) & 0b1) << 8);
+	bool matches = (vcountCompare == VCOUNT);
+	NDS9_setVCounterFlag(matches);
+	if (matches && ((DISPSTAT >> 5) & 0b1) && !nds9_vcountIRQLine)
+		m_interruptManager->NDS9_requestInterrupt(InterruptType::VCount);
+	nds9_vcountIRQLine = matches;
+
+	vcountCompare = ((NDS7_DISPSTAT >> 8) & 0xFF) | (((NDS7_DISPSTAT >> 7) & 0b1) << 8);
+	matches = (vcountCompare == VCOUNT);
+	if (matches && ((NDS7_DISPSTAT >> 5) & 0b1) && !nds7_vcountIRQLine)
+		m_interruptManager->NDS7_requestInterrupt(InterruptType::VCount);
+	nds7_vcountIRQLine = matches;
 }
 
 uint32_t PPU::col16to32(uint16_t col)
