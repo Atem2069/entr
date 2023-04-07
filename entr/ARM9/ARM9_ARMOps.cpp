@@ -902,6 +902,9 @@ void ARM946E::ARM_CoprocessorRegisterTransfer()
 			ITCM_Base = ((ITCM_Ctrl >> 12)) << 12;
 			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("New ITCM settings. base={:#x} size={:#x}", ITCM_Base, ITCM_Size));
 			break;
+		case 0x0704: case 0x0782:
+			Logger::getInstance()->msg(LoggerSeverity::Warn, "Unimplemented ARM9 halt.");
+			break;
 		}
 	}
 	

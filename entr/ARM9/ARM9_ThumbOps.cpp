@@ -553,6 +553,7 @@ void ARM946E::Thumb_MultipleLoadStore()
 	}
 
 	uint32_t base = R[baseRegIdx];
+	uint32_t oldBase = base;
 	uint32_t finalBase = base + (transferCount * 4);	//figure out final val of base address
 
 	bool firstAccess = true;
@@ -571,8 +572,8 @@ void ARM946E::Thumb_MultipleLoadStore()
 			else
 			{
 				uint32_t val = R[i];
-				if (i == baseRegIdx && !baseIsFirst)
-					val = finalBase;
+				if (i == baseRegIdx)
+					val = oldBase;
 				m_write32(base, val);
 			}
 			firstAccess = false;
@@ -580,21 +581,8 @@ void ARM946E::Thumb_MultipleLoadStore()
 		}
 	}
 
-	if (transferCount)
+	if(!transferCount)
 	{
-		int totalCycles = transferCount + ((loadStore) ? 2 : 1);
-	}
-	else
-	{
-		if (loadStore)
-		{
-			//not sure about this timing.
-			setReg(15, m_read32(base));
-		}
-		else
-		{
-			m_write32(base, R[15] + 2);	//+2 for pipeline effect
-		}
 		R[baseRegIdx] = base + 0x40;
 		writeback = false;
 	}
