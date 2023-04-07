@@ -451,18 +451,9 @@ void ARM946E::ARM_HalfwordTransferRegisterOffset()
 			setReg(srcDestRegIdx, val);
 			break;
 		case 3:
-			if (!(base & 0b1))
-			{
-				val = m_read16(base);
-				if (((val >> 15) & 0b1))
-					val |= 0xFFFF0000;
-			}
-			else
-			{
-				val = m_read8(base);
-				if (((val >> 7) & 0b1))
-					val |= 0xFFFFFF00;
-			}
+			val = m_read16(base);
+			if (((val >> 15) & 0b1))
+				val |= 0xFFFF0000;
 			setReg(srcDestRegIdx, val);
 			break;
 		}
@@ -550,18 +541,9 @@ void ARM946E::ARM_HalfwordTransferImmediateOffset()
 			setReg(srcDestRegIdx, data);
 			break;
 		case 3:
-			if (!(base & 0b1))
-			{
-				data = m_read16(base);
-				if (((data >> 15) & 0b1))
-					data |= 0xFFFF0000;
-			}
-			else
-			{
-				data = m_read8(base);
-				if (((data >> 7) & 0b1))
-					data |= 0xFFFFFF00;
-			}
+			data = m_read16(base);
+			if (((data >> 15) & 0b1))
+				data |= 0xFFFF0000;
 			setReg(srcDestRegIdx, data);
 			break;
 		}

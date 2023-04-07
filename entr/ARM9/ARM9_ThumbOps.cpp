@@ -342,19 +342,9 @@ void ARM946E::Thumb_LoadStoreSignExtended()
 	}
 	else if (op == 3)   //load sign extended halfword
 	{
-		uint32_t val = 0;
-		if (!(addr & 0b1))
-		{
-			val = m_read16(addr);
-			if (((val >> 15) & 0b1))
-				val |= 0xFFFF0000;
-		}
-		else
-		{
-			val = m_read8(addr);
-			if (((val >> 7) & 0b1))
-				val |= 0xFFFFFF00;
-		}
+		uint32_t val = m_read16(addr);
+		if (((val >> 15) & 0b1))
+			val |= 0xFFFF0000;
 		R[srcDestRegIdx] = val;
 	}
 }

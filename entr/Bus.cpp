@@ -546,7 +546,7 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 		m_interruptManager->NDS7_writeIO(address,value);
 		break;
 	case 0x04000204:
-		EXMEMCNT &= 0xFF00; EXMEMCNT |= value;
+		EXMEMCNT &= 0xFF80; EXMEMCNT |= value&0x7F;
 		break;
 	case 0x04000301:
 		//halt
