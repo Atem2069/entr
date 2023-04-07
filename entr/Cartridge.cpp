@@ -1,7 +1,8 @@
 #include"Cartridge.h"
 
-Cartridge::Cartridge(std::shared_ptr<InterruptManager> interruptManager)
+Cartridge::Cartridge(std::vector<uint8_t> cartData, std::shared_ptr<InterruptManager> interruptManager)
 {
+	m_cartData = cartData;
 	m_interruptManager = interruptManager;
 }
 

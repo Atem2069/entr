@@ -1,6 +1,6 @@
 #include"Bus.h"
 
-Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::shared_ptr<Scheduler> scheduler, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input)
+Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::shared_ptr<Cartridge> cartridge, std::shared_ptr<Scheduler> scheduler, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input)
 {
 	m_interruptManager = interruptManager;
 	m_scheduler = scheduler;
@@ -11,7 +11,7 @@ Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::sh
 	m_math = std::make_shared<DSMath>();
 	m_NDS9Timer = std::make_shared<Timer>(true, m_interruptManager, m_scheduler);
 	m_NDS7Timer = std::make_shared<Timer>(false, m_interruptManager, m_scheduler);
-	m_cartridge = std::make_shared<Cartridge>(m_interruptManager);
+	m_cartridge = cartridge;
 
 	m_ppu->registerMemory(m_mem);
 

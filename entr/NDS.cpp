@@ -47,7 +47,7 @@ void NDS::registerInput(std::shared_ptr<InputState> inp)
 
 void NDS::m_initialise()
 {
-	std::vector<uint8_t> romData = readFile("rom\\rockwrestler.nds");
+	std::vector<uint8_t> romData = readFile("rom\\aging.nds");
 	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
 	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
@@ -64,8 +64,9 @@ void NDS::m_initialise()
 	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
 
 	m_interruptManager = std::make_shared<InterruptManager>();
+	m_cartridge = std::make_shared<Cartridge>(romData, m_interruptManager);
 	m_ppu = std::make_shared<PPU>(m_interruptManager, m_scheduler);
-	m_bus = std::make_shared<Bus>(nds7bios,nds9bios,m_scheduler,m_interruptManager,m_ppu, m_input);
+	m_bus = std::make_shared<Bus>(nds7bios,nds9bios,m_cartridge, m_scheduler,m_interruptManager,m_ppu, m_input);
 	//load arm9/arm7 binaries
 	for (int i = 0; i < ARM9Size; i++)
 	{

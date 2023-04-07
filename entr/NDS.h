@@ -11,6 +11,7 @@
 #include"InterruptManager.h"
 #include"Input.h"
 #include"Scheduler.h"
+#include"Cartridge.h"
 
 class NDS
 {
@@ -34,6 +35,7 @@ private:
 	std::shared_ptr<Input> m_input;
 	std::shared_ptr<InputState> m_inputState;
 	std::shared_ptr<Scheduler> m_scheduler;
+	std::shared_ptr<Cartridge> m_cartridge;
 
 	void m_initialise();
 	void m_destroy();

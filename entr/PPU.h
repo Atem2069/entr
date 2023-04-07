@@ -87,9 +87,14 @@ private:
 
 	template<Engine engine> uint8_t ppuReadBg(uint32_t address)
 	{
+		uint8_t* ptr = nullptr;
 		if (engine == Engine::A)
-			return *mapABgAddress(address);
-		return *mapBBgAddress(address);
+			ptr = mapABgAddress(address);
+		else
+			ptr = mapBBgAddress(address);
+		if (ptr < m_mem->VRAM)
+			return 0;
+		return *ptr;
 	}
 
 	void setVBlankFlag(bool value);

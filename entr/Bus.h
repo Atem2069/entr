@@ -32,7 +32,7 @@ struct DMAChannel
 class Bus
 {
 public:
-	Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::shared_ptr<Scheduler> scheduler, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input);
+	Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::shared_ptr<Cartridge> cartridge, std::shared_ptr<Scheduler> scheduler, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input);
 	~Bus();
 
 	//NDS7 read/write handlers

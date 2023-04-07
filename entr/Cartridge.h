@@ -6,7 +6,7 @@
 class Cartridge
 {
 public:
-	Cartridge(std::shared_ptr<InterruptManager> interruptManager);
+	Cartridge(std::vector<uint8_t> cartData, std::shared_ptr<InterruptManager> interruptManager);
 	~Cartridge();
 
 	uint8_t NDS7_read(uint32_t address);
@@ -19,6 +19,7 @@ public:
 
 	void setNDS7AccessRights(bool val);
 private:
+	std::vector<uint8_t> m_cartData;	//vector probably sucks, but oh well
 	uint8_t read(uint32_t address);
 	void write(uint32_t address, uint8_t value);
 
