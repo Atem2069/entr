@@ -384,7 +384,7 @@ void Bus::NDS9_doDMATransfer(int channel)
 	{
 		if (reloadDest)
 			m_NDS9Channels[channel].internalDest = m_NDS9Channels[channel].dest;
-		m_NDS9Channels[channel].internalWordCount = m_NDS9Channels[channel].wordCount;
+		m_NDS9Channels[channel].internalWordCount = m_NDS9Channels[channel].wordCount | ((m_NDS9Channels[channel].control & 0x1F) << 16);
 	}
 	else
 		m_NDS9Channels[channel].control &= 0x7FFF;

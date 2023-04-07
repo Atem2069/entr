@@ -102,7 +102,7 @@ void Cartridge::write(uint32_t address, uint8_t value)
 	switch (address)
 	{
 	case 0x040001A0:
-		AUXSPICNT &= 0xFF00; AUXSPICNT |= value;
+		AUXSPICNT &= 0xFF00; AUXSPICNT |= value&0x7F;
 		break;
 	case 0x040001A1:
 		AUXSPICNT &= 0xFF; AUXSPICNT |= (value << 8);
@@ -164,6 +164,9 @@ uint32_t Cartridge::readGamecard()
 
 void Cartridge::startTransfer()
 {
+	transferInProgress = true;
+	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Gamecard transfer started. length={}", transferLength));
+	ROMCTRL |= (1 << 23);
 	bytesTransferred = 0;
 	uint8_t transferBlockSize = ((ROMCTRL >> 24) & 0b111);
 	if (transferBlockSize == 7)
@@ -182,24 +185,37 @@ void Cartridge::startTransfer()
 		//memcpy(readBuffer, &m_cartData[baseAddr], transferLength);
 		break;
 	}
-	case 0xB8:
+	case 0xB8: case 0x90:
 	{
 		// 0x00001FC2
-		readBuffer[0] = 0xC2;
-		readBuffer[1] = 0x1F;
-		readBuffer[2] = 0;
-		readBuffer[3] = 0;
+		//readBuffer[0] = 0xC2;
+		//readBuffer[1] = 0x1F;
+		//readBuffer[2] = 0;
+		//readBuffer[3] = 0;
+		readBuffer[0] = 0xFF;
+		readBuffer[1] = 0xFF;
+		readBuffer[2] = 0xFF;
+		readBuffer[3] = 0xFF;
 		break;
 	}
+	case 0x3c:
+		ROMCTRL &= ~(1 << 23);
+		ROMCTRL &= 0x7FFF;
+		break;
 	default:
 	{
+		ROMCTRL &= ~(1 << 23);
+		ROMCTRL &= 0x7FFF;
+		if ((AUXSPICNT >> 14) & 0b1)
+		{
+			if (NDS7HasAccess)
+				m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
+			else
+				m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
+		}
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown cartridge command {:#x}",commandId));
 		memset(readBuffer, 0xFF, transferLength);
 		break;
 	}
 	}
-
-	transferInProgress = true;
-	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Gamecard transfer started. length={}", transferLength));
-	ROMCTRL |= (1 << 23);
 }

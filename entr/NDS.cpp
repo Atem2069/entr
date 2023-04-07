@@ -47,7 +47,7 @@ void NDS::registerInput(std::shared_ptr<InputState> inp)
 
 void NDS::m_initialise()
 {
-	std::vector<uint8_t> romData = readFile("rom\\castlevania.nds");
+	std::vector<uint8_t> romData = readFile("rom\\nsmb.nds");
 	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
 	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
@@ -79,8 +79,8 @@ void NDS::m_initialise()
 		m_bus->NDS7_write8(ARM7LoadAddr + i, curByte);
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Info, "Mapped ARM9/ARM7 binaries into memory!");
-	//ARM9Entry = 0xFFFF0000;
-	//ARM7Entry = 0x0;
+	ARM9Entry = 0xFFFF0000;
+	ARM7Entry = 0x0;
 	ARM9 = std::make_shared<ARM946E>(ARM9Entry, m_bus, m_interruptManager, m_scheduler);
 	ARM7 = std::make_shared<ARM7TDMI>(ARM7Entry, m_bus, m_interruptManager, m_scheduler);
 

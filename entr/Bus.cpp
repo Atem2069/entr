@@ -12,6 +12,7 @@ Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::sh
 	m_NDS9Timer = std::make_shared<Timer>(true, m_interruptManager, m_scheduler);
 	m_NDS7Timer = std::make_shared<Timer>(false, m_interruptManager, m_scheduler);
 	m_cartridge = cartridge;
+	m_spi = std::make_shared<SPI>(m_interruptManager);
 
 	m_ppu->registerMemory(m_mem);
 
@@ -55,6 +56,8 @@ uint8_t Bus::NDS7_read8(uint32_t address)
 		uint8_t* addr = m_ppu->mapARM7Address(address);
 		return addr[0];
 	}
+	case 8: case 9:
+		return ((address >> 1) & 0xFFFF) >> ((address & 0b1)<<3);
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
@@ -119,6 +122,8 @@ uint16_t Bus::NDS7_read16(uint32_t address)
 		uint8_t* addr = m_ppu->mapARM7Address(address);
 		return getValue16(addr, 0, 0xFFFF);
 	}
+	case 8: case 9:
+		return (address >> 1) & 0xFFFF;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
@@ -184,6 +189,8 @@ uint32_t Bus::NDS7_read32(uint32_t address)
 		uint8_t* addr = m_ppu->mapARM7Address(address);
 		return getValue32(addr, 0, 0xFFFF);
 	}
+	case 8: case 9:
+		return ((address >> 1) & 0xFFFF) | ((((address + 2) >> 1) & 0xFFFF) << 16);
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
@@ -497,6 +504,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	case 0x040001A0: case 0x040001A1: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x040001A8: case 0x040001A9:
 	case 0x040001AA: case 0x040001AB: case 0x040001AC: case 0x040001AD: case 0x040001AE: case 0x040001AF: case 0x04100010: case 0x04100011: case 0x04100012: case 0x04100013:
 		return m_cartridge->NDS7_read(address);
+	case 0x040001C0: case 0x040001C1: case 0x040001C2: case 0x040001C3:
+		return m_spi->read(address);
 	case 0x04000204:
 		return (EXMEMCNT & 0xFF);
 	case 0x04000205:
@@ -505,7 +514,17 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return (m_mem->VRAM_C_ARM7) | (m_mem->VRAM_D_ARM7 << 1);
 	case 0x04000241:
 		return WRAMCNT;
-	//case 0x04000300:
+	case 0x04000300:
+		std::cout << "postflg read" << '\n';
+		return 0;
+	case 0x04000504:
+		return hack_soundBias & 0xFF;
+	case 0x04000505:
+		return ((hack_soundBias >> 8) & 0b11);
+	case 0x04000136:	//hax
+		return 0x7F;
+	case 0x04000137:
+		return 0x0;
 	//	return 1;
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
@@ -541,6 +560,9 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	case 0x040001AA: case 0x040001AB: case 0x040001AC: case 0x040001AD: case 0x040001AE: case 0x040001AF: case 0x04100010: case 0x04100011: case 0x04100012: case 0x04100013:
 		m_cartridge->NDS7_write(address, value);
 		break;
+	case 0x040001C0: case 0x040001C1: case 0x040001C2: case 0x040001C3:
+		m_spi->write(address, value);
+		break;
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
 		m_interruptManager->NDS7_writeIO(address,value);
@@ -548,8 +570,17 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000204:
 		EXMEMCNT &= 0xFF80; EXMEMCNT |= value&0x7F;
 		break;
+	case 0x04000300:
+		std::cout << "postflg write" << '\n';
+		break;
 	case 0x04000301:
-		//halt
+		//std::cout << "haltcnt write.." << '\n';
+		break;
+	case 0x04000504:
+		hack_soundBias &= 0xFF00; hack_soundBias |= value;
+		break;
+	case 0x04000505:
+		hack_soundBias &= 0x00FF; hack_soundBias |= ((value & 0b11) << 8);
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
@@ -635,8 +666,9 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 		return EXMEMCNT & 0xFF;
 	case 0x04000205:
 		return ((EXMEMCNT >> 8) & 0xFF);
-	///case 0x04000300:
-	//	return 1;
+	case 0x04000300:
+		std::cout << "arm9 postflg read" << '\n';
+		return 0;
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
@@ -727,6 +759,9 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000205:
 		EXMEMCNT &= 0xFF; EXMEMCNT |= (value << 8);
 		m_cartridge->setNDS7AccessRights(((EXMEMCNT >> 11) & 0b1));
+		break;
+	case 0x04000300:
+		std::cout << "arm9 postflg write" << '\n';
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));

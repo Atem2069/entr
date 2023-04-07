@@ -8,6 +8,7 @@
 #include"Math.h"
 #include"Timer.h"
 #include"Cartridge.h"
+#include"SPI.h"
 
 #include<format>
 
@@ -16,12 +17,12 @@ struct DMAChannel
 	//vals CPU writes to dma registers
 	uint32_t src;
 	uint32_t dest;
-	uint16_t wordCount;
+	uint32_t wordCount;
 
 	//latched regs at dma start or repeat
 	uint32_t internalSrc;
 	uint32_t internalDest;
-	uint16_t internalWordCount;
+	uint32_t internalWordCount;
 
 	uint16_t control;
 
@@ -135,6 +136,7 @@ private:
 	std::shared_ptr<Timer> m_NDS7Timer;
 	std::shared_ptr<Timer> m_NDS9Timer;
 	std::shared_ptr<Cartridge> m_cartridge;
+	std::shared_ptr<SPI> m_spi;
 
 	DMAChannel m_NDS7Channels[4] = {};
 	DMAChannel m_NDS9Channels[4] = {};
@@ -151,6 +153,7 @@ private:
 
 	uint8_t WRAMCNT = 0;
 	uint16_t EXMEMCNT = {};
+	uint16_t hack_soundBias = 0;
 
 	void setByteInWord(uint32_t* word, uint8_t byte, int pos);
 	void setByteInHalfword(uint16_t* halfword, uint8_t byte, int pos);

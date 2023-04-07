@@ -146,6 +146,7 @@
     <ClCompile Include="Bus.cpp" />
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="Display.cpp" />
+    <ClCompile Include="Firmware.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="InterruptManager.cpp" />
     <ClCompile Include="IPC.cpp" />
@@ -158,6 +159,7 @@
     <ClCompile Include="PPU.cpp" />
     <ClCompile Include="PPU_VRAM.cpp" />
     <ClCompile Include="Scheduler.cpp" />
+    <ClCompile Include="SPI.cpp" />
     <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +168,7 @@
     <ClInclude Include="Bus.h" />
     <ClInclude Include="Cartridge.h" />
     <ClInclude Include="Display.h" />
+    <ClInclude Include="Firmware.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="InterruptManager.h" />
     <ClInclude Include="IPC.h" />
@@ -177,6 +180,7 @@
     <ClInclude Include="Scheduler.h" />
     <ClInclude Include="Shaders\fragment.h" />
     <ClInclude Include="Shaders\vertex.h" />
+    <ClInclude Include="SPI.h" />
     <ClInclude Include="Timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -219,8 +219,12 @@ template<Engine engine, int bg> void PPU::renderBackground()
 {
 	PPURegisters m_regs = {};
 	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	uint32_t screenBase = 0;
 	if (engine == Engine::A)
+	{
+		screenBase = (((m_engineARegisters.DISPCNT >> 27) & 0b111) * 65536);
 		m_regs = m_engineARegisters;
+	}
 	else
 	{
 		m_backgroundLayers = m_engineBBgLayers;
@@ -288,7 +292,7 @@ template<Engine engine, int bg> void PPU::renderBackground()
 			normalizedTileFetchIdx -= 256;
 			baseBlockOffset++;
 		}
-		uint32_t bgMapBaseAddress = ((bgMapBaseBlock + baseBlockOffset) * 2048) + bgMapYIdx;
+		uint32_t bgMapBaseAddress = screenBase + ((bgMapBaseBlock + baseBlockOffset) * 2048) + bgMapYIdx;
 		bgMapBaseAddress += ((normalizedTileFetchIdx >> 3) * 2);
 
 		uint8_t tileLower = ppuReadBg<engine>(bgMapBaseAddress);
