@@ -34,6 +34,44 @@ struct BackgroundLayer
 	uint16_t lineBuffer[256];
 };
 
+union SpriteAttribute
+{
+	uint8_t attr;
+	struct
+	{
+		uint8_t priority : 5;
+		bool objWindow : 1;
+		bool transparent : 1;
+		bool mosaic : 1;
+	};
+};
+
+union OAMEntry
+{
+	uint64_t data;
+	struct
+	{
+		//attribute 0
+		unsigned yCoord : 8;
+		unsigned rotateScale : 1;
+		unsigned disableObj : 1;    //depends on mode. regular sprites use this as 'disable' flag, affine use it as doublesize flag 
+		unsigned objMode : 2;
+		unsigned mosaic : 1;
+		unsigned bitDepth : 1;
+		unsigned shape : 2;
+		//attribute 1
+		unsigned xCoord : 9;
+		unsigned unused : 3;		//in rot/scale bits 9-13 of attr1 are actually the parameter selection
+		unsigned xFlip : 1;
+		unsigned yFlip : 1;
+		unsigned size : 2;
+		//attribute 2
+		unsigned charName : 10;
+		unsigned priority : 2;
+		unsigned paletteNumber : 4;
+	};
+};
+
 class PPU
 {
 public:
@@ -69,6 +107,10 @@ private:
 
 	BackgroundLayer m_engineABgLayers[4] = {};
 	BackgroundLayer m_engineBBgLayers[4] = {};
+	SpriteAttribute m_engineASpriteAttribBuffer[256] = {};
+	SpriteAttribute m_engineBSpriteAttribBuffer[256] = {};
+	uint16_t m_engineASpriteLineBuffer[256] = {};
+	uint16_t m_engineBSpriteLineBuffer[256] = {};
 
 	uint32_t m_renderBuffer[2][256 * 384];
 	bool pageIdx = false;
@@ -83,7 +125,10 @@ private:
 	template <Engine engine> void renderMode0();
 
 	template<Engine engine, int bg> void renderBackground();
+	template<Engine engine> void renderSprites();
 	template<Engine engine> void composeLayers();
+
+	template<Engine engine> uint16_t extractColorFromTile(uint32_t tileBase, uint32_t xOffset, bool hiColor, bool sprite, uint32_t palette);
 
 	template<Engine engine> uint8_t ppuReadBg(uint32_t address)
 	{
@@ -92,6 +137,18 @@ private:
 			ptr = mapABgAddress(address);
 		else
 			ptr = mapBBgAddress(address);
+		if (ptr < m_mem->VRAM)
+			return 0;
+		return *ptr;
+	}
+
+	template<Engine engine> uint8_t ppuReadObj(uint32_t address)
+	{
+		uint8_t* ptr = nullptr;
+		if (engine == Engine::A)
+			ptr = mapAObjAddress(address);
+		else
+			ptr = mapBObjAddress(address);
 		if (ptr < m_mem->VRAM)
 			return 0;
 		return *ptr;
