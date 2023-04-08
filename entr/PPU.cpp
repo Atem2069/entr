@@ -62,8 +62,8 @@ void PPU::HDraw()
 		case 0:
 			renderMode0<Engine::A>();
 			break;
-		default:
-			Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown mode {}",(int)mode));
+		//default:
+		//	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown mode {}",(int)mode));
 		}
 		composeLayers<Engine::A>();
 	}
@@ -77,8 +77,8 @@ void PPU::HDraw()
 		case 0:
 			renderMode0<Engine::B>();
 			break;
-		default:
-			Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown mode {}",(int)mode));
+		//default:
+		//	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown mode {}",(int)mode));
 		}
 		composeLayers<Engine::B>();
 	}

@@ -188,14 +188,10 @@ void Cartridge::startTransfer()
 	case 0xB8: case 0x90:
 	{
 		// 0x00001FC2
-		//readBuffer[0] = 0xC2;
-		//readBuffer[1] = 0x1F;
-		//readBuffer[2] = 0;
-		//readBuffer[3] = 0;
-		readBuffer[0] = 0xFF;
-		readBuffer[1] = 0xFF;
-		readBuffer[2] = 0xFF;
-		readBuffer[3] = 0xFF;
+		readBuffer[0] = 0xC2;
+		readBuffer[1] = 0x1F;
+		readBuffer[2] = 0;
+		readBuffer[3] = 0;
 		break;
 	}
 	case 0x3c:
