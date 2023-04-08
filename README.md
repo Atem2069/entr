@@ -1,4 +1,4 @@
 # entr
-Nintendo DS Emulator.
+WIP Nintendo DS Emulator.
 
-This project is a huge work in progress! Currently boots ARMWrestler,Rockwrestler,... however much of the hardware is currently unimplemented.
+![image](https://user-images.githubusercontent.com/23128103/230740353-e733ae87-9ee1-448f-be56-cae6b8bb67ca.png)
