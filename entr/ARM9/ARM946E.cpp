@@ -138,17 +138,9 @@ bool ARM946E::dispatchInterrupt()
 	bool wasThumb = m_inThumbMode;
 	m_inThumbMode = false;
 	swapBankedRegisters();
-
 	constexpr int pcOffsetAmount[2] = { 4,0 };
 	setSPSR(oldCPSR);
 	setReg(14, getReg(15) - pcOffsetAmount[wasThumb]);
-	if (m_pipelineFlushed)
-	{
-		if (!wasThumb)
-			setReg(14, getReg(15) - 4);
-		else
-			setReg(14, getReg(15));
-	}
 	setReg(15, 0xFFFF0018);	//ARM9 uses high interrupt vector?
 	m_pipelineFlushed = false;
 	return true;
