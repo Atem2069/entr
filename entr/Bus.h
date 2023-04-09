@@ -153,6 +153,8 @@ private:
 
 	uint8_t WRAMCNT = 0;
 	uint16_t EXMEMCNT = {};
+	uint8_t NDS7_POSTFLG = 0;
+	uint8_t NDS9_POSTFLG = 0;
 	uint16_t hack_soundBias = 0;
 
 	void setByteInWord(uint32_t* word, uint8_t byte, int pos);

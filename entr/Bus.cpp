@@ -515,8 +515,7 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	case 0x04000241:
 		return WRAMCNT;
 	case 0x04000300:
-		std::cout << "postflg read" << '\n';
-		return 0;
+		return NDS7_POSTFLG;
 	case 0x04000504:
 		return hack_soundBias & 0xFF;
 	case 0x04000505:
@@ -571,7 +570,7 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 		EXMEMCNT &= 0xFF80; EXMEMCNT |= value&0x7F;
 		break;
 	case 0x04000300:
-		std::cout << "postflg write" << '\n';
+		NDS7_POSTFLG = value & 0b1;
 		break;
 	case 0x04000301:
 		//std::cout << "haltcnt write.." << '\n';
@@ -672,7 +671,7 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 	case 0x04000205:
 		return ((EXMEMCNT >> 8) & 0xFF);
 	case 0x04000300:
-		std::cout << "arm9 postflg read" << '\n';
+		return NDS9_POSTFLG;
 		return 0;
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
@@ -766,7 +765,7 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		m_cartridge->setNDS7AccessRights(((EXMEMCNT >> 11) & 0b1));
 		break;
 	case 0x04000300:
-		std::cout << "arm9 postflg write" << '\n';
+		NDS9_POSTFLG = value & 0b1;	//NDS9 POSTFLG seems to be 2 bits, assuming just bit 0 for now.
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));

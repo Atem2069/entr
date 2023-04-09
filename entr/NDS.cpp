@@ -15,14 +15,12 @@ NDS::~NDS()
 
 void NDS::run()
 {
-	//need to move all of this out of run soon! this is bad..
 	while (true)
 	{
 		ARM9->run(32);	//ARM9 runs twice the no. cycles as the ARM7, as it runs at twice the clock speed
 		ARM7->run(16);
 		m_scheduler->addCycles(16);
 		m_scheduler->tick();	//<--should probably remove this 'tick' logic, remnant from agbe
-		//todo: tick scheduler 16 cycles here. most hardware runs at ~33MHz so we're using that as a base clock
 	}
 }
 
@@ -47,7 +45,7 @@ void NDS::registerInput(std::shared_ptr<InputState> inp)
 
 void NDS::m_initialise()
 {
-	std::vector<uint8_t> romData = readFile("rom\\pmd.nds");
+	std::vector<uint8_t> romData = readFile("rom\\digimon.nds");
 	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
 	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
@@ -67,38 +65,50 @@ void NDS::m_initialise()
 	m_cartridge = std::make_shared<Cartridge>(romData, m_interruptManager);
 	m_ppu = std::make_shared<PPU>(m_interruptManager, m_scheduler);
 	m_bus = std::make_shared<Bus>(nds7bios,nds9bios,m_cartridge, m_scheduler,m_interruptManager,m_ppu, m_input);
-	//load arm9/arm7 binaries
-	for (int i = 0; i < ARM9Size; i++)
+
+	bool directBoot = true;
+	if (directBoot)
 	{
-		uint8_t curByte = romData[ARM9Offs + i];
-		m_bus->NDS9_write8(ARM9LoadAddr + i, curByte);
+		//load arm9/arm7 binaries
+		for (int i = 0; i < ARM9Size; i++)
+		{
+			uint8_t curByte = romData[ARM9Offs + i];
+			m_bus->NDS9_write8(ARM9LoadAddr + i, curByte);
+		}
+		for (int i = 0; i < ARM7Size; i++)
+		{
+			uint8_t curByte = romData[ARM7Offs + i];
+			m_bus->NDS7_write8(ARM7LoadAddr + i, curByte);
+		}
+		Logger::getInstance()->msg(LoggerSeverity::Info, "Mapped ARM9/ARM7 binaries into memory!");
+
+		//copy over rom header
+		for (int i = 0; i < 0x200; i++)
+			m_bus->NDS9_write8(0x027FFE00 + i, romData[i]);
+
+		//misc values from gbatek (bios ram usage)
+		m_bus->NDS7_write8(0x04000300, 1);
+		m_bus->NDS9_write8(0x04000300, 1);
+		m_bus->NDS9_write8(0x04000247, 0x03);
+		m_bus->NDS9_write32(0x027FF800, 0x00001FC2);
+		m_bus->NDS9_write32(0x027FF804, 0x00001FC2);
+		m_bus->NDS9_write16(0x027FF850, 0x5835);
+		m_bus->NDS9_write16(0x027FF880, 0x0007);
+		m_bus->NDS9_write16(0x027FF884, 0x0006);
+		m_bus->NDS9_write32(0x027FFC00, 0x00001FC2);
+		m_bus->NDS9_write32(0x027FFC04, 0x00001FC2);
+		m_bus->NDS9_write16(0x027FFC10, 0x5835);
+		m_bus->NDS9_write16(0x027FFC40, 0x0001);
 	}
-	for (int i = 0; i < ARM7Size; i++)
+	else
 	{
-		uint8_t curByte = romData[ARM7Offs + i];
-		m_bus->NDS7_write8(ARM7LoadAddr + i, curByte);
+		ARM9Entry = 0xFFFF0000;
+		ARM7Entry = 0x0;
 	}
-	Logger::getInstance()->msg(LoggerSeverity::Info, "Mapped ARM9/ARM7 binaries into memory!");
-	ARM9Entry = 0xFFFF0000;
-	ARM7Entry = 0x0;
 	ARM9 = std::make_shared<ARM946E>(ARM9Entry, m_bus, m_interruptManager, m_scheduler);
 	ARM7 = std::make_shared<ARM7TDMI>(ARM7Entry, m_bus, m_interruptManager, m_scheduler);
 
-	//copy over rom header
-	for (int i = 0; i < 0x200; i++)
-		m_bus->NDS9_write8(0x027FFE00+i, romData[i]);
 
-	//misc values from gbatek (bios ram usage)
-	m_bus->NDS9_write8(0x04000247, 0x03);
-	m_bus->NDS9_write32(0x027FF800, 0x00001FC2);
-	m_bus->NDS9_write32(0x027FF804, 0x00001FC2);
-	m_bus->NDS9_write16(0x027FF850, 0x5835);
-	m_bus->NDS9_write16(0x027FF880, 0x0007);
-	m_bus->NDS9_write16(0x027FF884, 0x0006);
-	m_bus->NDS9_write32(0x027FFC00, 0x00001FC2);
-	m_bus->NDS9_write32(0x027FFC04, 0x00001FC2);
-	m_bus->NDS9_write16(0x027FFC10, 0x5835);
-	m_bus->NDS9_write16(0x027FFC40, 0x0001);
 }
 
 void NDS::m_destroy()
