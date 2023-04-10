@@ -256,15 +256,23 @@ template<Engine engine, int bg> void PPU::renderBackground()
 	{
 	case 0:
 		ctrlReg = m_regs.BG0CNT;
+		xScroll = m_regs.BG0HOFS;
+		yScroll = m_regs.BG0VOFS;
 		break;
 	case 1:
 		ctrlReg = m_regs.BG1CNT;
+		xScroll = m_regs.BG1HOFS;
+		yScroll = m_regs.BG1VOFS;
 		break;
 	case 2:
 		ctrlReg = m_regs.BG2CNT;
+		xScroll = m_regs.BG2HOFS;
+		yScroll = m_regs.BG2VOFS;
 		break;
 	case 3:
 		ctrlReg = m_regs.BG3CNT;
+		xScroll = m_regs.BG3HOFS;
+		yScroll = m_regs.BG3VOFS;
 		break;
 	}
 
@@ -785,6 +793,54 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	case 0x0400000F:
 		m_engineARegisters.BG3CNT &= 0x00FF; m_engineARegisters.BG3CNT |= (value << 8);
 		break;
+	case 0x04000010:
+		m_engineARegisters.BG0HOFS &= 0xFF00; m_engineARegisters.BG0HOFS |= value;
+		break;
+	case 0x04000011:
+		m_engineARegisters.BG0HOFS &= 0x00FF; m_engineARegisters.BG0HOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x04000012:
+		m_engineARegisters.BG0VOFS &= 0xFF00; m_engineARegisters.BG0VOFS |= value;
+		break;
+	case 0x04000013:
+		m_engineARegisters.BG0VOFS &= 0x00FF; m_engineARegisters.BG0VOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x04000014:
+		m_engineARegisters.BG1HOFS &= 0xFF00; m_engineARegisters.BG1HOFS |= value;
+		break;
+	case 0x04000015:
+		m_engineARegisters.BG1HOFS &= 0x00FF; m_engineARegisters.BG1HOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x04000016:
+		m_engineARegisters.BG1VOFS &= 0xFF00; m_engineARegisters.BG1VOFS |= value;
+		break;
+	case 0x04000017:
+		m_engineARegisters.BG1VOFS &= 0x00FF; m_engineARegisters.BG1VOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x04000018:
+		m_engineARegisters.BG2HOFS &= 0xFF00; m_engineARegisters.BG2HOFS |= value;
+		break;
+	case 0x04000019:
+		m_engineARegisters.BG2HOFS &= 0x00FF; m_engineARegisters.BG2HOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x0400001A:
+		m_engineARegisters.BG2VOFS &= 0xFF00; m_engineARegisters.BG2VOFS |= value;
+		break;
+	case 0x0400001B:
+		m_engineARegisters.BG2VOFS &= 0x00FF; m_engineARegisters.BG2VOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x0400001C:
+		m_engineARegisters.BG3HOFS &= 0xFF00; m_engineARegisters.BG3HOFS |= value;
+		break;
+	case 0x0400001D:
+		m_engineARegisters.BG3HOFS &= 0x00FF; m_engineARegisters.BG3HOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x0400001E:
+		m_engineARegisters.BG3VOFS &= 0xFF00; m_engineARegisters.BG3VOFS |= value;
+		break;
+	case 0x0400001F:
+		m_engineARegisters.BG3VOFS &= 0x00FF; m_engineARegisters.BG3VOFS |= ((value & 0b1) << 8);
+		break;
 	case 0x04001000:
 		m_engineBRegisters.DISPCNT &= 0xFFFFFF00; m_engineBRegisters.DISPCNT |= value;
 		break;
@@ -826,6 +882,54 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		break;
 	case 0x0400100F:
 		m_engineBRegisters.BG3CNT &= 0x00FF; m_engineBRegisters.BG3CNT |= (value << 8);
+		break;
+	case 0x04001010:
+		m_engineBRegisters.BG0HOFS &= 0xFF00; m_engineBRegisters.BG0HOFS |= value;
+		break;
+	case 0x04001011:
+		m_engineBRegisters.BG0HOFS &= 0x00FF; m_engineBRegisters.BG0HOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x04001012:
+		m_engineBRegisters.BG0VOFS &= 0xFF00; m_engineBRegisters.BG0VOFS |= value;
+		break;
+	case 0x04001013:
+		m_engineBRegisters.BG0VOFS &= 0x00FF; m_engineBRegisters.BG0VOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x04001014:
+		m_engineBRegisters.BG1HOFS &= 0xFF00; m_engineBRegisters.BG1HOFS |= value;
+		break;
+	case 0x04001015:
+		m_engineBRegisters.BG1HOFS &= 0x00FF; m_engineBRegisters.BG1HOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x04001016:
+		m_engineBRegisters.BG1VOFS &= 0xFF00; m_engineBRegisters.BG1VOFS |= value;
+		break;
+	case 0x04001017:
+		m_engineBRegisters.BG1VOFS &= 0x00FF; m_engineBRegisters.BG1VOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x04001018:
+		m_engineBRegisters.BG2HOFS &= 0xFF00; m_engineBRegisters.BG2HOFS |= value;
+		break;
+	case 0x04001019:
+		m_engineBRegisters.BG2HOFS &= 0x00FF; m_engineBRegisters.BG2HOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x0400101A:
+		m_engineBRegisters.BG2VOFS &= 0xFF00; m_engineBRegisters.BG2VOFS |= value;
+		break;
+	case 0x0400101B:
+		m_engineBRegisters.BG2VOFS &= 0x00FF; m_engineBRegisters.BG2VOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x0400101C:
+		m_engineBRegisters.BG3HOFS &= 0xFF00; m_engineBRegisters.BG3HOFS |= value;
+		break;
+	case 0x0400101D:
+		m_engineBRegisters.BG3HOFS &= 0x00FF; m_engineBRegisters.BG3HOFS |= ((value & 0b1) << 8);
+		break;
+	case 0x0400101E:
+		m_engineBRegisters.BG3VOFS &= 0xFF00; m_engineBRegisters.BG3VOFS |= value;
+		break;
+	case 0x0400101F:
+		m_engineBRegisters.BG3VOFS &= 0x00FF; m_engineBRegisters.BG3VOFS |= ((value & 0b1) << 8);
 		break;
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));
