@@ -386,7 +386,7 @@ void Bus::NDS9_checkDMAChannel(int channel)
 		else
 		{
 			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Channel {} DMA, start timing={} src={:#x} dest={:#x}", channel, startTiming, m_NDS9Channels[channel].internalSrc, m_NDS9Channels[channel].internalDest));
-			m_NDS9Channels[channel].control &= 0x7FFF;	//dumb, remove when properly impl. other dma types
+			//m_NDS9Channels[channel].control &= 0x7FFF;	//dumb, remove when properly impl. other dma types
 		}
 	}
 }
@@ -472,4 +472,41 @@ void Bus::NDS9_doDMATransfer(int channel)
 	}
 	else
 		m_NDS9Channels[channel].control &= 0x7FFF;
+}
+
+//this is sort of slow, not super nice. could use bitmasks instead.
+void Bus::NDS9DMA_onHBlank()
+{
+	for (int i = 0; i < 4; i++)
+	{
+		DMAChannel curChannel = m_NDS9Channels[i];
+		bool channelEnabled = (curChannel.control >> 15) & 0b1;
+		uint8_t startTiming = (curChannel.control >> 11) & 0b111;
+		if (channelEnabled && (startTiming == 2))
+			NDS9_doDMATransfer(i);
+	}
+}
+
+void Bus::NDS9DMA_onVBlank()
+{
+	for (int i = 0; i < 4; i++)
+	{
+		DMAChannel curChannel = m_NDS9Channels[i];
+		bool channelEnabled = (curChannel.control >> 15) & 0b1;
+		uint8_t startTiming = (curChannel.control >> 11) & 0b111;
+		if (channelEnabled && (startTiming == 1))
+			NDS9_doDMATransfer(i);
+	}
+}
+
+void Bus::NDS9_HBlankDMACallback(void* context)
+{
+	Bus* thisPtr = (Bus*)context;
+	thisPtr->NDS9DMA_onHBlank();
+}
+
+void Bus::NDS9_VBlankDMACallback(void* context)
+{
+	Bus* thisPtr = (Bus*)context;
+	thisPtr->NDS9DMA_onVBlank();
 }

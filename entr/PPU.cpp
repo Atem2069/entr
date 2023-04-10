@@ -92,6 +92,9 @@ void PPU::HDraw()
 		m_interruptManager->NDS9_requestInterrupt(InterruptType::HBlank);
 	if (((NDS7_DISPSTAT >> 4) & 0b1))
 		m_interruptManager->NDS7_requestInterrupt(InterruptType::HBlank);
+
+	//check dmas
+	NDS9_HBlankDMACallback(callbackContext);
 }
 
 void PPU::HBlank()
@@ -113,6 +116,8 @@ void PPU::HBlank()
 		m_state = PPUState::VBlank;
 
 		pageIdx = !pageIdx;
+
+		NDS9_VBlankDMACallback(callbackContext);
 
 		m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 1607);
 		return;

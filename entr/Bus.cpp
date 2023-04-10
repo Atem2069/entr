@@ -16,6 +16,7 @@ Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::sh
 	m_rtc = std::make_shared<RTC>();
 
 	m_ppu->registerMemory(m_mem);
+	m_ppu->registerDMACallbacks((callbackFn)&Bus::NDS9_HBlankDMACallback, (callbackFn)&Bus::NDS9_VBlankDMACallback, (void*)this);
 
 	//i don't know if this initial state is accurate, but oh well..
 	m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[0];

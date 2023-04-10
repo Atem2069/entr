@@ -126,6 +126,8 @@ public:
 		return addr;
 	}
 
+	static void NDS9_HBlankDMACallback(void* context);
+	static void NDS9_VBlankDMACallback(void* context);
 private:
 	std::shared_ptr<NDSMem> m_mem;
 	std::shared_ptr<Scheduler> m_scheduler;
@@ -152,6 +154,8 @@ private:
 	void NDS9_writeDMAReg(uint32_t address, uint8_t value);
 	void NDS9_checkDMAChannel(int channel);
 	void NDS9_doDMATransfer(int channel);
+	void NDS9DMA_onHBlank();
+	void NDS9DMA_onVBlank();
 
 	uint8_t WRAMCNT = 0;
 	uint16_t EXMEMCNT = {};

@@ -86,6 +86,13 @@ public:
 	PPU(std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler);
 	~PPU();
 
+	void registerDMACallbacks(callbackFn NDS9HBlank, callbackFn NDS9VBlank, void* ctx)
+	{
+		NDS9_HBlankDMACallback = NDS9HBlank;
+		NDS9_VBlankDMACallback = NDS9VBlank;
+		callbackContext = ctx;
+	}
+
 	void updateDisplayOutput();
 
 	void registerMemory(std::shared_ptr<NDSMem> mem);
@@ -112,6 +119,10 @@ private:
 	std::shared_ptr<NDSMem> m_mem;
 	std::shared_ptr<InterruptManager> m_interruptManager;
 	std::shared_ptr<Scheduler> m_scheduler;
+
+	callbackFn NDS9_HBlankDMACallback;
+	callbackFn NDS9_VBlankDMACallback;
+	void* callbackContext = nullptr;
 
 	BackgroundLayer m_engineABgLayers[4] = {};
 	BackgroundLayer m_engineBBgLayers[4] = {};
