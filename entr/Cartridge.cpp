@@ -85,6 +85,8 @@ uint8_t Cartridge::read(uint32_t address)
 		return AUXSPICNT & 0xFF;
 	case 0x040001A1:
 		return ((AUXSPICNT >> 8) & 0xFF);
+	case 0x040001A2:
+		return 0x00;
 	case 0x040001A4:
 		return ROMCTRL & 0xFF;
 	case 0x040001A5:
@@ -107,6 +109,8 @@ void Cartridge::write(uint32_t address, uint8_t value)
 	case 0x040001A1:
 		AUXSPICNT &= 0xFF; AUXSPICNT |= (value << 8);
 		break;
+	case 0x040001A2:
+		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("AUXSPIDATA write: {:#x}", value));
 	case 0x040001A4:
 		ROMCTRL &= 0xFFFFFF00; ROMCTRL |= value;
 		break;
@@ -214,4 +218,7 @@ void Cartridge::startTransfer()
 		break;
 	}
 	}
+
+	if (!NDS7HasAccess)
+		NDS9_DMACallback(DMAContext);
 }

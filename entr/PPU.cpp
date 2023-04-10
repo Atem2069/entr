@@ -687,7 +687,7 @@ uint8_t PPU::readIO(uint32_t address)
 	case 0x0400100F:
 		return ((m_engineBRegisters.BG3CNT >> 8) & 0xFF);
 	}
-	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO read! addr={:#x}", address));
+	//Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO read! addr={:#x}", address));
 	return 0;
 }
 
@@ -936,8 +936,8 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	case 0x0400101F:
 		m_engineBRegisters.BG3VOFS &= 0x00FF; m_engineBRegisters.BG3VOFS |= ((value & 0b1) << 8);
 		break;
-	default:
-		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));
+	//default:
+	//	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));
 	}
 }
 

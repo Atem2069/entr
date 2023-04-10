@@ -412,6 +412,10 @@ void Bus::NDS9_doDMATransfer(int channel)
 	bool reloadDest = false;
 	static constexpr int offsetLUT[2] = { 2,4 };
 
+	//i hate this hack....
+	if (startTiming == 5)
+		numWords = m_cartridge->getWordsLeft();
+
 	for (int i = 0; i < numWords; i++)
 	{
 		if (wordTransfer)
@@ -499,6 +503,18 @@ void Bus::NDS9DMA_onVBlank()
 	}
 }
 
+void Bus::NDS9DMA_onCartridge()
+{
+	for (int i = 0; i < 4; i++)
+	{
+		DMAChannel curChannel = m_NDS9Channels[i];
+		bool channelEnabled = (curChannel.control >> 15) & 0b1;
+		uint8_t startTiming = (curChannel.control >> 11) & 0b111;
+		if (channelEnabled && (startTiming == 5))
+			NDS9_doDMATransfer(i);
+	}
+}
+
 void Bus::NDS9_HBlankDMACallback(void* context)
 {
 	Bus* thisPtr = (Bus*)context;
@@ -509,4 +525,10 @@ void Bus::NDS9_VBlankDMACallback(void* context)
 {
 	Bus* thisPtr = (Bus*)context;
 	thisPtr->NDS9DMA_onVBlank();
+}
+
+void Bus::NDS9_CartridgeDMACallback(void* context)
+{
+	Bus* thisPtr = (Bus*)context;
+	thisPtr->NDS9DMA_onCartridge();
 }

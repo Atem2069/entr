@@ -45,7 +45,7 @@ void NDS::registerInput(std::shared_ptr<InputState> inp)
 
 void NDS::m_initialise()
 {
-	std::vector<uint8_t> romData = readFile("rom\\kirby.nds");
+	std::vector<uint8_t> romData = readFile("rom\\pmd.nds");
 	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
 	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);

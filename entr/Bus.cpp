@@ -17,6 +17,7 @@ Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::sh
 
 	m_ppu->registerMemory(m_mem);
 	m_ppu->registerDMACallbacks((callbackFn)&Bus::NDS9_HBlankDMACallback, (callbackFn)&Bus::NDS9_VBlankDMACallback, (void*)this);
+	m_cartridge->registerDMACallbacks((callbackFn)&Bus::NDS9_CartridgeDMACallback, (void*)this);
 
 	//i don't know if this initial state is accurate, but oh well..
 	m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[0];
@@ -505,7 +506,7 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
 		return m_interruptManager->NDS7_readIO(address);
-	case 0x040001A0: case 0x040001A1: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x040001A8: case 0x040001A9:
+	case 0x040001A0: case 0x040001A1: case 0x040001A2: case 0x040001A3: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x040001A8: case 0x040001A9:
 	case 0x040001AA: case 0x040001AB: case 0x040001AC: case 0x040001AD: case 0x040001AE: case 0x040001AF: case 0x04100010: case 0x04100011: case 0x04100012: case 0x04100013:
 		return m_cartridge->NDS7_read(address);
 	case 0x040001C0: case 0x040001C1: case 0x040001C2: case 0x040001C3:
@@ -562,7 +563,7 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
 		m_ipc->NDS7_write8(address, value);
 		break;
-	case 0x040001A0: case 0x040001A1: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x040001A8: case 0x040001A9:
+	case 0x040001A0: case 0x040001A1: case 0x040001A2: case 0x040001A3: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x040001A8: case 0x040001A9:
 	case 0x040001AA: case 0x040001AB: case 0x040001AC: case 0x040001AD: case 0x040001AE: case 0x040001AF: case 0x04100010: case 0x04100011: case 0x04100012: case 0x04100013:
 		m_cartridge->NDS7_write(address, value);
 		break;
@@ -670,7 +671,7 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 	case 0x040002B6: case 0x040002B7: case 0x040002B8: case 0x040002B9: case 0x040002BA: case 0x040002BB: case 0x040002BC: case 0x040002BD:
 	case 0x040002BE: case 0x040002BF:
 		return m_math->readIO(address);
-	case 0x040001A0: case 0x040001A1: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x040001A8: case 0x040001A9:
+	case 0x040001A0: case 0x040001A1: case 0x040001A2: case 0x040001A3: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x040001A8: case 0x040001A9:
 	case 0x040001AA: case 0x040001AB: case 0x040001AC: case 0x040001AD: case 0x040001AE: case 0x040001AF: case 0x04100010: case 0x04100011: case 0x04100012: case 0x04100013:
 		return m_cartridge->NDS9_read(address);
 	case 0x04000204:
@@ -760,7 +761,7 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	case 0x040002BE: case 0x040002BF:
 		m_math->writeIO(address, value);
 		break;
-	case 0x040001A0: case 0x040001A1: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x040001A8: case 0x040001A9:
+	case 0x040001A0: case 0x040001A1: case 0x040001A2: case 0x040001A3: case 0x040001A4: case 0x040001A5: case 0x040001A6: case 0x040001A7: case 0x040001A8: case 0x040001A9:
 	case 0x040001AA: case 0x040001AB: case 0x040001AC: case 0x040001AD: case 0x040001AE: case 0x040001AF: case 0x04100010: case 0x04100011: case 0x04100012: case 0x04100013:
 		m_cartridge->NDS9_write(address, value);
 		break;
