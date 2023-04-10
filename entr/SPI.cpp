@@ -2,7 +2,9 @@
 
 SPI::SPI(std::shared_ptr<InterruptManager> interruptManager)
 {
-	m_firmware = std::make_shared<Firmware>();
+	m_SPIDevices[0] = std::make_shared<PowerManager>();
+	m_SPIDevices[1] = std::make_shared<Firmware>();
+	m_SPIDevices[2] = std::make_shared<Touchscreen>();
 	m_interruptManager = interruptManager;
 }
 
@@ -46,6 +48,8 @@ void SPI::write(uint32_t address, uint8_t value)
 		enabled = ((SPICNT >> 15) & 0b1);
 		chipSelectHold = ((SPICNT >> 11) & 0b1);
 		deviceSelect = ((SPICNT >> 8) & 0b11);
+		if (oldDeviceSelect != deviceSelect)
+			m_SPIDevices[oldDeviceSelect]->deselect();
 		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("New SPI settings. enabled={} irq={} chipselect hold = {} device={}", enabled, irq, chipSelectHold, deviceSelect));
 		break;
 	}
@@ -62,16 +66,9 @@ void SPI::writeSPIData(uint8_t value)
 
 	//Logger::getInstance()->msg(LoggerSeverity::Info, std::format("SPI write: {:#x}", value));
 
-	switch (deviceSelect)
-	{
-	case 1:
-		m_SPIData = m_firmware->sendCommand(value);
-		if (!chipSelectHold)
-			m_firmware->deselect();
-		break;
-	default:
-		m_SPIData = 0xFF;
-	}
+	m_SPIData = m_SPIDevices[deviceSelect]->sendCommand(value);
+	if (!chipSelectHold)
+		m_SPIDevices[deviceSelect]->deselect();
 	
 	if (irq)
 		m_interruptManager->NDS7_requestInterrupt(InterruptType::SPI);

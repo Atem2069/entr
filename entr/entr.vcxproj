@@ -156,12 +156,14 @@
     <ClCompile Include="NDS.cpp" />
     <ClCompile Include="NDS7_DMA.cpp" />
     <ClCompile Include="NDS9_DMA.cpp" />
+    <ClCompile Include="PowerManager.cpp" />
     <ClCompile Include="PPU.cpp" />
     <ClCompile Include="PPU_VRAM.cpp" />
     <ClCompile Include="RTC.cpp" />
     <ClCompile Include="Scheduler.cpp" />
     <ClCompile Include="SPI.cpp" />
     <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="Touchscreen.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ARM7\ARM7TDMI.h" />
@@ -177,13 +179,16 @@
     <ClInclude Include="Math.h" />
     <ClInclude Include="NDS.h" />
     <ClInclude Include="NDSMem.h" />
+    <ClInclude Include="PowerManager.h" />
     <ClInclude Include="PPU.h" />
     <ClInclude Include="RTC.h" />
     <ClInclude Include="Scheduler.h" />
     <ClInclude Include="Shaders\fragment.h" />
     <ClInclude Include="Shaders\vertex.h" />
     <ClInclude Include="SPI.h" />
+    <ClInclude Include="SPIDevice.h" />
     <ClInclude Include="Timer.h" />
+    <ClInclude Include="Touchscreen.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

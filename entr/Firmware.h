@@ -1,6 +1,7 @@
 #pragma once
 
 #include"Logger.h"
+#include"SPIDevice.h"
 
 enum class FirmwareState
 {
@@ -12,7 +13,7 @@ enum class FirmwareState
 	ProgramData
 };
 
-class Firmware
+class Firmware : public SPIDevice
 {
 public:
 	Firmware();

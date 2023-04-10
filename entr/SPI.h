@@ -2,7 +2,10 @@
 
 #include"Logger.h"
 #include"InterruptManager.h"
+#include"SPIDevice.h"
 #include"Firmware.h"
+#include"PowerManager.h"
+#include"Touchscreen.h"
 
 class SPI
 {
@@ -15,8 +18,7 @@ public:
 
 private:
 	std::shared_ptr<InterruptManager> m_interruptManager;
-	std::shared_ptr<Firmware> m_firmware;
-
+	std::shared_ptr<SPIDevice> m_SPIDevices[3];
 	void writeSPIData(uint8_t value);
 	uint16_t SPICNT = 0;
 	uint8_t m_SPIData = 0;
