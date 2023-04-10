@@ -13,6 +13,7 @@ Bus::Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::sh
 	m_NDS7Timer = std::make_shared<Timer>(false, m_interruptManager, m_scheduler);
 	m_cartridge = cartridge;
 	m_spi = std::make_shared<SPI>(m_interruptManager);
+	m_rtc = std::make_shared<RTC>();
 
 	m_ppu->registerMemory(m_mem);
 
@@ -496,6 +497,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return m_NDS7Timer->readIO(address);
 	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
 		return m_input->readIORegister(address);
+	case 0x04000138: case 0x04000139:	//4000139 to shut up console
+		return m_rtc->read(address);
 	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
 		return m_ipc->NDS7_read8(address);
 	case 0x04000208: case 0x04000209: case 0x0400020A: case 0x0400020B: case 0x04000210: case 0x04000211: case 0x04000212: case 0x04000213:
@@ -551,6 +554,9 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 		break;
 	case 0x04000132: case 0x04000133:
 		m_input->writeIORegister(address, value);
+		break;
+	case 0x04000138: case 0x04000139:	//4000139 to shut up console
+		m_rtc->write(address, value);
 		break;
 	case 0x04000180: case 0x04000181: case 0x04000182: case 0x04000183: case 0x04000184: case 0x04000185:
 		m_ipc->NDS7_write8(address, value);

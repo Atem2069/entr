@@ -111,6 +111,9 @@
     <ClCompile Include="Firmware.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RTC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
@@ -168,6 +171,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Firmware.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RTC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

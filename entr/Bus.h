@@ -9,6 +9,7 @@
 #include"Timer.h"
 #include"Cartridge.h"
 #include"SPI.h"
+#include"RTC.h"
 
 #include<format>
 
@@ -137,6 +138,7 @@ private:
 	std::shared_ptr<Timer> m_NDS9Timer;
 	std::shared_ptr<Cartridge> m_cartridge;
 	std::shared_ptr<SPI> m_spi;
+	std::shared_ptr<RTC> m_rtc;
 
 	DMAChannel m_NDS7Channels[4] = {};
 	DMAChannel m_NDS9Channels[4] = {};
