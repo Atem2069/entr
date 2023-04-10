@@ -7,7 +7,9 @@ enum class FirmwareState
 	AwaitCommand,
 	WriteAddress,
 	ReadStatus,
-	TransferData
+	ReadData,
+	WriteData,
+	ProgramData
 };
 
 class Firmware
@@ -26,6 +28,7 @@ private:
 	uint8_t m_statusReg = 0;
 
 	FirmwareState m_state = FirmwareState::AwaitCommand;
+	uint8_t m_command = 0;
 
 	void decodeCommand(uint8_t value);
 

@@ -15,7 +15,7 @@ NDS::~NDS()
 
 void NDS::run()
 {
-	while (true)
+	while (!m_shouldStop)
 	{
 		ARM9->run(32);	//ARM9 runs twice the no. cycles as the ARM7, as it runs at twice the clock speed
 		ARM7->run(16);
@@ -34,7 +34,7 @@ void NDS::frameEventHandler()
 
 void NDS::notifyDetach()
 {
-	//todo
+	m_shouldStop = true;
 }
 
 void NDS::registerInput(std::shared_ptr<InputState> inp)
@@ -66,7 +66,7 @@ void NDS::m_initialise()
 	m_ppu = std::make_shared<PPU>(m_interruptManager, m_scheduler);
 	m_bus = std::make_shared<Bus>(nds7bios,nds9bios,m_cartridge, m_scheduler,m_interruptManager,m_ppu, m_input);
 
-	bool directBoot = true;
+	bool directBoot = false;
 	if (directBoot)
 	{
 		//load arm9/arm7 binaries

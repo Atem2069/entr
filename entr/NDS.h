@@ -41,6 +41,7 @@ private:
 	void m_destroy();
 
 	void frameEventHandler();
+	bool m_shouldStop = false;
 
 	std::vector<uint8_t> readFile(const char* name);
 };

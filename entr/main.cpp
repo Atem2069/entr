@@ -42,6 +42,8 @@ int main()
 		m_inputState->Right = m_display.getPressed(GLFW_KEY_RIGHT);
 	}
 
+	m_nds->notifyDetach();
+
 	if(m_workerThread.joinable())
 		m_workerThread.join();
 	return 0;

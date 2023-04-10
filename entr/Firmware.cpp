@@ -7,7 +7,10 @@ Firmware::Firmware()
 
 Firmware::~Firmware()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Info, "Saving firmware data..");
+	std::ofstream fout("rom\\firmware.bin", std::ios::out | std::ios::binary);
+	fout.write((char*)&m_data[0], m_data.size());
+	fout.close();
 }
 
 uint8_t Firmware::sendCommand(uint8_t value)
@@ -26,13 +29,32 @@ uint8_t Firmware::sendCommand(uint8_t value)
 		if (addressProgress == 3)
 		{
 			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Access to address {:#x}", m_readAddress));
-			m_state = FirmwareState::TransferData;
+			switch (m_command)
+			{
+			case 0x03:
+				m_state = FirmwareState::ReadData; break;
+			case 0x0A:
+				m_state = FirmwareState::WriteData; break;
+			case 0x02:
+				m_state = FirmwareState::ProgramData; break;
+			}
 		}
 		return 0;
 	}
-	case FirmwareState::TransferData:
+	case FirmwareState::ReadData:
 	{
 		return m_data[m_readAddress++];
+	}
+	case FirmwareState::WriteData:						//write data/program data shouldn't cross page boundaries.. should take this into account at some point
+	{
+		m_data[m_readAddress++] = value;
+		return 0;
+	}
+	case FirmwareState::ProgramData:
+	{
+		uint8_t curData = m_data[m_readAddress];
+		m_data[m_readAddress++] = curData & value;
+		return 0;
 	}
 	case FirmwareState::ReadStatus:
 		return m_statusReg;
@@ -48,8 +70,7 @@ void Firmware::decodeCommand(uint8_t value)
 {
 	switch (value)
 	{
-	case 0x03:
-		Logger::getInstance()->msg(LoggerSeverity::Info, "Firmware read command!");
+	case 0x03: case 0x0A: case 0x02:
 		m_state = FirmwareState::WriteAddress;
 		m_readAddress = 0;
 		addressProgress = 0;
@@ -69,4 +90,6 @@ void Firmware::decodeCommand(uint8_t value)
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown firmware command {:#x}", value));
 	}
+
+	m_command = value;
 }
