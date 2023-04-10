@@ -23,6 +23,7 @@ private:
 	std::vector<uint8_t> m_data;
 	uint32_t m_readAddress = 0;
 	uint32_t addressProgress = 0;
+	uint8_t m_statusReg = 0;
 
 	FirmwareState m_state = FirmwareState::AwaitCommand;
 

@@ -35,7 +35,7 @@ uint8_t Firmware::sendCommand(uint8_t value)
 		return m_data[m_readAddress++];
 	}
 	case FirmwareState::ReadStatus:
-		return 0;
+		return m_statusReg;
 	}
 }
 
@@ -54,9 +54,18 @@ void Firmware::decodeCommand(uint8_t value)
 		m_readAddress = 0;
 		addressProgress = 0;
 		break;
+	case 0x04:
+		m_statusReg &= ~(1 << 1);	//clear write enable bit
+		m_state = FirmwareState::AwaitCommand;
+		break;
 	case 0x05:
 		m_state = FirmwareState::ReadStatus;
 		break;
+	case 0x06:
+		m_statusReg |= (1 << 1);
+		m_state = FirmwareState::AwaitCommand;
+		break;
+
 	default:
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown firmware command {:#x}", value));
 	}
