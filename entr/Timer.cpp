@@ -21,18 +21,19 @@ void Timer::event()
 	int timerIdx = 0;
 	switch (m_scheduler->getLastFiredEvent())
 	{
-	case Event::TIMER0:
+	case Event::NDS9_TIMER0: case Event::NDS7_TIMER0:
 		break;
-	case Event::TIMER1:
+	case Event::NDS9_TIMER1: case Event::NDS7_TIMER1:
 		timerIdx = 1;
 		break;
-	case Event::TIMER2:
+	case Event::NDS9_TIMER2: case Event::NDS7_TIMER2:
 		timerIdx = 2;
 		break;
-	case Event::TIMER3:
+	case Event::NDS9_TIMER3: case Event::NDS7_TIMER3:
 		timerIdx = 3;
 		break;
 	}
+
 
 	uint8_t ctrlreg = m_timers[timerIdx].CNT_H;
 	bool timerEnabled = (ctrlreg >> 7) & 0b1;
@@ -120,8 +121,8 @@ void Timer::calculateNextOverflow(int timerIdx, uint64_t timeBase)
 	uint64_t currentTime = timeBase;
 	uint64_t overflowTimestamp = currentTime + cyclesToOverflow;
 
-	m_scheduler->removeEvent(timerEventLUT[timerIdx]);	//just in case :)
-	m_scheduler->addEvent(timerEventLUT[timerIdx], &Timer::onSchedulerEvent, (void*)this, overflowTimestamp);
+	m_scheduler->removeEvent(timerEventLUT[NDS9][timerIdx]);	//just in case :)
+	m_scheduler->addEvent(timerEventLUT[NDS9][timerIdx], &Timer::onSchedulerEvent, (void*)this, overflowTimestamp);
 
 	m_timers[timerIdx].timeActivated = currentTime;
 	m_timers[timerIdx].lastUpdateClock = (currentTime >> shiftLut[prescalerSelect]);
@@ -202,7 +203,7 @@ void Timer::writeControl(int timerIdx)
 		calculateNextOverflow(timerIdx, m_scheduler->getCurrentTimestamp());
 
 	if ((timerWasEnabled && !timerNowEnabled) || (countup))			//if timer becomes disabled, or it becomes a countup timer: unschedule
-		m_scheduler->removeEvent(timerEventLUT[timerIdx]);
+		m_scheduler->removeEvent(timerEventLUT[NDS9][timerIdx]);
 }
 
 void Timer::writeReload(int timerIdx)

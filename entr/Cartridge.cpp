@@ -105,12 +105,14 @@ void Cartridge::write(uint32_t address, uint8_t value)
 	{
 	case 0x040001A0:
 		AUXSPICNT &= 0xFF00; AUXSPICNT |= value&0x7F;
+		chipSelectHold = (AUXSPICNT >> 6) & 0b1;
 		break;
 	case 0x040001A1:
 		AUXSPICNT &= 0xFF; AUXSPICNT |= (value << 8);
 		break;
 	case 0x040001A2:
 		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("AUXSPIDATA write: {:#x}", value));
+		break;
 	case 0x040001A4:
 		ROMCTRL &= 0xFFFFFF00; ROMCTRL |= value;
 		break;

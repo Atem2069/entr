@@ -46,4 +46,6 @@ private:
 	bool transferInProgress = false;
 	bool NDS7HasAccess = false;
 	uint64_t cartCommand = 0;
+
+	bool chipSelectHold = false;
 };

@@ -11,10 +11,14 @@ enum class Event
 {
 	Frame = 0,
 	PPU = 1,
-	TIMER0=2,
-	TIMER1=3,
-	TIMER2=4,
-	TIMER3=5
+	NDS7_TIMER0=2,
+	NDS7_TIMER1=3,
+	NDS7_TIMER2=4,
+	NDS7_TIMER3=5,
+	NDS9_TIMER0=6,
+	NDS9_TIMER1=7,
+	NDS9_TIMER2=8,
+	NDS9_TIMER3=9
 };
 
 struct SchedulerEntry

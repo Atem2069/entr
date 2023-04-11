@@ -1009,6 +1009,7 @@ void PPU::checkVCOUNTInterrupt()
 
 	vcountCompare = ((NDS7_DISPSTAT >> 8) & 0xFF) | (((NDS7_DISPSTAT >> 7) & 0b1) << 8);
 	matches = (vcountCompare == VCOUNT);
+	NDS7_setVCounterFlag(matches);
 	if (matches && ((NDS7_DISPSTAT >> 5) & 0b1) && !nds7_vcountIRQLine)
 		m_interruptManager->NDS7_requestInterrupt(InterruptType::VCount);
 	nds7_vcountIRQLine = matches;

@@ -32,7 +32,7 @@ public:
 
 	static void onSchedulerEvent(void* context);
 private:
-	static constexpr Event timerEventLUT[4] = { Event::TIMER0,Event::TIMER1,Event::TIMER2,Event::TIMER3 };
+	static constexpr Event timerEventLUT[2][4] = { {Event::NDS7_TIMER0,Event::NDS7_TIMER1,Event::NDS7_TIMER2,Event::NDS7_TIMER3}, {Event::NDS9_TIMER0,Event::NDS9_TIMER1,Event::NDS9_TIMER2,Event::NDS9_TIMER3} };
 	static constexpr InterruptType irqLUT[4] = { InterruptType::Timer0,InterruptType::Timer1,InterruptType::Timer2,InterruptType::Timer3 };
 	void event();
 	void calculateNextOverflow(int timerIdx, uint64_t timeBase);

@@ -66,7 +66,7 @@ void NDS::m_initialise()
 	m_ppu = std::make_shared<PPU>(m_interruptManager, m_scheduler);
 	m_bus = std::make_shared<Bus>(nds7bios,nds9bios,m_cartridge, m_scheduler,m_interruptManager,m_ppu, m_input);
 
-	bool directBoot = false;
+	bool directBoot = true;
 	if (directBoot)
 	{
 		//load arm9/arm7 binaries
