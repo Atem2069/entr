@@ -3,7 +3,7 @@
 SPI::SPI(std::shared_ptr<InterruptManager> interruptManager)
 {
 	m_SPIDevices[0] = std::make_shared<PowerManager>();
-	m_SPIDevices[1] = std::make_shared<Firmware>();
+	m_SPIDevices[1] = std::make_shared<Flash>("rom\\firmware.bin");
 	m_SPIDevices[2] = std::make_shared<Touchscreen>();
 	m_interruptManager = interruptManager;
 }

@@ -108,7 +108,7 @@
     <ClCompile Include="SPI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Firmware.cpp">
+    <ClCompile Include="Flash.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RTC.cpp">
@@ -176,7 +176,7 @@
     <ClInclude Include="SPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Firmware.h">
+    <ClInclude Include="Flash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RTC.h">

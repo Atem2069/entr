@@ -225,7 +225,7 @@ void Bus::NDS7_write32(uint32_t address, uint32_t value)
 	case 6:
 	{
 		uint8_t* addr = m_ppu->mapARM7Address(address);
-		setValue16(addr, 0, 0xFFFF, value);
+		setValue32(addr, 0, 0xFFFF, value);
 		break;
 	}
 	default:

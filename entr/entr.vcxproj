@@ -102,13 +102,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Users\Henry\source\repos\entr\lib\glfw\include;C:\Users\Henry\source\repos\entr\lib\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\Henry\source\repos\entr\lib\glfw\lib;C:\Users\Henry\source\repos\entr\lib\glad\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;glad-build.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -146,7 +149,7 @@
     <ClCompile Include="Bus.cpp" />
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="Display.cpp" />
-    <ClCompile Include="Firmware.cpp" />
+    <ClCompile Include="Flash.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="InterruptManager.cpp" />
     <ClCompile Include="IPC.cpp" />
@@ -171,7 +174,7 @@
     <ClInclude Include="Bus.h" />
     <ClInclude Include="Cartridge.h" />
     <ClInclude Include="Display.h" />
-    <ClInclude Include="Firmware.h" />
+    <ClInclude Include="Flash.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="InterruptManager.h" />
     <ClInclude Include="IPC.h" />

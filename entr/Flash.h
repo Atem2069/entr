@@ -3,7 +3,7 @@
 #include"Logger.h"
 #include"SPIDevice.h"
 
-enum class FirmwareState
+enum class FlashState
 {
 	AwaitCommand,
 	WriteAddress,
@@ -13,11 +13,11 @@ enum class FirmwareState
 	ProgramData
 };
 
-class Firmware : public SPIDevice
+class Flash : public SPIDevice
 {
 public:
-	Firmware();
-	~Firmware();
+	Flash(std::string fileName);
+	~Flash();
 
 	uint8_t sendCommand(uint8_t value);
 	void deselect();
@@ -27,8 +27,9 @@ private:
 	uint32_t m_readAddress = 0;
 	uint32_t addressProgress = 0;
 	uint8_t m_statusReg = 0;
+	bool writeback = false;	//hack
 
-	FirmwareState m_state = FirmwareState::AwaitCommand;
+	FlashState m_state = FlashState::AwaitCommand;
 	uint8_t m_command = 0;
 
 	void decodeCommand(uint8_t value);

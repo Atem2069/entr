@@ -3,6 +3,7 @@
 #include"Logger.h"
 #include"InterruptManager.h"
 #include"Scheduler.h"
+#include"Flash.h"
 
 class Cartridge
 {
@@ -32,6 +33,8 @@ private:
 	uint8_t read(uint32_t address);
 	void write(uint32_t address, uint8_t value);
 
+	std::shared_ptr<Flash> m_backup;
+
 	callbackFn NDS9_DMACallback;
 	void* DMAContext;
 
@@ -48,4 +51,5 @@ private:
 	uint64_t cartCommand = 0;
 
 	bool chipSelectHold = false;
+	uint8_t SPIData = 0;
 };

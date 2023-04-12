@@ -3,7 +3,7 @@
 #include"Logger.h"
 #include"InterruptManager.h"
 #include"SPIDevice.h"
-#include"Firmware.h"
+#include"Flash.h"
 #include"PowerManager.h"
 #include"Touchscreen.h"
 

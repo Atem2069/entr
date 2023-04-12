@@ -4,6 +4,7 @@ Cartridge::Cartridge(std::vector<uint8_t> cartData, std::shared_ptr<InterruptMan
 {
 	m_cartData = cartData;
 	m_interruptManager = interruptManager;
+	m_backup = std::make_shared<Flash>("");
 }
 
 Cartridge::~Cartridge()
@@ -86,7 +87,7 @@ uint8_t Cartridge::read(uint32_t address)
 	case 0x040001A1:
 		return ((AUXSPICNT >> 8) & 0xFF);
 	case 0x040001A2:
-		return 0x00;
+		return SPIData;
 	case 0x040001A4:
 		return ROMCTRL & 0xFF;
 	case 0x040001A5:
@@ -109,9 +110,17 @@ void Cartridge::write(uint32_t address, uint8_t value)
 		break;
 	case 0x040001A1:
 		AUXSPICNT &= 0xFF; AUXSPICNT |= (value << 8);
+		if (!(AUXSPICNT >> 15))
+			m_backup->deselect();
+		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("AUXSPICNT config. enable = {} chipselect hold = {} spi mode={}", (AUXSPICNT >> 15), chipSelectHold, ((AUXSPICNT >> 13) & 0b1)));
 		break;
 	case 0x040001A2:
 		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("AUXSPIDATA write: {:#x}", value));
+		if (!(AUXSPICNT >> 15))
+			break;
+		SPIData = m_backup->sendCommand(value);
+		if (!chipSelectHold)
+			m_backup->deselect();
 		break;
 	case 0x040001A4:
 		ROMCTRL &= 0xFFFFFF00; ROMCTRL |= value;
