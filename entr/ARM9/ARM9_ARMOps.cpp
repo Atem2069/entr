@@ -916,7 +916,7 @@ void ARM946E::ARM_SoftwareInterrupt()
 	uint32_t oldPC = R[15] - 4;	//-4 because it points to next instruction
 
 	CPSR &= 0xFFFFFFE0;	//clear mode bits (0-4)
-	CPSR |= 0b0010011;	//set svc bits
+	CPSR |= 0b10010011;	//set svc bits
 	swapBankedRegisters();
 
 	setSPSR(oldCPSR);			//set SPSR_svc
