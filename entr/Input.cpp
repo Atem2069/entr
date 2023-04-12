@@ -10,13 +10,6 @@ Input::~Input()
 
 }
 
-void Input::registerInput(std::shared_ptr<InputState> inputState)
-{
-	m_inputState = inputState;
-	keyInput = 0xFFFF;
-	KEYCNT = 0;
-}
-
 void Input::registerInterrupts(std::shared_ptr<InterruptManager> interruptManager)
 {
 	m_interruptManager = interruptManager;
@@ -24,7 +17,7 @@ void Input::registerInterrupts(std::shared_ptr<InterruptManager> interruptManage
 
 void Input::tick()
 {
-	uint16_t newInputState = (~(m_inputState->reg)) & 0x3FF;
+	uint16_t newInputState = (~(inputState.reg)) & 0x3FF;
 	bool shouldCheckIRQ = (newInputState != keyInput);
 	keyInput = newInputState;
 	/*if (shouldCheckIRQ)					//i'm confused.. if the irq was already asserted when KEYCNT written, then we can just trigger the irq on key input change
@@ -88,3 +81,5 @@ void Input::checkIRQ()
 		m_interruptManager->requestInterrupt(InterruptType::Keypad);
 	irqActive = shouldDoIRQ;*/
 }
+
+InputState Input::inputState = {};

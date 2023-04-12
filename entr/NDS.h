@@ -21,9 +21,6 @@ public:
 
 	void run();
 	void notifyDetach();	
-
-	void registerInput(std::shared_ptr<InputState> inp);
-
 	void* getPPUData();
 	static void onEvent(void* context);
 private:

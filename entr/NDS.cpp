@@ -37,12 +37,6 @@ void NDS::notifyDetach()
 	m_shouldStop = true;
 }
 
-void NDS::registerInput(std::shared_ptr<InputState> inp)
-{
-	m_inputState = inp;
-	m_input->registerInput(m_inputState);
-}
-
 void NDS::m_initialise()
 {
 	std::vector<uint8_t> romData = readFile("rom\\mkds.nds");
