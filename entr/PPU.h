@@ -142,6 +142,11 @@ private:
 
 	void renderLCDCMode();
 	template <Engine engine> void renderMode0();
+	template <Engine engine> void renderMode1();
+	template <Engine engine> void renderMode2();
+	template <Engine engine> void renderMode3();
+	template <Engine engine> void renderMode4();
+	template <Engine engine> void renderMode5();
 
 	template<Engine engine, int bg> void renderBackground();
 	template<Engine engine> void renderSprites();

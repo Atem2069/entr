@@ -62,6 +62,21 @@ void PPU::HDraw()
 		case 0:
 			renderMode0<Engine::A>();
 			break;
+		case 1:
+			renderMode1<Engine::A>();
+			break;
+		case 2:
+			renderMode2<Engine::A>();
+			break;
+		case 3:
+			renderMode3<Engine::A>();
+			break;
+		case 4:
+			renderMode4<Engine::A>();
+			break;
+		case 5:
+			renderMode5<Engine::A>();
+			break;
 		//default:
 		//	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown mode {}",(int)mode));
 		}
@@ -76,6 +91,21 @@ void PPU::HDraw()
 		{
 		case 0:
 			renderMode0<Engine::B>();
+			break;
+		case 1:
+			renderMode1<Engine::B>();
+			break;
+		case 2:
+			renderMode2<Engine::B>();
+			break;
+		case 3:
+			renderMode3<Engine::B>();
+			break;
+		case 4:
+			renderMode4<Engine::B>();
+			break;
+		case 5:
+			renderMode5<Engine::B>();
 			break;
 		//default:
 		//	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown mode {}",(int)mode));
@@ -196,6 +226,106 @@ template<Engine engine>void PPU::renderMode0()
 		renderBackground<engine, 3>();
 
 }
+
+template<Engine engine> void PPU::renderMode1()
+{
+	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	if (engine == Engine::B)
+		m_backgroundLayers = m_engineBBgLayers;
+
+	renderSprites<engine>();
+	//bit messy, don't like too much..
+	m_backgroundLayers[0].priority = 255;
+	if (m_backgroundLayers[0].enabled)
+		renderBackground<engine, 0>();
+	m_backgroundLayers[1].priority = 255;
+	if (m_backgroundLayers[1].enabled)
+		renderBackground<engine, 1>();
+	m_backgroundLayers[2].priority = 255;
+	if (m_backgroundLayers[2].enabled)
+		renderBackground<engine, 2>();
+	m_backgroundLayers[3].priority = 255;
+	//todo: render bg 3 (affine)
+}
+
+template<Engine engine> void PPU::renderMode2()
+{
+	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	if (engine == Engine::B)
+		m_backgroundLayers = m_engineBBgLayers;
+
+	renderSprites<engine>();
+	//bit messy, don't like too much..
+	m_backgroundLayers[0].priority = 255;
+	if (m_backgroundLayers[0].enabled)
+		renderBackground<engine, 0>();
+	m_backgroundLayers[1].priority = 255;
+	if (m_backgroundLayers[1].enabled)
+		renderBackground<engine, 1>();
+	m_backgroundLayers[2].priority = 255;
+	m_backgroundLayers[3].priority = 255;
+	//todo: render bgs 2,3 (affine)
+}
+
+template<Engine engine> void PPU::renderMode3()
+{
+	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	if (engine == Engine::B)
+		m_backgroundLayers = m_engineBBgLayers;
+
+	renderSprites<engine>();
+	//bit messy, don't like too much..
+	m_backgroundLayers[0].priority = 255;
+	if (m_backgroundLayers[0].enabled)
+		renderBackground<engine, 0>();
+	m_backgroundLayers[1].priority = 255;
+	if (m_backgroundLayers[1].enabled)
+		renderBackground<engine, 1>();
+	m_backgroundLayers[2].priority = 255;
+	if (m_backgroundLayers[2].enabled)
+		renderBackground<engine, 2>();
+	m_backgroundLayers[3].priority = 255;
+	//todo: render bg 3 (extended)
+}
+
+template<Engine engine> void PPU::renderMode4()
+{
+	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	if (engine == Engine::B)
+		m_backgroundLayers = m_engineBBgLayers;
+
+	renderSprites<engine>();
+	//bit messy, don't like too much..
+	m_backgroundLayers[0].priority = 255;
+	if (m_backgroundLayers[0].enabled)
+		renderBackground<engine, 0>();
+	m_backgroundLayers[1].priority = 255;
+	if (m_backgroundLayers[1].enabled)
+		renderBackground<engine, 1>();
+	m_backgroundLayers[2].priority = 255;
+	m_backgroundLayers[3].priority = 255;
+	//todo: render bg 2 (affine), bg 3 (extended)
+}
+
+template<Engine engine> void PPU::renderMode5()
+{
+	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	if (engine == Engine::B)
+		m_backgroundLayers = m_engineBBgLayers;
+
+	renderSprites<engine>();
+	//bit messy, don't like too much..
+	m_backgroundLayers[0].priority = 255;
+	if (m_backgroundLayers[0].enabled)
+		renderBackground<engine, 0>();
+	m_backgroundLayers[1].priority = 255;
+	if (m_backgroundLayers[1].enabled)
+		renderBackground<engine, 1>();
+	m_backgroundLayers[2].priority = 255;
+	m_backgroundLayers[3].priority = 255;
+	//todo: render bgs 2,3 (extended)
+}
+
 
 template<Engine engine> void PPU::composeLayers()
 {
