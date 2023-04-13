@@ -12,8 +12,8 @@ Touchscreen::~Touchscreen()
 
 uint8_t Touchscreen::sendCommand(uint8_t value)
 {
-	uint8_t result = ((m_data >> 8) & 0xFF);
-	m_data <<= 8;
+	uint8_t result = (m_data & 0xFF);	//janky
+	m_data >>= 8;
 
 	if ((value >> 7) & 0b1)			//update adc y, adc x
 	{
@@ -30,10 +30,10 @@ uint8_t Touchscreen::sendCommand(uint8_t value)
 	switch (channelSelect)
 	{
 	case 1:			//y
-		m_data = adcy;
+		m_data = ((adcy >> 8) & 0xFF) | (adcy & 0xFF);
 		break;
 	case 5:			//x
-		m_data = adcx;
+		m_data = ((adcx >> 8) & 0xFF) | (adcx & 0xFF);
 		break;
 	}
 	return result;

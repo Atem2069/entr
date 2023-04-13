@@ -136,3 +136,16 @@ bool Display::getPressed(unsigned int key)
 {
 	return (glfwGetKey(m_window, key)) == GLFW_PRESS;
 }
+
+bool Display::getLeftMouseClick()
+{
+	return (glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_LEFT)) == GLFW_PRESS;
+}
+
+void Display::getCursorPos(int& x, int& y)
+{
+	double a, b;
+	glfwGetCursorPos(m_window, &a, &b);
+	x = (int)a;
+	y = (int)b;
+}

@@ -26,6 +26,6 @@ public:
 private:
 	TouchscreenState m_state = TouchscreenState::AwaitCommand;
 	uint16_t m_data;
-	int adcx1 = 0, adcx2 = 0, adcy1 = 0, adcy2 = 0, scrx1 = 0, scrx2 = 0, scry1 = 0, scry2 = 0;	//todo: fill out
+	int adcx1 = 0, adcy1 = 0, scrx1 = 0, scry1 = 0, adcx2 = 0xFF0, adcy2 = 0xBF0, scrx2 = 0xFF, scry2 = 0xBF;	//values ripped from firmware. should pull them automatically :)
 	uint16_t adcy = 0, adcx = 0;
 };

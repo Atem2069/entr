@@ -38,6 +38,21 @@ int main()
 		Input::inputState.Down = m_display.getPressed(GLFW_KEY_DOWN);
 		Input::inputState.Left = m_display.getPressed(GLFW_KEY_LEFT);
 		Input::inputState.Right = m_display.getPressed(GLFW_KEY_RIGHT);
+
+		int x = 0, y = 0;
+		m_display.getCursorPos(x, y);
+		if ((x >= 0 && x < 512) && (y >= 384 && y < 768) && m_display.getLeftMouseClick())
+		{
+			Input::extInputState.penDown = true;
+			Touchscreen::pressed = true;
+			Touchscreen::screenX = x/2;
+			Touchscreen::screenY = (y/2)-192;
+		}
+		else
+		{
+			Touchscreen::pressed = false;
+			Input::extInputState.penDown = false;
+		}
 	}
 
 	m_nds->notifyDetach();

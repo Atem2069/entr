@@ -20,6 +20,7 @@ void Input::tick()
 	uint16_t newInputState = (~(inputState.reg)) & 0x3FF;
 	bool shouldCheckIRQ = (newInputState != keyInput);
 	keyInput = newInputState;
+	extKeyInput = (~(extInputState.reg)) & 0xFF;
 	/*if (shouldCheckIRQ)					//i'm confused.. if the irq was already asserted when KEYCNT written, then we can just trigger the irq on key input change
 	{									//....otherwise, recheck if the irq can happen?? wtf is my code doing??
 		if (irqActive)
@@ -50,6 +51,10 @@ uint8_t Input::readIORegister(uint32_t address)
 		return KEYCNT & 0xFF;
 	case 0x04000133:
 		return ((KEYCNT >> 8) & 0xFF);
+	case 0x04000136:
+		return extKeyInput & 0x7F;
+	case 0x04000137:
+		return 0;
 	}
 }
 
@@ -83,3 +88,4 @@ void Input::checkIRQ()
 }
 
 InputState Input::inputState = {};
+ExtInputState Input::extInputState = {};

@@ -29,6 +29,22 @@ union InputState
 	};
 };
 
+union ExtInputState
+{
+	uint8_t reg;
+	struct
+	{
+		bool X : 1;
+		bool Y : 1;
+		bool unused2 : 1;
+		bool unused3 : 1;
+		bool unused4 : 1;
+		bool unused5 : 1;
+		bool penDown : 1;
+		bool unused7 : 1;
+	};
+};
+
 class Input
 {
 public:
@@ -42,6 +58,7 @@ public:
 	bool getIRQConditionsMet();
 
 	static InputState inputState;
+	static ExtInputState extInputState;
 private:
 	void checkIRQ();
 
@@ -49,5 +66,6 @@ private:
 	uint64_t lastEventTime = 0;
 	uint16_t keyInput = 0;
 	uint16_t KEYCNT = 0;
+	uint8_t extKeyInput = 0;
 	bool irqActive = false;
 };

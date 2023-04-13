@@ -39,6 +39,8 @@ public:
 	void update(void* newData);	//unsafe but size is known :)
 
 	bool getPressed(unsigned int key);
+	bool getLeftMouseClick();
+	void getCursorPos(int& x, int& y);
 private:
 	GLFWwindow* m_window;
 

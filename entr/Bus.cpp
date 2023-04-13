@@ -525,10 +525,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return hack_soundBias & 0xFF;
 	case 0x04000505:
 		return ((hack_soundBias >> 8) & 0b11);
-	case 0x04000136:	//hax
-		return 0x7F;
-	case 0x04000137:
-		return 0x0;
+	case 0x04000136: case 0x04000137:
+		return m_input->readIORegister(address);
 	//	return 1;
 	}
 	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
