@@ -386,31 +386,36 @@ template<Engine engine, int bg> void PPU::renderBackground()
 	}
 	uint16_t ctrlReg = 0;
 	uint32_t xScroll = 0, yScroll = 0;
-
+	int extPalBlock = 0;
 	switch (bg)
 	{
 	case 0:
 		ctrlReg = m_regs.BG0CNT;
 		xScroll = m_regs.BG0HOFS;
 		yScroll = m_regs.BG0VOFS;
+		extPalBlock = ((ctrlReg >> 13) & 0b1) << 1;	//0=slot 0,1=slot 2
 		break;
 	case 1:
 		ctrlReg = m_regs.BG1CNT;
 		xScroll = m_regs.BG1HOFS;
 		yScroll = m_regs.BG1VOFS;
+		extPalBlock = (((ctrlReg >> 13) & 0b1) << 1) + 1;	//0=slot 1, 1=slot 3
 		break;
 	case 2:
 		ctrlReg = m_regs.BG2CNT;
 		xScroll = m_regs.BG2HOFS;
 		yScroll = m_regs.BG2VOFS;
+		extPalBlock = 2;
 		break;
 	case 3:
 		ctrlReg = m_regs.BG3CNT;
 		xScroll = m_regs.BG3HOFS;
 		yScroll = m_regs.BG3VOFS;
+		extPalBlock = 3;
 		break;
 	}
 
+	bool extendedPalette = ((m_regs.DISPCNT >> 30) & 0b1);
 	int mosaicHorizontal = 0;// (MOSAIC & 0xF) + 1;
 	int mosaicVertical = 0;// ((MOSAIC >> 4) & 0xF) + 1;
 
@@ -494,9 +499,20 @@ template<Engine engine, int bg> void PPU::renderBackground()
 
 				if (paletteEntry)
 				{
-					uint8_t colLow = m_mem->PAL[paletteMemoryAddr];
-					uint8_t colHigh = m_mem->PAL[paletteMemoryAddr + 1];
-					col = ((colHigh << 8) | colLow) & 0x7FFF;
+					if (!extendedPalette)
+					{
+						uint8_t colLow = m_mem->PAL[paletteMemoryAddr];
+						uint8_t colHigh = m_mem->PAL[paletteMemoryAddr + 1];
+						col = ((colHigh << 8) | colLow) & 0x7FFF;
+					}
+					else
+					{
+						uint32_t paletteMemoryAddr = paletteNumber * 256;
+						paletteMemoryAddr += (paletteEntry * 2);
+						uint8_t colLow = ppuReadBgExtPal<engine>(extPalBlock, paletteMemoryAddr);
+						uint8_t colHigh = ppuReadBgExtPal<engine>(extPalBlock, paletteMemoryAddr + 1);
+						col = ((colHigh << 8) | colLow) & 0x7FFF;
+					}
 				}
 			}
 			else

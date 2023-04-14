@@ -178,6 +178,21 @@ private:
 		return *ptr;
 	}
 
+	template<Engine engine> uint8_t ppuReadBgExtPal(int block, uint32_t address)
+	{
+		uint8_t* ptr = nullptr;
+		uint32_t lookupAddr = (block * 8192) + address;
+		uint8_t page = (lookupAddr >> 14);
+		uint32_t offset = lookupAddr & 0x3FFF;
+		if (engine == Engine::A)
+			ptr = m_mem->ABGExtPalPageTable[page];
+		else
+			ptr = m_mem->BBGExtPalPageTable[page];
+		if (ptr)
+			return ptr[offset];
+		return 0;
+	}
+
 	void setVBlankFlag(bool value);
 	void setHBlankFlag(bool value);
 	void NDS7_setVCounterFlag(bool value);
