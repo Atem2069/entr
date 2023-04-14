@@ -571,6 +571,7 @@ template<Engine engine> void PPU::renderSprites()
 	//m_spriteCyclesElapsed = 0;
 	if (!((m_registers.DISPCNT >> 12) & 0b1))							
 		return;
+	bool extendedPalettes = ((m_registers.DISPCNT >> 31) & 0b1);
 	bool oneDimensionalMapping = ((m_registers.DISPCNT >> 4) & 0b1);	
 	//bool isBlendTarget1 = ((BLDCNT >> 4) & 0b1);
 	//bool isBlendTarget2 = ((BLDCNT >> 12) & 0b1);
@@ -716,10 +717,14 @@ template<Engine engine>uint16_t PPU::extractColorFromTile(uint32_t tileBase, uin
 {
 	uint16_t col = 0;
 	uint32_t paletteMemoryAddr = 0;
-	if (sprite)
+	if (sprite)							//need to remove this. tbh rewrite this function entirely.
 		paletteMemoryAddr = 0x200;
-	if (engine == Engine::B)
-		paletteMemoryAddr += 0x400;
+	PPURegisters m_regs = m_engineARegisters;
+	if constexpr (engine == Engine::B)
+	{
+		m_regs = m_engineBRegisters;
+		paletteMemoryAddr = 0x600;
+	}
 	if (!hiColor)
 	{
 		tileBase += (xOffset / 2);
@@ -733,6 +738,10 @@ template<Engine engine>uint16_t PPU::extractColorFromTile(uint32_t tileBase, uin
 
 		paletteMemoryAddr += palette * 32;
 		paletteMemoryAddr += (colorId * 2);
+		uint8_t colLow = m_mem->PAL[paletteMemoryAddr];
+		uint8_t colHigh = m_mem->PAL[paletteMemoryAddr + 1];
+
+		col = (colHigh << 8) | colLow;
 	}
 	else
 	{
@@ -740,13 +749,25 @@ template<Engine engine>uint16_t PPU::extractColorFromTile(uint32_t tileBase, uin
 		uint8_t tileData = ppuReadObj<engine>(tileBase);
 		if (!tileData)
 			return 0x8000;
-		paletteMemoryAddr += (tileData * 2);
+		if ((m_regs.DISPCNT >> 31) & 0b1)
+		{
+			paletteMemoryAddr = palette * 256;
+			paletteMemoryAddr += tileData * 2;
+			uint8_t colLow = ppuReadObjExtPal<engine>(paletteMemoryAddr);
+			uint8_t colHigh = ppuReadObjExtPal<engine>(paletteMemoryAddr + 1);
+			col = (colHigh << 8) | colLow;
+		}
+		else
+		{
+			paletteMemoryAddr += (tileData * 2);
+			uint8_t colLow = m_mem->PAL[paletteMemoryAddr];
+			uint8_t colHigh = m_mem->PAL[paletteMemoryAddr + 1];
+
+			col = (colHigh << 8) | colLow;
+		}
 	}
 
-	uint8_t colLow = m_mem->PAL[paletteMemoryAddr];
-	uint8_t colHigh = m_mem->PAL[paletteMemoryAddr + 1];
 
-	col = (colHigh << 8) | colLow;
 	return col & 0x7FFF;
 }
 

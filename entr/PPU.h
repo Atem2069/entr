@@ -157,7 +157,7 @@ private:
 	template<Engine engine> uint8_t ppuReadBg(uint32_t address)
 	{
 		uint8_t* ptr = nullptr;
-		if (engine == Engine::A)
+		if constexpr (engine == Engine::A)
 			ptr = mapABgAddress(address);
 		else
 			ptr = mapBBgAddress(address);
@@ -169,7 +169,7 @@ private:
 	template<Engine engine> uint8_t ppuReadObj(uint32_t address)
 	{
 		uint8_t* ptr = nullptr;
-		if (engine == Engine::A)
+		if constexpr (engine == Engine::A)
 			ptr = mapAObjAddress(address);
 		else
 			ptr = mapBObjAddress(address);
@@ -184,12 +184,24 @@ private:
 		uint32_t lookupAddr = (block * 8192) + address;
 		uint8_t page = (lookupAddr >> 14);
 		uint32_t offset = lookupAddr & 0x3FFF;
-		if (engine == Engine::A)
+		if constexpr (engine == Engine::A)
 			ptr = m_mem->ABGExtPalPageTable[page];
 		else
 			ptr = m_mem->BBGExtPalPageTable[page];
 		if (ptr)
 			return ptr[offset];
+		return 0;
+	}
+
+	template<Engine engine> uint8_t ppuReadObjExtPal(uint32_t address)
+	{
+		uint8_t* ptr = nullptr;
+		if constexpr (engine == Engine::A)
+			ptr = m_mem->AObjExtPalPageTable;
+		else
+			ptr = m_mem->BObjExtPalPageTable;
+		if (ptr)
+			return ptr[address];
 		return 0;
 	}
 
