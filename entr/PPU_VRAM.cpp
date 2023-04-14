@@ -138,6 +138,10 @@ void PPU::rebuildPageTables()
 		for (int i = 0; i < 4; i++)
 			m_mem->AObjPageTable[i] = m_mem->VRAM + EOffs + (16384 * i);
 		break;
+	case 4:
+		m_mem->ABGExtPalPageTable[0] = m_mem->VRAM + EOffs;
+		m_mem->ABGExtPalPageTable[1] = m_mem->VRAM + EOffs + 16384;
+		break;
 	}
 
 	MST = VRAMCNT_F & 0b111;
@@ -154,6 +158,12 @@ void PPU::rebuildPageTables()
 	case 2:
 		m_mem->AObjPageTable[(OFS & 1) | (OFS & 2) << 1] = m_mem->VRAM + FOffs;
 		m_mem->AObjPageTable[(OFS & 1) | (OFS & 2) << 1 | 2] = m_mem->VRAM + FOffs;	//also mirrored
+		break;
+	case 4:
+		m_mem->ABGExtPalPageTable[(OFS & 0b1)] = m_mem->VRAM + FOffs;
+		break;
+	case 5:
+		m_mem->AObjExtPalPageTable = m_mem->VRAM + FOffs;
 		break;
 	}
 
@@ -172,6 +182,12 @@ void PPU::rebuildPageTables()
 		m_mem->AObjPageTable[(OFS & 1) | (OFS & 2) << 1] = m_mem->VRAM + GOffs;
 		m_mem->AObjPageTable[(OFS & 1) | (OFS & 2) << 1 | 2] = m_mem->VRAM + GOffs;	//also mirrored
 		break;
+	case 4:
+		m_mem->ABGExtPalPageTable[(OFS & 0b1)] = m_mem->VRAM + GOffs;
+		break;
+	case 5:
+		m_mem->AObjExtPalPageTable = m_mem->VRAM + GOffs;
+		break;
 	}
 
 	MST = VRAMCNT_H & 0b11;
@@ -187,6 +203,10 @@ void PPU::rebuildPageTables()
 		m_mem->BBGPageTable[1] = m_mem->VRAM + HOffs + 16384;
 		m_mem->BBGPageTable[4] = m_mem->VRAM + HOffs;
 		m_mem->BBGPageTable[5] = m_mem->VRAM + HOffs + 16384;
+		break;
+	case 2:
+		m_mem->BBGExtPalPageTable[0] = m_mem->VRAM + HOffs;
+		m_mem->BBGExtPalPageTable[1] = m_mem->VRAM + HOffs + 16384;
 		break;
 	}
 
@@ -204,6 +224,8 @@ void PPU::rebuildPageTables()
 		for (int i = 0; i < 8; i++)
 			m_mem->BObjPageTable[i] = m_mem->VRAM + IOffs;	//mirrored across 8 16kb pages
 		break;
+	case 3:
+		m_mem->BObjExtPalPageTable = m_mem->VRAM + IOffs;
 	}
 }
 
