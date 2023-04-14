@@ -39,7 +39,7 @@ void NDS::notifyDetach()
 
 void NDS::m_initialise()
 {
-	std::vector<uint8_t> romData = readFile("rom\\fireemblem.nds");
+	std::vector<uint8_t> romData = readFile("rom\\kirby.nds");
 	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
 	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
@@ -79,6 +79,9 @@ void NDS::m_initialise()
 		//copy over rom header
 		for (int i = 0; i < 0x200; i++)
 			m_bus->NDS9_write8(0x027FFE00 + i, romData[i]);
+		//copy firmware user data (e.g. tsc calibration)
+		for (int i = 0; i < 0x70; i++)
+			m_bus->NDS9_write8(0x027FFC00 + i, romData[0x3FE00 + i]);
 
 		//misc values from gbatek (bios ram usage)
 		m_bus->NDS7_write8(0x04000300, 1);
