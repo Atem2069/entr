@@ -180,7 +180,6 @@ uint32_t Cartridge::readGamecard()
 void Cartridge::startTransfer()
 {
 	transferInProgress = true;
-	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Gamecard transfer started. length={}", transferLength));
 	ROMCTRL |= (1 << 23);
 	bytesTransferred = 0;
 	uint8_t transferBlockSize = ((ROMCTRL >> 24) & 0b111);
@@ -189,15 +188,15 @@ void Cartridge::startTransfer()
 	else
 		transferLength = 0x100 << transferBlockSize;
 
+	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Gamecard transfer started. length={}", transferLength));
+
 	uint8_t commandId = ((cartCommand >> 56) & 0xFF);
 	switch (commandId)
 	{
 	case 0xB7:
 	{
 		uint32_t baseAddr = ((cartCommand >> 24) & 0xFFFFFFFF);
-		for (int i = 0; i < transferLength; i++)
-			readBuffer[i] = m_cartData[baseAddr + i];
-		//memcpy(readBuffer, &m_cartData[baseAddr], transferLength);
+		memcpy(readBuffer, &m_cartData[baseAddr], transferLength);
 		break;
 	}
 	case 0xB8: case 0x90:
