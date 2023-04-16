@@ -80,8 +80,8 @@ void NDS::m_initialise()
 		for (int i = 0; i < 0x200; i++)
 			m_bus->NDS9_write8(0x027FFE00 + i, romData[i]);
 		//copy firmware user data (e.g. tsc calibration)
-		for (int i = 0; i < 0x70; i++)
-			m_bus->NDS9_write8(0x027FFC00 + i, romData[0x3FE00 + i]);
+		for (int i = 0; i < 0xF0; i++)
+			m_bus->NDS9_write8(0x027FFC80 + i, romData[0x3FE00 + i]);
 
 		//misc values from gbatek (bios ram usage)
 		m_bus->NDS7_write8(0x04000300, 1);
