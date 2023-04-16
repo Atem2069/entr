@@ -41,7 +41,7 @@ uint8_t Touchscreen::sendCommand(uint8_t value)
 
 void Touchscreen::deselect()
 {
-	m_state = TouchscreenState::AwaitCommand;
+
 }
 
 int Touchscreen::screenX = 0;
