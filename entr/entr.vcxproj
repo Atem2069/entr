@@ -149,6 +149,7 @@
     <ClCompile Include="Bus.cpp" />
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="Display.cpp" />
+    <ClCompile Include="EEPROM.cpp" />
     <ClCompile Include="Flash.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="InterruptManager.cpp" />
@@ -174,6 +175,7 @@
     <ClInclude Include="Bus.h" />
     <ClInclude Include="Cartridge.h" />
     <ClInclude Include="Display.h" />
+    <ClInclude Include="EEPROM.h" />
     <ClInclude Include="Flash.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="InterruptManager.h" />
