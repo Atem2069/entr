@@ -4,7 +4,7 @@ Cartridge::Cartridge(std::vector<uint8_t> cartData, std::shared_ptr<InterruptMan
 {
 	m_cartData = cartData;
 	m_interruptManager = interruptManager;
-	m_backup = std::make_shared<Flash>("");
+	m_backup = std::make_shared<EEPROM>();
 }
 
 Cartridge::~Cartridge()

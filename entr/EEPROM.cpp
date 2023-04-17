@@ -2,7 +2,8 @@
 
 EEPROM::EEPROM()
 {
-
+	memset(m_data, 0xFF, 65536);
+	m_addressLatch = 0;
 }
 
 EEPROM::~EEPROM()
@@ -12,11 +13,77 @@ EEPROM::~EEPROM()
 
 uint8_t EEPROM::sendCommand(uint8_t value)
 {
-	//todo
+	switch (m_state)
+	{
+	case EEPROMState::AwaitCommand:
+		decodeCommand(value);
+		break;
+	case EEPROMState::WriteAddress:
+	{
+		uint32_t shiftAmount = 8 - (m_addressProgress * 8);
+		m_addressLatch &= ~(0xFF << shiftAmount);
+		m_addressLatch |= (value << shiftAmount);
+		m_addressProgress++;
+		if (m_addressProgress == 2)
+		{
+			m_addressProgress = 0;
+			m_state = m_nextState;
+		}
+		break;
+	}
+	case EEPROMState::ReadData:
+		return m_data[m_addressLatch++];
+	case EEPROMState::WriteData:
+		m_data[m_addressLatch++] = value;	//<--todo: write cannot cross page boundary
+		break;
+	case EEPROMState::ReadStatus:
+		return  m_statusRegister;
+	case EEPROMState::WriteStatus:
+	{
+		m_statusRegister &= 0b00000011;				//preserve lower 2 bits
+		m_statusRegister |= (value & 0b10001100);
+		break;
+	}
+	}
 	return 0;
 }
 
 void EEPROM::deselect()
 {
-	//todo
+	m_state = EEPROMState::AwaitCommand;
+}
+
+void EEPROM::decodeCommand(uint8_t value)
+{
+	switch (value)
+	{
+	case 0x06:
+		//write enable, unhandled.
+		break;
+	case 0x04:
+		//write disable, unhandled
+		break;
+	case 0x05:
+		m_state = EEPROMState::ReadStatus;
+		break;
+	case 0x01:
+		m_state = EEPROMState::WriteStatus;
+		break;
+	case 0x9F:
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to read status register from EEPROM..");
+		break;
+	case 0x03:
+		m_state = EEPROMState::WriteAddress;
+		m_nextState = EEPROMState::ReadData;
+		break;
+	case 0x02:
+		m_state = EEPROMState::WriteAddress;
+		m_nextState = EEPROMState::WriteData;
+		break;
+	default:
+		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown EEPROM command {:#x}", value));
+		while (true)
+			int a = 5;
+		break;
+	}
 }
