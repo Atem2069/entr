@@ -438,7 +438,7 @@ void ARM946E::ARM_HalfwordTransferRegisterOffset()
 		switch (operation)
 		{
 		case 0:
-			Logger::getInstance()->msg(LoggerSeverity::Error, "SWP called from halfword transfer - opcode decoding is invalid!!!");
+			Logger::msg(LoggerSeverity::Error, "SWP called from halfword transfer - opcode decoding is invalid!!!");
 			break;
 		case 1:
 			val = m_read16(base);
@@ -466,7 +466,7 @@ void ARM946E::ARM_HalfwordTransferRegisterOffset()
 		switch (operation)
 		{
 		case 0:
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
+			Logger::msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
 			break;
 		case 1:
 			m_write16(base, data & 0xFFFF);
@@ -528,7 +528,7 @@ void ARM946E::ARM_HalfwordTransferImmediateOffset()
 		switch (op)
 		{
 		case 0:
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
+			Logger::msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
 			break;
 		case 1:
 			data = m_read16(base);
@@ -556,7 +556,7 @@ void ARM946E::ARM_HalfwordTransferImmediateOffset()
 		switch (op)
 		{
 		case 0:
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
+			Logger::msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
 			break;
 		case 1:
 			m_write16(base, data & 0xFFFF);
@@ -618,7 +618,7 @@ void ARM946E::ARM_SingleDataTransfer()
 		uint8_t shiftAmount = ((m_currentOpcode >> 7) & 0x1F);	//5 bit shift amount
 		uint8_t shiftType = ((m_currentOpcode >> 5) & 0b11);
 		if (((m_currentOpcode >> 4) & 0b1) == 1)
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Opcode encoding is not valid! bit 4 shouldn't be set!!");
+			Logger::msg(LoggerSeverity::Error, "Opcode encoding is not valid! bit 4 shouldn't be set!!");
 
 		int garbageCarry = 0;
 		switch (shiftType)
@@ -693,7 +693,7 @@ void ARM946E::ARM_SingleDataTransfer()
 
 void ARM946E::ARM_Undefined()
 {
-	//Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+	//Logger::msg(LoggerSeverity::Error, "Unimplemented");
 	throw std::runtime_error("unimplemented");
 }
 
@@ -836,12 +836,12 @@ void ARM946E::ARM_BlockDataTransfer()
 
 void ARM946E::ARM_CoprocessorDataTransfer()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented. this shouldn't be executed!!");
+	Logger::msg(LoggerSeverity::Error, "Unimplemented. this shouldn't be executed!!");
 }
 
 void ARM946E::ARM_CoprocessorDataOperation()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented. this shoulldn't be executed");
+	Logger::msg(LoggerSeverity::Error, "Unimplemented. this shoulldn't be executed");
 }
 
 void ARM946E::ARM_CoprocessorRegisterTransfer()
@@ -854,7 +854,7 @@ void ARM946E::ARM_CoprocessorRegisterTransfer()
 	uint8_t CP = (m_currentOpcode >> 5) & 0x7;
 	uint8_t Cm = m_currentOpcode & 0xF;
 
-	//Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Reg transfer- load={} ARM reg=R{} CP={}, {},C{},C{},{}", loadStore, srcDestRegIdx, coprocessorNumber, CPOpc, Cn, Cm, CP));
+	//Logger::msg(LoggerSeverity::Info, std::format("Reg transfer- load={} ARM reg=R{} CP={}, {},C{},C{},{}", loadStore, srcDestRegIdx, coprocessorNumber, CPOpc, Cn, Cm, CP));
 
 	uint16_t regId = (CPOpc << 12) | (Cn << 8) | (Cm << 4) | CP;
 	if (loadStore)
@@ -888,19 +888,19 @@ void ARM946E::ARM_CoprocessorRegisterTransfer()
 			DTCM_load = (CP15_control >> 17) & 0b1;
 			ITCM_enabled = (CP15_control >> 18) & 0b1;
 			ITCM_load = (CP15_control >> 19) & 0b1;
-			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Ctrl register write. DTCM enabled={}, load={}. ITCM enabled={}, load={}",DTCM_enabled,DTCM_load,ITCM_enabled,ITCM_load));
+			Logger::msg(LoggerSeverity::Info, std::format("Ctrl register write. DTCM enabled={}, load={}. ITCM enabled={}, load={}",DTCM_enabled,DTCM_load,ITCM_enabled,ITCM_load));
 			break;
 		case 0x0910:
 			DTCM_Ctrl = getReg(srcDestRegIdx);
 			DTCM_Size = 512 << ((DTCM_Ctrl >> 1) & 0b11111);
 			DTCM_Base = ((DTCM_Ctrl >> 12)) << 12;
-			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("New DTCM settings. base={:#x} size={:#x}", DTCM_Base, DTCM_Size));
+			Logger::msg(LoggerSeverity::Info, std::format("New DTCM settings. base={:#x} size={:#x}", DTCM_Base, DTCM_Size));
 			break;
 		case 0x0911:
 			ITCM_Ctrl = getReg(srcDestRegIdx);
 			ITCM_Size = 512 << ((ITCM_Ctrl >> 1) & 0b11111);
 			ITCM_Base = ((ITCM_Ctrl >> 12)) << 12;
-			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("New ITCM settings. base={:#x} size={:#x}", ITCM_Base, ITCM_Size));
+			Logger::msg(LoggerSeverity::Info, std::format("New ITCM settings. base={:#x} size={:#x}", ITCM_Base, ITCM_Size));
 			break;
 		case 0x0704: case 0x0782:
 			m_halted = true;

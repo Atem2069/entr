@@ -19,7 +19,7 @@ Flash::~Flash()
 {
 	if (writeback)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Info, "Saving flash data..");
+		Logger::msg(LoggerSeverity::Info, "Saving flash data..");
 		std::ofstream fout("rom\\firmware.bin", std::ios::out | std::ios::binary);
 		fout.write((char*)&m_data[0], m_data.size());
 		fout.close();
@@ -41,7 +41,7 @@ uint8_t Flash::sendCommand(uint8_t value)
 		addressProgress++;
 		if (addressProgress == 3)
 		{
-			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Access to address {:#x}", m_readAddress));
+			Logger::msg(LoggerSeverity::Info, std::format("Access to address {:#x}", m_readAddress));
 			switch (m_command)
 			{
 			case 0x03:
@@ -101,7 +101,7 @@ void Flash::decodeCommand(uint8_t value)
 		break;
 
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown flash command {:#x}", value));
+		Logger::msg(LoggerSeverity::Error, std::format("Unknown flash command {:#x}", value));
 	}
 
 	m_command = value;

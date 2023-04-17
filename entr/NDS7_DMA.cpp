@@ -215,12 +215,12 @@ void Bus::NDS7_checkDMAChannel(int channel)
 	uint8_t startTiming = (m_NDS7Channels[channel].control >> 12) & 0b11;
 	if (channelEnabled && (startTiming == 0))
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Channel {} immediate DMA. src={:#x} dest={:#x} words={:#x}", channel, m_NDS7Channels[channel].internalSrc, m_NDS7Channels[channel].internalDest, m_NDS7Channels[channel].internalWordCount));
+		Logger::msg(LoggerSeverity::Info, std::format("Channel {} immediate DMA. src={:#x} dest={:#x} words={:#x}", channel, m_NDS7Channels[channel].internalSrc, m_NDS7Channels[channel].internalDest, m_NDS7Channels[channel].internalWordCount));
 		NDS7_doDMATransfer(channel);
 	}
 	else
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Channel {} DMA, start timing={} src={:#x} dest={:#x}", channel, startTiming, m_NDS7Channels[channel].internalSrc, m_NDS7Channels[channel].internalDest));
+		Logger::msg(LoggerSeverity::Info, std::format("Channel {} DMA, start timing={} src={:#x} dest={:#x}", channel, startTiming, m_NDS7Channels[channel].internalSrc, m_NDS7Channels[channel].internalDest));
 		m_NDS7Channels[channel].control &= 0x7FFF;
 	}
 }

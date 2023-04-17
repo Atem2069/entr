@@ -62,7 +62,7 @@ uint8_t Bus::NDS7_read8(uint32_t address)
 	case 8: case 9:
 		return ((address >> 1) & 0xFFFF) >> ((address & 0b1)<<3);
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
 
 	return 0;
@@ -95,7 +95,7 @@ void Bus::NDS7_write8(uint32_t address, uint8_t value)
 		break;
 	}
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
 }
 
@@ -128,7 +128,7 @@ uint16_t Bus::NDS7_read16(uint32_t address)
 	case 8: case 9:
 		return (address >> 1) & 0xFFFF;
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
 
 	return 0;
@@ -162,7 +162,7 @@ void Bus::NDS7_write16(uint32_t address, uint16_t value)
 		break;
 	}
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
 }
 
@@ -195,7 +195,7 @@ uint32_t Bus::NDS7_read32(uint32_t address)
 	case 8: case 9:
 		return ((address >> 1) & 0xFFFF) | ((((address + 2) >> 1) & 0xFFFF) << 16);
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
 
 	return 0;
@@ -229,7 +229,7 @@ void Bus::NDS7_write32(uint32_t address, uint32_t value)
 		break;
 	}
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
 }
 
@@ -259,14 +259,14 @@ uint8_t Bus::NDS9_read8(uint32_t address)
 	case 7:
 		return m_mem->OAM[address & 0x7FF];
 	case 8: case 9: case 0xA:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
 		return 0;
 	case 0xFF:
 		if ((address & 0xFFFF) > 0x7FFF)
 			return 0;
 		return m_mem->NDS9_BIOS[address & 0x7FFF];
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
 	}
 
@@ -304,13 +304,13 @@ void Bus::NDS9_write8(uint32_t address, uint8_t value)
 		m_mem->OAM[address & 0x7FF] = value;
 		break;
 	case 8: case 9: case 0xA:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space write! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space write! addr={:#x}", address));
 		break;
 	case 0xFF:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
+		Logger::msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
 		break;
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
 		break;
 	}
 
@@ -343,14 +343,14 @@ uint16_t Bus::NDS9_read16(uint32_t address)
 	case 7:
 		return getValue16(m_mem->OAM,address & 0x7FF,0x7FF);
 	case 8: case 9: case 0xA:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
 		return 0;
 	case 0xFF:
 		if ((address & 0xFFFF) > 0x7FFF)
 			return 0;
 		return getValue16(m_mem->NDS9_BIOS, address & 0x7FFF, 0x7FFF);
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
 	}
 
@@ -389,13 +389,13 @@ void Bus::NDS9_write16(uint32_t address, uint16_t value)
 		setValue16(m_mem->OAM, address & 0x7FF, 0x7FF, value);
 		break;
 	case 8: case 9: case 0xA:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space write! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space write! addr={:#x}", address));
 		break;
 	case 0xFF:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
+		Logger::msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
 		break;
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
 		break;
 	}
 
@@ -428,14 +428,14 @@ uint32_t Bus::NDS9_read32(uint32_t address)
 	case 7:
 		return getValue32(m_mem->OAM, address & 0x7FF, 0x7FF);
 	case 8: case 9: case 0xA:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
 		return 0;
 	case 0xFF:
 		if ((address & 0xFFFF) > 0x7FFF)
 			return 0;
 		return getValue32(m_mem->NDS9_BIOS, address & 0x7FFF, 0x7FFF);
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
 	}
 
@@ -474,13 +474,13 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 		setValue32(m_mem->OAM, address & 0x7FF, 0x7FF, value);
 		break;
 	case 8: case 9: case 0xA:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space write! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space write! addr={:#x}", address));
 		break;
 	case 0xFF:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
+		Logger::msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
 		break;
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
+		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
 		break;
 	}
 }
@@ -529,7 +529,7 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return m_input->readIORegister(address);
 	//	return 1;
 	}
-	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
+	Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
 }
 
@@ -588,7 +588,7 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 		hack_soundBias &= 0x00FF; hack_soundBias |= ((value & 0b11) << 8);
 		break;
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
+		Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
 	}
 }
 
@@ -680,7 +680,7 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 		return NDS9_POSTFLG;
 		return 0;
 	}
-	Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
+	Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
 }
 
@@ -774,7 +774,7 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		NDS9_POSTFLG = value & 0b1;	//NDS9 POSTFLG seems to be 2 bits, assuming just bit 0 for now.
 		break;
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
+		Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
 	}
 }
 

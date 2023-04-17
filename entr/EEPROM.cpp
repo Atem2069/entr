@@ -70,7 +70,7 @@ void EEPROM::decodeCommand(uint8_t value)
 		m_state = EEPROMState::WriteStatus;
 		break;
 	case 0x9F:
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to read status register from EEPROM..");
+		Logger::msg(LoggerSeverity::Error, "Tried to read status register from EEPROM..");
 		break;
 	case 0x03:
 		m_state = EEPROMState::WriteAddress;
@@ -81,7 +81,7 @@ void EEPROM::decodeCommand(uint8_t value)
 		m_nextState = EEPROMState::WriteData;
 		break;
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown EEPROM command {:#x}", value));
+		Logger::msg(LoggerSeverity::Error, std::format("Unknown EEPROM command {:#x}", value));
 		while (true)
 			int a = 5;
 		break;

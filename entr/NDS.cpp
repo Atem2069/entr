@@ -52,8 +52,8 @@ void NDS::m_initialise()
 	uint32_t ARM7LoadAddr = romData[0x038] | (romData[0x039] << 8) | (romData[0x03A] << 16) | (romData[0x03B] << 24);
 	uint32_t ARM7Size = romData[0x03C] | (romData[0x03D] << 8) | (romData[0x03E] << 16) | (romData[0x03F] << 24);
 
-	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("ARM9 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM9Offs, ARM9Entry, ARM9LoadAddr, ARM9Size));
-	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
+	Logger::msg(LoggerSeverity::Info, std::format("ARM9 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM9Offs, ARM9Entry, ARM9LoadAddr, ARM9Size));
+	Logger::msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
 
 	m_interruptManager = std::make_shared<InterruptManager>();
 	m_cartridge = std::make_shared<Cartridge>(romData, m_interruptManager);
@@ -74,7 +74,7 @@ void NDS::m_initialise()
 			uint8_t curByte = romData[ARM7Offs + i];
 			m_bus->NDS7_write8(ARM7LoadAddr + i, curByte);
 		}
-		Logger::getInstance()->msg(LoggerSeverity::Info, "Mapped ARM9/ARM7 binaries into memory!");
+		Logger::msg(LoggerSeverity::Info, "Mapped ARM9/ARM7 binaries into memory!");
 
 		//copy over rom header
 		for (int i = 0; i < 0x200; i++)

@@ -379,7 +379,7 @@ void ARM946E::swapBankedRegisters()
 	case 0b11111:
 		destPtr = usrBankedRegisters; break;
 	default:
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid destination mode: {:#x}", (int)newMode));
+		Logger::msg(LoggerSeverity::Error, std::format("Invalid destination mode: {:#x}", (int)newMode));
 		destPtr = usrBankedRegisters;
 		break;
 	}

@@ -2,7 +2,7 @@
 
 Display::Display(int scaleFactor)
 {
-	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Init display - width={0} height={1}", 256 * scaleFactor, 384 * scaleFactor));
+	Logger::msg(LoggerSeverity::Info, std::format("Init display - width={0} height={1}", 256 * scaleFactor, 384 * scaleFactor));
 	if (!glfwInit())
 		return;
 
@@ -13,7 +13,7 @@ Display::Display(int scaleFactor)
 	m_window = glfwCreateWindow(256 * scaleFactor, 384 * scaleFactor, "entr", nullptr, nullptr);
 	if (!m_window)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Failed to init OpenGL context!!!");
+		Logger::msg(LoggerSeverity::Error, "Failed to init OpenGL context!!!");
 		return;
 	}
 
@@ -21,7 +21,7 @@ Display::Display(int scaleFactor)
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Failed to init GLAD!!!");
+		Logger::msg(LoggerSeverity::Error, "Failed to init GLAD!!!");
 		return;
 	}
 

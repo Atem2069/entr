@@ -25,7 +25,7 @@ uint8_t SPI::read(uint32_t address)
 	case 0x040001C2:
 		if (!enabled)
 			return 0;
-		//Logger::getInstance()->msg(LoggerSeverity::Info, std::format("SPI read: {:#x}", m_SPIData));
+		//Logger::msg(LoggerSeverity::Info, std::format("SPI read: {:#x}", m_SPIData));
 		return m_SPIData;
 	}
 }
@@ -50,7 +50,7 @@ void SPI::write(uint32_t address, uint8_t value)
 		deviceSelect = ((SPICNT >> 8) & 0b11);
 		if (oldDeviceSelect != deviceSelect)
 			m_SPIDevices[oldDeviceSelect]->deselect();
-		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("New SPI settings. enabled={} irq={} chipselect hold = {} device={}", enabled, irq, chipSelectHold, deviceSelect));
+		Logger::msg(LoggerSeverity::Info, std::format("New SPI settings. enabled={} irq={} chipselect hold = {} device={}", enabled, irq, chipSelectHold, deviceSelect));
 		break;
 	}
 	case 0x040001C2:
@@ -64,7 +64,7 @@ void SPI::writeSPIData(uint8_t value)
 	if (!enabled)
 		return;
 
-	//Logger::getInstance()->msg(LoggerSeverity::Info, std::format("SPI write: {:#x}", value));
+	//Logger::msg(LoggerSeverity::Info, std::format("SPI write: {:#x}", value));
 
 	m_SPIData = m_SPIDevices[deviceSelect]->sendCommand(value);
 	if (!chipSelectHold)

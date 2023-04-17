@@ -600,7 +600,7 @@ void ARM946E::Thumb_ConditionalBranch()
 
 	uint8_t condition = ((m_currentOpcode >> 8) & 0xF);
 	if (condition == 14 || condition == 15)
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid condition code - opcode decoding is likely wrong!!");
+		Logger::msg(LoggerSeverity::Error, "Invalid condition code - opcode decoding is likely wrong!!");
 	static constexpr auto conditionTable = genConditionCodeTable();
 	bool conditionMet = (conditionTable[(CPSR >> 28) & 0xF] >> condition) & 0b1;
 	if (!conditionMet)

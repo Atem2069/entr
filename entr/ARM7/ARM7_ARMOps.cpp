@@ -417,7 +417,7 @@ void ARM7TDMI::ARM_HalfwordTransferRegisterOffset()
 		switch (operation)
 		{
 		case 0:
-			Logger::getInstance()->msg(LoggerSeverity::Error, "SWP called from halfword transfer - opcode decoding is invalid!!!");
+			Logger::msg(LoggerSeverity::Error, "SWP called from halfword transfer - opcode decoding is invalid!!!");
 			break;
 		case 1:
 			val = m_bus->NDS7_read16(base);
@@ -456,7 +456,7 @@ void ARM7TDMI::ARM_HalfwordTransferRegisterOffset()
 		switch (operation)
 		{
 		case 0:
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
+			Logger::msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
 			break;
 		case 1:
 			m_bus->NDS7_write16(base, data & 0xFFFF);
@@ -512,7 +512,7 @@ void ARM7TDMI::ARM_HalfwordTransferImmediateOffset()
 		switch (op)
 		{
 		case 0:
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
+			Logger::msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
 			break;
 		case 1:
 			data = m_bus->NDS7_read16(base);
@@ -551,7 +551,7 @@ void ARM7TDMI::ARM_HalfwordTransferImmediateOffset()
 		switch (op)
 		{
 		case 0:
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
+			Logger::msg(LoggerSeverity::Error, "Invalid halfword operation encoding");
 			break;
 		case 1:
 			m_bus->NDS7_write16(base, data & 0xFFFF);
@@ -607,7 +607,7 @@ void ARM7TDMI::ARM_SingleDataTransfer()
 		uint8_t shiftAmount = ((m_currentOpcode >> 7) & 0x1F);	//5 bit shift amount
 		uint8_t shiftType = ((m_currentOpcode >> 5) & 0b11);
 		if (((m_currentOpcode >> 4) & 0b1) == 1)
-			Logger::getInstance()->msg(LoggerSeverity::Error, "Opcode encoding is not valid! bit 4 shouldn't be set!!");
+			Logger::msg(LoggerSeverity::Error, "Opcode encoding is not valid! bit 4 shouldn't be set!!");
 
 		int garbageCarry = 0;
 		switch (shiftType)
@@ -668,7 +668,7 @@ void ARM7TDMI::ARM_SingleDataTransfer()
 
 void ARM7TDMI::ARM_Undefined()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Undefined instruction!! PC={}",getReg(15)-4));
+	Logger::msg(LoggerSeverity::Error, std::format("Undefined instruction!! PC={}",getReg(15)-4));
 	uint32_t oldCPSR = CPSR;
 	uint32_t oldPC = R[15] - 4;	
 
@@ -810,13 +810,13 @@ void ARM7TDMI::ARM_BlockDataTransfer()
 
 void ARM7TDMI::ARM_CoprocessorDataTransfer()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+	Logger::msg(LoggerSeverity::Error, "Unimplemented");
 	throw std::runtime_error("unimplemented");
 }
 
 void ARM7TDMI::ARM_CoprocessorDataOperation()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Unimplemented");
+	Logger::msg(LoggerSeverity::Error, "Unimplemented");
 	throw std::runtime_error("unimplemented");
 }
 
@@ -825,10 +825,10 @@ void ARM7TDMI::ARM_CoprocessorRegisterTransfer()
 	uint8_t coprocessorNumber = (m_currentOpcode >> 8) & 0xF;
 	if (coprocessorNumber == 14)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Warn, "Ignoring ARM7 CP14 access..");
+		Logger::msg(LoggerSeverity::Warn, "Ignoring ARM7 CP14 access..");
 		return;
 	}
-	Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Undefined attempt to access CP{}", coprocessorNumber));
+	Logger::msg(LoggerSeverity::Error, std::format("Undefined attempt to access CP{}", coprocessorNumber));
 	ARM_Undefined();
 }
 

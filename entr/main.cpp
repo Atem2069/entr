@@ -13,7 +13,7 @@ void emuWorkerThread();
 
 int main()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Info, "Hello world!");
+	Logger::msg(LoggerSeverity::Info, "Hello world!");
 
 	Display m_display(2);
 
@@ -64,7 +64,7 @@ int main()
 
 void emuWorkerThread()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Info, "Entered worker thread!");
+	Logger::msg(LoggerSeverity::Info, "Entered worker thread!");
 	m_nds->run();
-	Logger::getInstance()->msg(LoggerSeverity::Info, "Exited worker thread!");
+	Logger::msg(LoggerSeverity::Info, "Exited worker thread!");
 }

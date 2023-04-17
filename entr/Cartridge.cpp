@@ -16,7 +16,7 @@ uint8_t Cartridge::NDS7_read(uint32_t address)
 {
 	if (!NDS7HasAccess)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
+		Logger::msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
 		return 0;
 	}
 	return read(address);
@@ -26,7 +26,7 @@ void Cartridge::NDS7_write(uint32_t address, uint8_t value)
 {
 	if (!NDS7HasAccess)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to write gamecard registers without access!!");
+		Logger::msg(LoggerSeverity::Error, "Tried to write gamecard registers without access!!");
 		return;
 	}
 	write(address, value);
@@ -36,7 +36,7 @@ uint32_t Cartridge::NDS7_readGamecard()
 {
 	if (!NDS7HasAccess)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
+		Logger::msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
 		return 0;
 	}
 	return readGamecard();
@@ -46,7 +46,7 @@ uint8_t Cartridge::NDS9_read(uint32_t address)
 {
 	if (NDS7HasAccess)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
+		Logger::msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
 		return 0;
 	}
 	return read(address);
@@ -56,7 +56,7 @@ void Cartridge::NDS9_write(uint32_t address, uint8_t value)
 {
 	if (NDS7HasAccess)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to write gamecard registers without access!!");
+		Logger::msg(LoggerSeverity::Error, "Tried to write gamecard registers without access!!");
 		return;
 	}
 	write(address, value);
@@ -66,7 +66,7 @@ uint32_t Cartridge::NDS9_readGamecard()
 {
 	if (NDS7HasAccess)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
+		Logger::msg(LoggerSeverity::Error, "Tried to read gamecard registers without access!!");
 		return 0;
 	}
 	return readGamecard();
@@ -112,10 +112,10 @@ void Cartridge::write(uint32_t address, uint8_t value)
 		AUXSPICNT &= 0xFF; AUXSPICNT |= (value << 8);
 		if (!(AUXSPICNT >> 15))
 			m_backup->deselect();
-		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("AUXSPICNT config. enable = {} chipselect hold = {} spi mode={}", (AUXSPICNT >> 15), chipSelectHold, ((AUXSPICNT >> 13) & 0b1)));
+		Logger::msg(LoggerSeverity::Info, std::format("AUXSPICNT config. enable = {} chipselect hold = {} spi mode={}", (AUXSPICNT >> 15), chipSelectHold, ((AUXSPICNT >> 13) & 0b1)));
 		break;
 	case 0x040001A2:
-		Logger::getInstance()->msg(LoggerSeverity::Info, std::format("AUXSPIDATA write: {:#x}", value));
+		Logger::msg(LoggerSeverity::Info, std::format("AUXSPIDATA write: {:#x}", value));
 		if (!(AUXSPICNT >> 15))
 			break;
 		SPIData = m_backup->sendCommand(value);
@@ -145,7 +145,7 @@ void Cartridge::write(uint32_t address, uint8_t value)
 		cartCommand &= ~(((uint64_t)0xFF) << shiftOffs);
 		cartCommand |= ((uint64_t)(value) << shiftOffs);
 		if ((address & 0b111) == 7)
-			Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Cartridge command: {:#x}",cartCommand));
+			Logger::msg(LoggerSeverity::Info, std::format("Cartridge command: {:#x}",cartCommand));
 		break;
 	}
 	}
@@ -160,7 +160,7 @@ uint32_t Cartridge::readGamecard()
 		bytesTransferred += 4;
 		if (bytesTransferred == transferLength)
 		{
-			Logger::getInstance()->msg(LoggerSeverity::Info, "Transfer completed!");
+			Logger::msg(LoggerSeverity::Info, "Transfer completed!");
 			transferInProgress = false;
 			ROMCTRL &= 0x7FFFFFFF;
 			if ((AUXSPICNT >> 14) & 0b1)
@@ -188,7 +188,7 @@ void Cartridge::startTransfer()
 	else
 		transferLength = 0x100 << transferBlockSize;
 
-	Logger::getInstance()->msg(LoggerSeverity::Info, std::format("Gamecard transfer started. length={}", transferLength));
+	Logger::msg(LoggerSeverity::Info, std::format("Gamecard transfer started. length={}", transferLength));
 
 	uint8_t commandId = ((cartCommand >> 56) & 0xFF);
 	switch (commandId)
@@ -223,7 +223,7 @@ void Cartridge::startTransfer()
 			else
 				m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
 		}
-		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Unknown cartridge command {:#x}",commandId));
+		Logger::msg(LoggerSeverity::Error, std::format("Unknown cartridge command {:#x}",commandId));
 		memset(readBuffer, 0xFF, transferLength);
 		break;
 	}

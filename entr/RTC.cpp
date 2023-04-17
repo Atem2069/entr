@@ -50,7 +50,7 @@ void RTC::m_writeDataRegister(uint8_t value)
 			m_shiftCount = 0;
 			m_command = 0;
 			m_dataLatch = 0;
-			//Logger::getInstance()->msg(LoggerSeverity::Info, "GPIO transfer started..");
+			//Logger::msg(LoggerSeverity::Info, "GPIO transfer started..");
 		}
 		break;
 	}
@@ -73,7 +73,7 @@ void RTC::m_writeDataRegister(uint8_t value)
 
 				//should decode bits 1-3 here, decide which register being read/written (important to determine byte size for r/w)...
 				uint8_t rtcRegisterIdx = (m_command >> 1) & 0b111;
-				//Logger::getInstance()->msg(LoggerSeverity::Info, std::format("GPIO command received: {:#x} - access to {} RTC register.", m_command, registerNameLUT[rtcRegisterIdx]));
+				//Logger::msg(LoggerSeverity::Info, std::format("GPIO command received: {:#x} - access to {} RTC register.", m_command, registerNameLUT[rtcRegisterIdx]));
 
 				//bit 0 denotes whether read/write command. 0=write,1=read
 				if (m_command & 0b1)
@@ -91,12 +91,12 @@ void RTC::m_writeDataRegister(uint8_t value)
 						break;
 					}
 
-					//Logger::getInstance()->msg(LoggerSeverity::Info, "Process GPIO read command..");
+					//Logger::msg(LoggerSeverity::Info, "Process GPIO read command..");
 					m_state = GPIOState::Read;
 				}
 				else
 				{
-					//Logger::getInstance()->msg(LoggerSeverity::Info, "Process GPIO write command..");
+					//Logger::msg(LoggerSeverity::Info, "Process GPIO write command..");
 					m_state = GPIOState::Write;
 				}
 			}
@@ -118,7 +118,7 @@ void RTC::m_writeDataRegister(uint8_t value)
 		if (csFalling)
 		{
 			m_state = GPIOState::Ready;
-			//Logger::getInstance()->msg(LoggerSeverity::Info, "GPIO transfer ended!");
+			//Logger::msg(LoggerSeverity::Info, "GPIO transfer ended!");
 		}
 		break;
 	}
@@ -140,23 +140,23 @@ void RTC::m_writeDataRegister(uint8_t value)
 			{
 			case 0:
 				controlReg = m_dataLatch & 0b00001110;
-				//Logger::getInstance()->msg(LoggerSeverity::Info, std::format("RTC control write: {:#x}", m_dataLatch));
+				//Logger::msg(LoggerSeverity::Info, std::format("RTC control write: {:#x}", m_dataLatch));
 				break;
 			case 2:
-				//Logger::getInstance()->msg(LoggerSeverity::Warn, "Ignoring write to Date/Time RTC register...");
+				//Logger::msg(LoggerSeverity::Warn, "Ignoring write to Date/Time RTC register...");
 				break;
 			case 3:
-				//Logger::getInstance()->msg(LoggerSeverity::Warn, "Ignoring write to Time RTC register...");
+				//Logger::msg(LoggerSeverity::Warn, "Ignoring write to Time RTC register...");
 				break;
 			case 6:
-				//Logger::getInstance()->msg(LoggerSeverity::Warn, "Write to IRQ RTC register ???");
+				//Logger::msg(LoggerSeverity::Warn, "Write to IRQ RTC register ???");
 				break;
 			default:
-				//Logger::getInstance()->msg(LoggerSeverity::Error, "Unsupported write to RTC register..");
+				//Logger::msg(LoggerSeverity::Error, "Unsupported write to RTC register..");
 				break;
 			}
 			m_state = GPIOState::Ready;
-			//Logger::getInstance()->msg(LoggerSeverity::Info, "GPIO transfer ended!");
+			//Logger::msg(LoggerSeverity::Info, "GPIO transfer ended!");
 		}
 		break;
 	}
