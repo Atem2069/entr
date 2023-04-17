@@ -57,26 +57,26 @@ void EEPROM::decodeCommand(uint8_t value)
 {
 	switch (value)
 	{
-	case 0x06:
-		//write enable, unhandled.
+	case 0x06:						//write enable
+		m_statusRegister |= 0b10;
 		break;
-	case 0x04:
-		//write disable, unhandled
+	case 0x04:						//write disable
+		m_statusRegister &= ~0b10;
 		break;
-	case 0x05:
+	case 0x05:						//read status register
 		m_state = EEPROMState::ReadStatus;
 		break;
-	case 0x01:
+	case 0x01:						//write status register
 		m_state = EEPROMState::WriteStatus;
 		break;
-	case 0x9F:
-		Logger::msg(LoggerSeverity::Error, "Tried to read status register from EEPROM..");
+	case 0x9F:						//chip id (not supported on eeprom? gbatek says returns $FF)
+		Logger::msg(LoggerSeverity::Error, "Tried to read chip ID from EEPROM..");
 		break;
-	case 0x03:
+	case 0x03:						//read data
 		m_state = EEPROMState::WriteAddress;
 		m_nextState = EEPROMState::ReadData;
 		break;
-	case 0x02:
+	case 0x02:						//write data
 		m_state = EEPROMState::WriteAddress;
 		m_nextState = EEPROMState::WriteData;
 		break;
