@@ -82,8 +82,6 @@ void EEPROM::decodeCommand(uint8_t value)
 		break;
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Unknown EEPROM command {:#x}", value));
-		while (true)
-			int a = 5;
 		break;
 	}
 }
