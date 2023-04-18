@@ -30,6 +30,7 @@ private:
 	bool writeback = false;	//hack
 
 	FlashState m_state = FlashState::AwaitCommand;
+	FlashState m_nextState = FlashState::AwaitCommand;
 	uint8_t m_command = 0;
 
 	void decodeCommand(uint8_t value);

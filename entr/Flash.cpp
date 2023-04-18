@@ -41,16 +41,8 @@ uint8_t Flash::sendCommand(uint8_t value)
 		addressProgress++;
 		if (addressProgress == 3)
 		{
-			Logger::msg(LoggerSeverity::Info, std::format("Access to address {:#x}", m_readAddress));
-			switch (m_command)
-			{
-			case 0x03:
-				m_state = FlashState::ReadData; break;
-			case 0x0A:
-				m_state = FlashState::WriteData; break;
-			case 0x02:
-				m_state = FlashState::ProgramData; break;
-			}
+			addressProgress = 0;
+			m_state = m_nextState;
 		}
 		return 0;
 	}
@@ -72,6 +64,8 @@ uint8_t Flash::sendCommand(uint8_t value)
 	case FlashState::ReadStatus:
 		return m_statusReg;
 	}
+
+	return 0;
 }
 
 void Flash::deselect()
@@ -83,10 +77,17 @@ void Flash::decodeCommand(uint8_t value)
 {
 	switch (value)
 	{
-	case 0x03: case 0x0A: case 0x02:
+	case 0x03:
 		m_state = FlashState::WriteAddress;
-		m_readAddress = 0;
-		addressProgress = 0;
+		m_nextState = FlashState::ReadData;
+		break;
+	case 0x0A:
+		m_state = FlashState::WriteAddress;
+		m_nextState = FlashState::WriteData;
+		break;
+	case 0x02:
+		m_state = FlashState::WriteAddress;
+		m_nextState = FlashState::ProgramData;
 		break;
 	case 0x04:
 		m_statusReg &= ~(1 << 1);	//clear write enable bit
