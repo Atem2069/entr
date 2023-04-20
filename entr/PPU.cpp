@@ -507,7 +507,7 @@ template<Engine engine, int bg> void PPU::renderBackground()
 					}
 					else
 					{
-						uint32_t paletteMemoryAddr = paletteNumber * 256;
+						paletteMemoryAddr = paletteNumber * 512;
 						paletteMemoryAddr += (paletteEntry * 2);
 						uint8_t colLow = ppuReadBgExtPal<engine>(extPalBlock, paletteMemoryAddr);
 						uint8_t colHigh = ppuReadBgExtPal<engine>(extPalBlock, paletteMemoryAddr + 1);
@@ -751,7 +751,7 @@ template<Engine engine>uint16_t PPU::extractColorFromTile(uint32_t tileBase, uin
 			return 0x8000;
 		if ((m_regs.DISPCNT >> 31) & 0b1)
 		{
-			paletteMemoryAddr = palette * 256;
+			paletteMemoryAddr = palette * 512;
 			paletteMemoryAddr += tileData * 2;
 			uint8_t colLow = ppuReadObjExtPal<engine>(paletteMemoryAddr);
 			uint8_t colHigh = ppuReadObjExtPal<engine>(paletteMemoryAddr + 1);

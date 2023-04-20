@@ -190,7 +190,7 @@ private:
 			ptr = m_mem->BBGExtPalPageTable[page];
 		if (ptr)
 			return ptr[offset];
-		return 0;
+		return 0xFF;
 	}
 
 	template<Engine engine> uint8_t ppuReadObjExtPal(uint32_t address)
