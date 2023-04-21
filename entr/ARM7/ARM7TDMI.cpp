@@ -74,8 +74,16 @@ consteval std::array<ARM7TDMI::instructionFn, 1024> ARM7TDMI::genThumbTable()
 
 void ARM7TDMI::run(int cycles)
 {
+	uint64_t cyclesBefore = m_scheduler->getCurrentTimestamp();
 	for (int i = 0; i < cycles; i++)
 	{
+		if (m_bus->ARM7_halt)
+		{
+			if (m_interruptManager->NDS7_getInterrupt())
+				m_bus->ARM7_halt = false;
+			else
+				return;
+		}
 		fetch();
 		if (dispatchInterrupt())	//if interrupt was dispatched then fetch new opcode (dispatchInterrupt already flushes pipeline !)
 			continue;
@@ -100,7 +108,9 @@ void ARM7TDMI::run(int cycles)
 		}
 		else
 			refillPipeline();
+		m_scheduler->addCycles(1);
 	}
+	m_scheduler->setTimestamp(cyclesBefore);
 }
 
 void ARM7TDMI::fetch()

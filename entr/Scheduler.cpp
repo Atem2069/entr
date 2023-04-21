@@ -13,18 +13,6 @@ Scheduler::~Scheduler()
 void Scheduler::addCycles(uint64_t cycles)
 {
 	timestamp += cycles;
-
-	if (shouldSync && (timestamp >= syncDelta))
-	{
-		shouldSync = false;
-		tick();
-	}
-}
-
-void Scheduler::forceSync(uint64_t delta)
-{
-	syncDelta = timestamp + delta;
-	shouldSync = true;
 }
 
 void Scheduler::tick()
@@ -55,6 +43,17 @@ uint64_t Scheduler::getCurrentTimestamp()
 uint64_t Scheduler::getEventTime()
 {
 	return eventTime;
+}
+
+void Scheduler::setTimestamp(uint64_t time)
+{
+	timestamp = time;
+}
+
+uint64_t Scheduler::getCyclesToNextEvent()
+{
+	std::list<SchedulerEntry>::iterator it = m_entries.begin();
+	return ((*it).timestamp) - timestamp;
 }
 
 void Scheduler::addEvent(Event type, callbackFn callback, void* context, uint64_t time)

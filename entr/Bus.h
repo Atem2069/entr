@@ -130,6 +130,8 @@ public:
 	static void NDS9_HBlankDMACallback(void* context);
 	static void NDS9_VBlankDMACallback(void* context);
 	static void NDS9_CartridgeDMACallback(void* context);
+
+	bool ARM7_halt = false;
 private:
 	NDSMem* m_mem;
 	Scheduler* m_scheduler;

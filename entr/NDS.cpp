@@ -1,6 +1,6 @@
 #include"NDS.h"
 
-NDS::NDS(int a)
+NDS::NDS()
 {
 	m_initialise();
 	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
@@ -15,11 +15,14 @@ void NDS::run()
 {
 	while (!m_shouldStop)
 	{
-		ARM9.run(32);	//ARM9 runs twice the no. cycles as the ARM7, as it runs at twice the clock speed
-		ARM7.run(16);
-		m_scheduler.addCycles(16);
+		ARM9.run(64);	//ARM9 runs twice the no. cycles as the ARM7, as it runs at twice the clock speed
+		ARM7.run(32);
+		m_scheduler.addCycles(32);
 		m_scheduler.tick();	//<--should probably remove this 'tick' logic, remnant from agbe
 	}
+
+	if (m_bus.ARM7_halt && ARM9.getHalted())
+		m_scheduler.jumpToNextEvent();
 }
 
 void NDS::frameEventHandler()
@@ -38,7 +41,7 @@ void NDS::notifyDetach()
 void NDS::m_initialise()
 {
 	m_scheduler.invalidateAll();
-	std::vector<uint8_t> romData = readFile("rom\\kirby.nds");
+	std::vector<uint8_t> romData = readFile("rom\\yoshi.nds");
 	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
 	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
 
@@ -58,7 +61,7 @@ void NDS::m_initialise()
 	m_cartridge.init(romData, &m_interruptManager);
 	m_bus.init(nds7bios, nds9bios, &m_cartridge, &m_scheduler, &m_interruptManager, &m_ppu, &m_input);
 
-	bool directBoot = false;
+	bool directBoot = true;
 	if (directBoot)
 	{
 		//load arm9/arm7 binaries

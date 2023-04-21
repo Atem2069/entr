@@ -17,6 +17,8 @@ public:
 	~ARM946E();
 
 	void run(int cycles);
+
+	bool getHalted() { return m_halted; };
 private:
 	static constexpr int incrAmountLUT[2] = { 4,2 };
 	Bus* m_bus;

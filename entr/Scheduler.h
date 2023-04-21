@@ -37,11 +37,12 @@ public:
 	~Scheduler();
 
 	void addCycles(uint64_t cycles);
-	void forceSync(uint64_t delta);
 	void tick();
 
 	void jumpToNextEvent();
 
+	void setTimestamp(uint64_t time);
+	uint64_t getCyclesToNextEvent();
 	uint64_t getCurrentTimestamp();
 	uint64_t getEventTime();
 
@@ -55,8 +56,6 @@ private:
 	bool getEntryAtTimestamp(SchedulerEntry& entry);
 	uint64_t timestamp;
 	uint64_t eventTime;
-	uint64_t syncDelta = 0;
-	bool shouldSync = false;
 	std::list<SchedulerEntry> m_entries;
 
 	Event m_lastFiredEvent = Event::Frame;

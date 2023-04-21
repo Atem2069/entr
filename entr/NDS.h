@@ -16,7 +16,7 @@
 class NDS
 {
 public:
-	NDS(int a);
+	NDS();
 	~NDS();
 
 	void run();

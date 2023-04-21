@@ -16,9 +16,7 @@ int main()
 	Logger::msg(LoggerSeverity::Info, "Hello world!");
 
 	Display m_display(2);
-	//NDS nds(5);
-	//m_nds = &nds;
-	m_nds = std::make_shared<NDS>(5);
+	m_nds = std::make_shared<NDS>();
 	std::thread m_workerThread(&emuWorkerThread);
 
 	while (!m_display.getShouldClose())

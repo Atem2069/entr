@@ -584,7 +584,7 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 		NDS7_POSTFLG = value & 0b1;
 		break;
 	case 0x04000301:
-		//std::cout << "haltcnt write.." << '\n';
+		ARM7_halt = ((value >> 6) & 0b11) == 2;
 		break;
 	case 0x04000504:
 		hack_soundBias &= 0xFF00; hack_soundBias |= value;
