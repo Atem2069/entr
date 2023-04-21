@@ -12,15 +12,16 @@
 class ARM946E
 {
 public:
-	ARM946E(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler);
+	ARM946E();
+	void init(uint32_t entry, Bus* bus, InterruptManager* interruptManager, Scheduler* scheduler);
 	~ARM946E();
 
 	void run(int cycles);
 private:
 	static constexpr int incrAmountLUT[2] = { 4,2 };
-	std::shared_ptr<Bus> m_bus;
-	std::shared_ptr<InterruptManager> m_interruptManager;
-	std::shared_ptr<Scheduler> m_scheduler;
+	Bus* m_bus;
+	InterruptManager* m_interruptManager;
+	Scheduler* m_scheduler;
 
 	bool m_pipelineFlushed = false;
 	uint32_t R[16];

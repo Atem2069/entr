@@ -9,7 +9,8 @@
 class Cartridge
 {
 public:
-	Cartridge(std::vector<uint8_t> cartData, std::shared_ptr<InterruptManager> interruptManager);
+	Cartridge();
+	void init(std::vector<uint8_t> cartData, InterruptManager* interruptManager);
 	~Cartridge();
 
 	void registerDMACallbacks(callbackFn NDS9Callback, void* ctx)
@@ -34,14 +35,14 @@ private:
 	uint8_t read(uint32_t address);
 	void write(uint32_t address, uint8_t value);
 
-	std::shared_ptr<SPIDevice> m_backup;
+	SPIDevice* m_backup;
 
 	callbackFn NDS9_DMACallback;
 	void* DMAContext;
 
 	uint32_t readGamecard();
 
-	std::shared_ptr<InterruptManager> m_interruptManager;
+	InterruptManager* m_interruptManager;
 	uint16_t AUXSPICNT = {};
 	uint32_t ROMCTRL = {};
 

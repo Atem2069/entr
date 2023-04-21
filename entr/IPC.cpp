@@ -1,6 +1,11 @@
 #include"IPC.h"
 
-IPC::IPC(std::shared_ptr<InterruptManager> interruptManager)
+IPC::IPC()
+{
+
+}
+
+void IPC::init(InterruptManager* interruptManager)
 {
 	m_interruptManager = interruptManager;
 

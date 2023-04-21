@@ -83,7 +83,8 @@ union OAMEntry
 class PPU
 {
 public:
-	PPU(std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler);
+	PPU();
+	void init(InterruptManager* interruptManager, Scheduler* scheduler);
 	~PPU();
 
 	void registerDMACallbacks(callbackFn NDS9HBlank, callbackFn NDS9VBlank, void* ctx)
@@ -95,7 +96,7 @@ public:
 
 	void updateDisplayOutput();
 
-	void registerMemory(std::shared_ptr<NDSMem> mem);
+	void registerMemory(NDSMem* mem);
 
 	uint8_t readIO(uint32_t address);
 	void writeIO(uint32_t address, uint8_t value); 
@@ -116,9 +117,9 @@ public:
 private:
 	PPUState m_state = {};
 	bool registered = false;
-	std::shared_ptr<NDSMem> m_mem;
-	std::shared_ptr<InterruptManager> m_interruptManager;
-	std::shared_ptr<Scheduler> m_scheduler;
+	NDSMem* m_mem;
+	InterruptManager* m_interruptManager;
+	Scheduler* m_scheduler;
 
 	callbackFn NDS9_HBlankDMACallback;
 	callbackFn NDS9_VBlankDMACallback;

@@ -6,7 +6,7 @@
 #include"Logger.h"
 
 std::shared_ptr<NDS> m_nds;
-std::shared_ptr<InputState> m_inputState;
+InputState* m_inputState;
 
 void emuWorkerThread();
 
@@ -16,8 +16,9 @@ int main()
 	Logger::msg(LoggerSeverity::Info, "Hello world!");
 
 	Display m_display(2);
-
-	m_nds = std::make_shared<NDS>();
+	//NDS nds(5);
+	//m_nds = &nds;
+	m_nds = std::make_shared<NDS>(5);
 	std::thread m_workerThread(&emuWorkerThread);
 
 	while (!m_display.getShouldClose())

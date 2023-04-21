@@ -16,7 +16,7 @@
 class NDS
 {
 public:
-	NDS();
+	NDS(int a);
 	~NDS();
 
 	void run();
@@ -24,15 +24,15 @@ public:
 	void* getPPUData();
 	static void onEvent(void* context);
 private:
-	std::shared_ptr<ARM946E> ARM9;
-	std::shared_ptr<ARM7TDMI> ARM7;
-	std::shared_ptr<Bus> m_bus;
-	std::shared_ptr<PPU> m_ppu;
-	std::shared_ptr<InterruptManager> m_interruptManager;
-	std::shared_ptr<Input> m_input;
-	std::shared_ptr<InputState> m_inputState;
-	std::shared_ptr<Scheduler> m_scheduler;
-	std::shared_ptr<Cartridge> m_cartridge;
+	ARM946E ARM9;
+	ARM7TDMI ARM7;
+	Bus m_bus;
+	PPU m_ppu;
+	InterruptManager m_interruptManager;
+	Input m_input;
+	InputState m_inputState;
+	Scheduler m_scheduler;
+	Cartridge m_cartridge;
 
 	void m_initialise();
 	void m_destroy();

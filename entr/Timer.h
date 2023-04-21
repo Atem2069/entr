@@ -24,7 +24,8 @@ struct TimerRegister
 class Timer
 {
 public:
-	Timer(bool NDS9, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler);
+	Timer();
+	void init(bool NDS9, InterruptManager* interruptManager, Scheduler* scheduler);
 	~Timer();
 
 	uint8_t readIO(uint32_t address);
@@ -46,6 +47,6 @@ private:
 	void raiseInterrupt(int timer);
 	bool NDS9 = false;
 
-	std::shared_ptr<InterruptManager> m_interruptManager;
-	std::shared_ptr<Scheduler> m_scheduler;
+	InterruptManager* m_interruptManager;
+	Scheduler* m_scheduler;
 };

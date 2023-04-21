@@ -10,7 +10,7 @@ Input::~Input()
 
 }
 
-void Input::registerInterrupts(std::shared_ptr<InterruptManager> interruptManager)
+void Input::registerInterrupts(InterruptManager* interruptManager)
 {
 	m_interruptManager = interruptManager;
 }

@@ -34,7 +34,8 @@ struct DMAChannel
 class Bus
 {
 public:
-	Bus(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, std::shared_ptr<Cartridge> cartridge, std::shared_ptr<Scheduler> scheduler, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<PPU> ppu, std::shared_ptr<Input> input);
+	Bus();
+	void init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, Cartridge* cartridge, Scheduler* scheduler, InterruptManager* interruptManager, PPU* ppu, Input* input);
 	~Bus();
 
 	//NDS7 read/write handlers
@@ -130,18 +131,18 @@ public:
 	static void NDS9_VBlankDMACallback(void* context);
 	static void NDS9_CartridgeDMACallback(void* context);
 private:
-	std::shared_ptr<NDSMem> m_mem;
-	std::shared_ptr<Scheduler> m_scheduler;
-	std::shared_ptr<InterruptManager> m_interruptManager;
-	std::shared_ptr<PPU> m_ppu;
-	std::shared_ptr<Input> m_input;
-	std::shared_ptr<IPC> m_ipc;
-	std::shared_ptr<DSMath> m_math;
-	std::shared_ptr<Timer> m_NDS7Timer;
-	std::shared_ptr<Timer> m_NDS9Timer;
-	std::shared_ptr<Cartridge> m_cartridge;
-	std::shared_ptr<SPI> m_spi;
-	std::shared_ptr<RTC> m_rtc;
+	NDSMem* m_mem;
+	Scheduler* m_scheduler;
+	InterruptManager* m_interruptManager;
+	PPU* m_ppu;
+	Input* m_input;
+	IPC m_ipc;
+	DSMath m_math;
+	Timer m_NDS7Timer;
+	Timer m_NDS9Timer;
+	Cartridge* m_cartridge;
+	SPI m_spi;
+	RTC m_rtc;
 
 	DMAChannel m_NDS7Channels[4] = {};
 	DMAChannel m_NDS9Channels[4] = {};

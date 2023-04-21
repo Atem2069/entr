@@ -1,6 +1,11 @@
 #include"ARM946E.h"
 
-ARM946E::ARM946E(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler)
+ARM946E::ARM946E()
+{
+
+}
+
+void ARM946E::init(uint32_t entry, Bus* bus, InterruptManager* interruptManager, Scheduler* scheduler)
 {
 	m_bus = bus;
 	m_interruptManager = interruptManager;

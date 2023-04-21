@@ -1,6 +1,11 @@
 #include"ARM7TDMI.h"
 
-ARM7TDMI::ARM7TDMI(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler)
+ARM7TDMI::ARM7TDMI()
+{
+
+}
+
+void ARM7TDMI::init(uint32_t entry, Bus* bus, InterruptManager* interruptManager, Scheduler* scheduler)
 {
 	m_bus = bus;
 	m_interruptManager = interruptManager;

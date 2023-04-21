@@ -1,6 +1,11 @@
 #include"PPU.h"
 
-PPU::PPU(std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler)
+PPU::PPU()
+{
+
+}
+
+void PPU::init(InterruptManager* interruptManager, Scheduler* scheduler)
 {
 	m_interruptManager = interruptManager;
 	m_scheduler = scheduler;
@@ -24,7 +29,7 @@ void PPU::updateDisplayOutput()
 	memcpy(m_safeDisplayBuffer, m_renderBuffer[!pageIdx], 256 * 384 * sizeof(uint32_t));
 }
 
-void PPU::registerMemory(std::shared_ptr<NDSMem> mem)
+void PPU::registerMemory(NDSMem* mem)
 {
 	Logger::msg(LoggerSeverity::Info, "Registered memory with PPU!");
 	m_mem = mem;

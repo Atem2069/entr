@@ -1,11 +1,9 @@
 #include"NDS.h"
 
-NDS::NDS()
+NDS::NDS(int a)
 {
-	m_input = std::make_shared<Input>();
-	m_scheduler = std::make_shared<Scheduler>();
 	m_initialise();
-	m_scheduler->addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
+	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
 }
 
 NDS::~NDS()
@@ -17,19 +15,19 @@ void NDS::run()
 {
 	while (!m_shouldStop)
 	{
-		ARM9->run(32);	//ARM9 runs twice the no. cycles as the ARM7, as it runs at twice the clock speed
-		ARM7->run(16);
-		m_scheduler->addCycles(16);
-		m_scheduler->tick();	//<--should probably remove this 'tick' logic, remnant from agbe
+		ARM9.run(32);	//ARM9 runs twice the no. cycles as the ARM7, as it runs at twice the clock speed
+		ARM7.run(16);
+		m_scheduler.addCycles(16);
+		m_scheduler.tick();	//<--should probably remove this 'tick' logic, remnant from agbe
 	}
 }
 
 void NDS::frameEventHandler()
 {
 	//handle video sync at some point..
-	m_ppu->updateDisplayOutput();
-	m_scheduler->addEvent(Event::Frame, &NDS::onEvent, (void*)this, m_scheduler->getEventTime()+560190);
-	m_input->tick();
+	m_ppu.updateDisplayOutput();
+	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, m_scheduler.getEventTime()+560190);
+	m_input.tick();
 }
 
 void NDS::notifyDetach()
@@ -39,9 +37,11 @@ void NDS::notifyDetach()
 
 void NDS::m_initialise()
 {
+	m_scheduler.invalidateAll();
 	std::vector<uint8_t> romData = readFile("rom\\kirby.nds");
 	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
 	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
+
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
 	uint32_t ARM9Entry = romData[0x024] | (romData[0x025] << 8) | (romData[0x026] << 16) | (romData[0x027] << 24);
 	uint32_t ARM9LoadAddr = romData[0x028] | (romData[0x029] << 8) | (romData[0x02A] << 16) | (romData[0x02B] << 24);
@@ -55,63 +55,62 @@ void NDS::m_initialise()
 	Logger::msg(LoggerSeverity::Info, std::format("ARM9 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM9Offs, ARM9Entry, ARM9LoadAddr, ARM9Size));
 	Logger::msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
 
-	m_interruptManager = std::make_shared<InterruptManager>();
-	m_cartridge = std::make_shared<Cartridge>(romData, m_interruptManager);
-	m_ppu = std::make_shared<PPU>(m_interruptManager, m_scheduler);
-	m_bus = std::make_shared<Bus>(nds7bios,nds9bios,m_cartridge, m_scheduler,m_interruptManager,m_ppu, m_input);
+	m_cartridge.init(romData, &m_interruptManager);
+	m_bus.init(nds7bios, nds9bios, &m_cartridge, &m_scheduler, &m_interruptManager, &m_ppu, &m_input);
 
-	bool directBoot = true;
+	bool directBoot = false;
 	if (directBoot)
 	{
 		//load arm9/arm7 binaries
 		for (int i = 0; i < ARM9Size; i++)
 		{
 			uint8_t curByte = romData[ARM9Offs + i];
-			m_bus->NDS9_write8(ARM9LoadAddr + i, curByte);
+			m_bus.NDS9_write8(ARM9LoadAddr + i, curByte);
 		}
 		for (int i = 0; i < ARM7Size; i++)
 		{
 			uint8_t curByte = romData[ARM7Offs + i];
-			m_bus->NDS7_write8(ARM7LoadAddr + i, curByte);
+			m_bus.NDS7_write8(ARM7LoadAddr + i, curByte);
 		}
 		Logger::msg(LoggerSeverity::Info, "Mapped ARM9/ARM7 binaries into memory!");
 
 		//copy over rom header
 		for (int i = 0; i < 0x200; i++)
-			m_bus->NDS9_write8(0x027FFE00 + i, romData[i]);
+			m_bus.NDS9_write8(0x027FFE00 + i, romData[i]);
 		//copy firmware user data (e.g. tsc calibration)
 		for (int i = 0; i < 0xF0; i++)
-			m_bus->NDS9_write8(0x027FFC80 + i, romData[0x3FE00 + i]);
+			m_bus.NDS9_write8(0x027FFC80 + i, romData[0x3FE00 + i]);
 
 		//misc values from gbatek (bios ram usage)
-		m_bus->NDS7_write8(0x04000300, 1);
-		m_bus->NDS9_write8(0x04000300, 1);
-		m_bus->NDS9_write8(0x04000247, 0x03);
-		m_bus->NDS9_write32(0x027FF800, 0x00001FC2);
-		m_bus->NDS9_write32(0x027FF804, 0x00001FC2);
-		m_bus->NDS9_write16(0x027FF850, 0x5835);
-		m_bus->NDS9_write16(0x027FF880, 0x0007);
-		m_bus->NDS9_write16(0x027FF884, 0x0006);
-		m_bus->NDS9_write32(0x027FFC00, 0x00001FC2);
-		m_bus->NDS9_write32(0x027FFC04, 0x00001FC2);
-		m_bus->NDS9_write16(0x027FFC10, 0x5835);
-		m_bus->NDS9_write16(0x027FFC40, 0x0001);
+		m_bus.NDS7_write8(0x04000300, 1);
+		m_bus.NDS9_write8(0x04000300, 1);
+		m_bus.NDS9_write8(0x04000247, 0x03);
+		m_bus.NDS9_write32(0x027FF800, 0x00001FC2);
+		m_bus.NDS9_write32(0x027FF804, 0x00001FC2);
+		m_bus.NDS9_write16(0x027FF850, 0x5835);
+		m_bus.NDS9_write16(0x027FF880, 0x0007);
+		m_bus.NDS9_write16(0x027FF884, 0x0006);
+		m_bus.NDS9_write32(0x027FFC00, 0x00001FC2);
+		m_bus.NDS9_write32(0x027FFC04, 0x00001FC2);
+		m_bus.NDS9_write16(0x027FFC10, 0x5835);
+		m_bus.NDS9_write16(0x027FFC40, 0x0001);
 	}
 	else
 	{
 		ARM9Entry = 0xFFFF0000;
 		ARM7Entry = 0x0;
 	}
-	ARM9 = std::make_shared<ARM946E>(ARM9Entry, m_bus, m_interruptManager, m_scheduler);
-	ARM7 = std::make_shared<ARM7TDMI>(ARM7Entry, m_bus, m_interruptManager, m_scheduler);
 
+	m_ppu.init(&m_interruptManager, &m_scheduler);
+	ARM9.init(ARM9Entry, &m_bus, &m_interruptManager, &m_scheduler);
+	ARM7.init(ARM7Entry, &m_bus, &m_interruptManager, &m_scheduler);
 
 }
 
 void NDS::m_destroy()
 {
-	m_scheduler->invalidateAll();
-	m_scheduler->addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
+	m_scheduler.invalidateAll();
+	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
 }
 
 std::vector<uint8_t> NDS::readFile(const char* name)

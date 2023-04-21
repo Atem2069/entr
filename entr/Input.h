@@ -50,7 +50,7 @@ class Input
 public:
 	Input();
 	~Input();
-	void registerInterrupts(std::shared_ptr<InterruptManager> interruptManager);
+	void registerInterrupts(InterruptManager* interruptManager);
 
 	uint8_t readIORegister(uint32_t address);
 	void writeIORegister(uint32_t address, uint8_t value);
@@ -62,7 +62,7 @@ public:
 private:
 	void checkIRQ();
 
-	std::shared_ptr<InterruptManager> m_interruptManager;
+	InterruptManager* m_interruptManager;
 	uint64_t lastEventTime = 0;
 	uint16_t keyInput = 0;
 	uint16_t KEYCNT = 0;

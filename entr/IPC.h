@@ -53,7 +53,8 @@ struct IPCFIFO
 class IPC
 {
 public:
-	IPC(std::shared_ptr<InterruptManager> interruptManager);
+	IPC();
+	void init(InterruptManager* interruptManager);
 	~IPC();
 
 	uint8_t NDS7_read8(uint32_t address);
@@ -69,7 +70,7 @@ public:
 	uint32_t NDS9_read32(uint32_t address);
 	void NDS9_write32(uint32_t address, uint32_t value);
 private:
-	std::shared_ptr<InterruptManager> m_interruptManager;
+	InterruptManager* m_interruptManager;
 
 	uint8_t NDS7_IPCData;
 	uint8_t NDS9_IPCData;

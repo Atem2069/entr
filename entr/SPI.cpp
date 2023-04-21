@@ -1,16 +1,23 @@
 #include"SPI.h"
 
-SPI::SPI(std::shared_ptr<InterruptManager> interruptManager)
+SPI::SPI()
 {
-	m_SPIDevices[0] = std::make_shared<PowerManager>();
-	m_SPIDevices[1] = std::make_shared<Flash>("rom\\firmware.bin");
-	m_SPIDevices[2] = std::make_shared<Touchscreen>();
+
+}
+
+void SPI::init(InterruptManager* interruptManager)
+{
+	m_SPIDevices[0] = std::make_unique<PowerManager>();
+	m_SPIDevices[1] = std::make_unique<Flash>("rom\\firmware.bin");
+	m_SPIDevices[2] = std::make_unique<Touchscreen>();
 	m_interruptManager = interruptManager;
 }
 
 SPI::~SPI()
 {
-
+	m_SPIDevices[0].reset();
+	m_SPIDevices[1].reset();
+	m_SPIDevices[2].reset();
 }
 
 uint8_t SPI::read(uint32_t address)

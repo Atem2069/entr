@@ -24,15 +24,16 @@ struct Pipeline
 class ARM7TDMI
 {
 public:
-	ARM7TDMI(uint32_t entry, std::shared_ptr<Bus> bus, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler);
+	ARM7TDMI();
+	void init(uint32_t entry, Bus* bus, InterruptManager* interruptManager, Scheduler* scheduler);
 	~ARM7TDMI();
 
 	void run(int cycles);
 private:
 	static constexpr int incrAmountLUT[2] = { 4,2 };
-	std::shared_ptr<Bus> m_bus;
-	std::shared_ptr<InterruptManager> m_interruptManager;
-	std::shared_ptr<Scheduler> m_scheduler;
+	Bus* m_bus;
+	InterruptManager* m_interruptManager;
+	Scheduler* m_scheduler;
 
 	Pipeline m_pipeline[3];
 	uint8_t m_pipelinePtr = 0;

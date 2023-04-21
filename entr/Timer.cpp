@@ -1,6 +1,11 @@
 #include"Timer.h"
 
-Timer::Timer(bool NDS9, std::shared_ptr<InterruptManager> interruptManager, std::shared_ptr<Scheduler> scheduler)
+Timer::Timer()
+{
+
+}
+
+void Timer::init(bool NDS9, InterruptManager* interruptManager, Scheduler* scheduler)
 {
 	this->NDS9 = NDS9;
 	m_scheduler = scheduler;

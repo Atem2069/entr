@@ -1,15 +1,20 @@
 #include"Cartridge.h"
 
-Cartridge::Cartridge(std::vector<uint8_t> cartData, std::shared_ptr<InterruptManager> interruptManager)
+Cartridge::Cartridge()
+{
+
+}
+
+void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptManager)
 {
 	m_cartData = cartData;
 	m_interruptManager = interruptManager;
-	m_backup = std::make_shared<EEPROM>();
+	m_backup = new EEPROM;
 }
 
 Cartridge::~Cartridge()
 {
-
+	delete m_backup;
 }
 
 uint8_t Cartridge::NDS7_read(uint32_t address)
