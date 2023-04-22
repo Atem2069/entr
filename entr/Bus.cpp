@@ -497,7 +497,12 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	{
 	case 0x04000004: case 0x04000005: case 0x04000006: case 0x04000007:
 		return m_ppu->NDS7_readIO(address);
-	case 0x040000BA: case 0x040000BB: case 0x040000C6: case 0x040000C7: case 0x040000D2: case 0x040000D3: case 0x040000DE: case 0x040000DF:
+	case 0x040000B0: case 0x040000B1: case 0x040000B2: case 0x040000B3: case 0x040000B4: case 0x040000B5: case 0x040000B6: case 0x040000B7:
+	case 0x040000B8: case 0x040000B9: case 0x040000BA: case 0x040000BB: case 0x040000BC: case 0x040000BD: case 0x040000BE: case 0x040000BF:
+	case 0x040000C0: case 0x040000C1: case 0x040000C2: case 0x040000C3: case 0x040000C4: case 0x040000C5: case 0x040000C6: case 0x040000C7:
+	case 0x040000C8: case 0x040000C9: case 0x040000CA: case 0x040000CB: case 0x040000CC: case 0x040000CD: case 0x040000CE: case 0x040000CF:
+	case 0x040000D0: case 0x040000D1: case 0x040000D2: case 0x040000D3: case 0x040000D4: case 0x040000D5: case 0x040000D6: case 0x040000D7:
+	case 0x040000D8: case 0x040000D9: case 0x040000DA: case 0x040000DB: case 0x040000DC: case 0x040000DD: case 0x040000DE: case 0x040000DF:
 		return NDS7_readDMAReg(address);
 	case 0x04000100: case 0x04000101: case 0x04000102: case 0x04000103: case 0x04000104: case 0x04000105: case 0x04000106: case 0x04000107:
 	case 0x04000108: case 0x04000109: case 0x0400010A: case 0x0400010B: case 0x0400010C: case 0x0400010D: case 0x0400010E: case 0x0400010F:
@@ -581,7 +586,7 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 		EXMEMCNT &= 0xFF80; EXMEMCNT |= value&0x7F;
 		break;
 	case 0x04000300:
-		NDS7_POSTFLG = value & 0b1;
+		NDS7_POSTFLG = 1;
 		break;
 	case 0x04000301:
 		ARM7_halt = ((value >> 6) & 0b11) == 2;
@@ -776,7 +781,8 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		m_cartridge->setNDS7AccessRights(((EXMEMCNT >> 11) & 0b1));
 		break;
 	case 0x04000300:
-		NDS9_POSTFLG = value & 0b1;	//NDS9 POSTFLG seems to be 2 bits, assuming just bit 0 for now.
+		NDS9_POSTFLG = 1;
+		NDS9_POSTFLG |= (value & 0b10);
 		break;
 	default:
 		Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
