@@ -38,7 +38,7 @@ private:
 
 	const std::string registerNameLUT[8] = { "Reset","Control","Date/Time","Time","Unknown","Unknown","IRQ","Unknown" };
 
-	uint8_t controlReg = 0x2;	//I think RTC starts in 24hr mode by default?
+	uint8_t controlReg = 0x0;	//I think RTC starts in 24hr mode by default?
 	uint32_t dateReg = 0;
 	uint32_t timeReg = 0;
 };

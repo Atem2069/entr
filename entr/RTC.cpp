@@ -34,12 +34,16 @@ void RTC::m_writeDataRegister(uint8_t value)
 {
 	uint8_t oldData = RTCReg;
 	if (!dataDirectionMask)
+	{
 		value &= ~0b1;
+		value |= (RTCReg & 0b1);
+	}
 	RTCReg = value;
 	bool csRising = (~((oldData >> 2) & 0b1)) & ((RTCReg >> 2) & 0b1);	//CS low before, now high
 	bool csFalling = ((oldData >> 2) & 0b1) & (~((RTCReg >> 2) & 0b1));	//CS high before, now low
 	bool sckFalling = ((oldData >> 1) & 0b1) & (~((RTCReg >> 1) & 0b1));
-
+	bool sckRising = (~(oldData >> 1) & 0b1) & (((RTCReg >> 1) & 0b1));
+	bool sckLow = ~(((RTCReg >> 1)) & 0b1);
 	switch (m_state)
 	{
 	case GPIOState::Ready:
@@ -57,7 +61,7 @@ void RTC::m_writeDataRegister(uint8_t value)
 
 	case GPIOState::Command:
 	{
-		if (sckFalling)
+		if (sckRising)
 		{
 			uint8_t serialData = (RTCReg) & 0b1;
 			m_command |= (serialData << m_shiftCount);
@@ -73,7 +77,6 @@ void RTC::m_writeDataRegister(uint8_t value)
 
 				//should decode bits 1-3 here, decide which register being read/written (important to determine byte size for r/w)...
 				uint8_t rtcRegisterIdx = (m_command >> 1) & 0b111;
-				//Logger::msg(LoggerSeverity::Info, std::format("GPIO command received: {:#x} - access to {} RTC register.", m_command, registerNameLUT[rtcRegisterIdx]));
 
 				//bit 0 denotes whether read/write command. 0=write,1=read
 				if (m_command & 0b1)
@@ -89,8 +92,9 @@ void RTC::m_writeDataRegister(uint8_t value)
 					case 3:
 						m_dataLatch = timeReg;
 						break;
-					default:
-						Logger::msg(LoggerSeverity::Error, std::format("Unknown register {:#x}", rtcRegisterIdx));
+					case 4:
+						m_dataLatch = 0;
+						break;
 					}
 
 					//Logger::msg(LoggerSeverity::Info, "Process GPIO read command..");
@@ -108,7 +112,7 @@ void RTC::m_writeDataRegister(uint8_t value)
 
 	case GPIOState::Read:
 	{
-		if (sckFalling)
+		if (sckFalling)	//lmao, what??
 		{
 			//data &= ~0b010;
 			RTCReg &= ~0b1;
@@ -128,7 +132,7 @@ void RTC::m_writeDataRegister(uint8_t value)
 	case GPIOState::Write:
 	{
 		//todo
-		if (sckFalling)
+		if (sckRising)
 		{
 			uint64_t inBit = RTCReg & 0b1;
 			m_dataLatch |= (inBit << m_shiftCount);

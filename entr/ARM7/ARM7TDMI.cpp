@@ -109,8 +109,6 @@ void ARM7TDMI::run(int cycles)
 		else
 			refillPipeline();
 		m_scheduler->addCycles(1);
-
-		m_bus->NDS7_write16(0x027ff816, 0);			//<--evil!! remove soon
 	}
 	m_scheduler->setTimestamp(cyclesBefore);
 }

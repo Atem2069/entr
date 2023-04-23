@@ -207,7 +207,7 @@ void Cartridge::startTransfer()
 		uint32_t temp[2] = { cartCommand & 0xFFFFFFFF,(cartCommand >> 32) & 0xFFFFFFFF };
 		KEY1_decrypt(temp);
 		cartCommand = temp[0] | ((uint64_t)(temp[1]) << 32);
-		Logger::msg(LoggerSeverity::Error, std::format("Decrypted KEY1 command: {:#x}", cartCommand));
+		Logger::msg(LoggerSeverity::Info, std::format("Decrypted KEY1 command: {:#x}", cartCommand));
 		decodeKEY1Cmd();
 		return;
 	}
@@ -306,6 +306,16 @@ void Cartridge::decodeKEY1Cmd()
 	}
 	case 0x2:
 	{
+		Logger::msg(LoggerSeverity::Error, "Unimplemented secure area load :(");
+		ROMCTRL &= ~(1 << 23);
+		ROMCTRL &= 0x7FFF;
+		if ((AUXSPICNT >> 14) & 0b1)
+		{
+			if (NDS7HasAccess)
+				m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
+			else
+				m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
+		}
 		while (true)
 			int a = 5;
 		break;
