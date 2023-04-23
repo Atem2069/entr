@@ -6,12 +6,21 @@
 #include"Flash.h"
 #include"EEPROM.h"
 
+enum class CartEncryptionState
+{
+	Unencrypted,
+	KEY1,
+	KEY2
+};
+
 class Cartridge
 {
 public:
 	Cartridge();
 	void init(std::vector<uint8_t> cartData, InterruptManager* interruptManager);
 	~Cartridge();
+
+	void encryptSecureArea(uint8_t* keyBuf);
 
 	void registerDMACallbacks(callbackFn NDS9Callback, void* ctx)
 	{
@@ -31,6 +40,8 @@ public:
 	uint32_t getWordsLeft() { return (transferLength - bytesTransferred) / 4; }
 private:
 	void startTransfer();
+	void decodeKEY1Cmd();
+	CartEncryptionState m_encryptionState = CartEncryptionState::Unencrypted;
 	std::vector<uint8_t> m_cartData;	//vector probably sucks, but oh well
 	uint8_t read(uint32_t address);
 	void write(uint32_t address, uint8_t value);
@@ -39,6 +50,16 @@ private:
 
 	callbackFn NDS9_DMACallback;
 	void* DMAContext;
+
+	//KEY1 stuff
+	uint32_t storedKeyBuffer[0x412];
+	uint32_t KEY1_KeyBuffer[0x412];	
+	uint32_t cartId = 0;
+	void KEY1_InitKeyCode(uint32_t idcode, int level, int mod);
+	void KEY1_ApplyKeyCode(uint32_t* keycode, int mod);
+	void KEY1_encrypt(uint32_t* data);
+	void KEY1_decrypt(uint32_t* data);
+	uint32_t KEY1_ByteSwap(uint32_t in);
 
 	uint32_t readGamecard();
 

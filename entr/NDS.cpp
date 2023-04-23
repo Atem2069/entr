@@ -41,7 +41,7 @@ void NDS::notifyDetach()
 void NDS::m_initialise()
 {
 	m_scheduler.invalidateAll();
-	std::vector<uint8_t> romData = readFile("rom\\kirby.nds");
+	std::vector<uint8_t> romData = readFile("rom\\yoshi.nds");
 	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
 	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
 
@@ -61,7 +61,7 @@ void NDS::m_initialise()
 	m_cartridge.init(romData, &m_interruptManager);
 	m_bus.init(nds7bios, nds9bios, &m_cartridge, &m_scheduler, &m_interruptManager, &m_ppu, &m_input);
 
-	bool directBoot = true;
+	bool directBoot = false;
 	if (directBoot)
 	{
 		//load arm9/arm7 binaries
@@ -100,6 +100,10 @@ void NDS::m_initialise()
 	}
 	else
 	{
+		uint8_t keyBuf[0x1048];
+		for (int i = 0; i < 0x1048; i++)
+			keyBuf[i] = nds7bios[0x30 + i];
+		m_cartridge.encryptSecureArea(keyBuf);
 		ARM9Entry = 0xFFFF0000;
 		ARM7Entry = 0x0;
 	}

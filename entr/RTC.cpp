@@ -89,6 +89,8 @@ void RTC::m_writeDataRegister(uint8_t value)
 					case 3:
 						m_dataLatch = timeReg;
 						break;
+					default:
+						Logger::msg(LoggerSeverity::Error, std::format("Unknown register {:#x}", rtcRegisterIdx));
 					}
 
 					//Logger::msg(LoggerSeverity::Info, "Process GPIO read command..");
