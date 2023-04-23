@@ -21,7 +21,25 @@ void Cartridge::encryptSecureArea(uint8_t* keyBuf)
 {
 	memcpy(storedKeyBuffer, keyBuf, 0x1048);
 	cartId = m_cartData[0xC] | (m_cartData[0xD] << 8) | (m_cartData[0xE] << 16) | (m_cartData[0xF] << 24);
-	//todo: write 'encryObj', encrypt first 2K of secure area, encrypt 'encryObj' part again.
+	uint32_t secureAreaId = *(uint32_t*)&m_cartData[0x4000];
+	if (secureAreaId != 0xE7FFDEFF)							//secure area already encrypted, or no secure area exists
+		return;
+
+	//write 'encryObj' to secure area ID
+	char encryObj[8] = { 'e','n','c','r','y','O','b','j' };
+	for (int i = 0; i < 8; i++)
+		m_cartData[0x4000 + i] = encryObj[i];
+
+	//level 3 encrypt first 2KB
+	KEY1_InitKeyCode(cartId, 3, 2);
+	for (int i = 0x4000; i < 0x4800; i += 8)
+	{
+		KEY1_encrypt((uint32_t*)&m_cartData[i]);
+	}
+
+	//level 2 encrypt secure area id once more
+	KEY1_InitKeyCode(cartId, 2, 2);
+	KEY1_encrypt((uint32_t*)&m_cartData[0x4000]);
 }
 
 uint8_t Cartridge::NDS7_read(uint32_t address)
@@ -91,7 +109,6 @@ void Cartridge::setNDS7AccessRights(bool val)
 
 uint8_t Cartridge::read(uint32_t address)
 {
-	//std::cout << "read " << std::hex << address << '\n';
 	switch (address)
 	{
 	case 0x040001A0:
@@ -113,7 +130,6 @@ uint8_t Cartridge::read(uint32_t address)
 
 void Cartridge::write(uint32_t address, uint8_t value)
 {
-	//std::cout << "write " << std::hex << address << " " << value << '\n';
 	switch (address)
 	{
 	case 0x040001A0:
@@ -269,9 +285,14 @@ void Cartridge::startTransfer()
 		break;
 	}
 	}
-
-	if (!NDS7HasAccess)
-		NDS9_DMACallback(DMAContext);
+	if (transferInProgress)
+	{
+		switch (NDS7HasAccess)
+		{
+		case 0:NDS9_DMACallback(DMAContext); break;
+		case 1:NDS7_DMACallback(DMAContext); break;
+		}
+	}
 }
 
 void Cartridge::decodeKEY1Cmd()
@@ -306,18 +327,11 @@ void Cartridge::decodeKEY1Cmd()
 	}
 	case 0x2:
 	{
-		Logger::msg(LoggerSeverity::Error, "Unimplemented secure area load :(");
-		ROMCTRL &= ~(1 << 23);
-		ROMCTRL &= 0x7FFF;
-		if ((AUXSPICNT >> 14) & 0b1)
-		{
-			if (NDS7HasAccess)
-				m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
-			else
-				m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
-		}
-		while (true)
-			int a = 5;
+		Logger::msg(LoggerSeverity::Info, "read secure area");
+		uint64_t baseBlock = ((cartCommand >> 44) & 0xF);
+		uint32_t baseAddr = baseBlock << 12;
+		memcpy(readBuffer, &m_cartData[baseAddr], 0x1000);
+		//transferLength = 0x1000;
 		break;
 	}
 	case 0xa:
@@ -333,6 +347,7 @@ void Cartridge::decodeKEY1Cmd()
 			else
 				m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
 		}
+		transferInProgress = false;
 		break;
 	}
 	default:
@@ -351,8 +366,14 @@ void Cartridge::decodeKEY1Cmd()
 		break;
 	}
 
-	if (!NDS7HasAccess)
-		NDS9_DMACallback(DMAContext);
+	if (transferInProgress)
+	{
+		switch (NDS7HasAccess)
+		{
+		case 0:NDS9_DMACallback(DMAContext); break;
+		case 1:NDS7_DMACallback(DMAContext); break;
+		}
+	}
 }
 
 void Cartridge::KEY1_InitKeyCode(uint32_t idcode, int level, int mod)
@@ -426,7 +447,7 @@ void Cartridge::KEY1_decrypt(uint32_t* data)
 
 uint32_t Cartridge::KEY1_ByteSwap(uint32_t in)
 {
-	uint8_t a = in & 0xFF;
+	uint32_t a = in & 0xFF;
 	uint32_t b = (in >> 8) & 0xFF;
 	uint32_t c = (in >> 16) & 0xFF;
 	uint32_t d = (in >> 24) & 0xFF;

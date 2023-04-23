@@ -130,6 +130,7 @@ public:
 	static void NDS9_HBlankDMACallback(void* context);
 	static void NDS9_VBlankDMACallback(void* context);
 	static void NDS9_CartridgeDMACallback(void* context);
+	static void NDS7_CartridgeDMACallback(void* context);
 
 	bool ARM7_halt = false;
 private:
@@ -153,6 +154,7 @@ private:
 	void NDS7_writeDMAReg(uint32_t address, uint8_t value);
 	void NDS7_checkDMAChannel(int channel);
 	void NDS7_doDMATransfer(int channel);
+	void NDS7DMA_onCartridge();
 
 	uint8_t NDS9_readDMAReg(uint32_t address);
 	void NDS9_writeDMAReg(uint32_t address, uint8_t value);

@@ -22,8 +22,9 @@ public:
 
 	void encryptSecureArea(uint8_t* keyBuf);
 
-	void registerDMACallbacks(callbackFn NDS9Callback, void* ctx)
+	void registerDMACallbacks(callbackFn NDS7Callback, callbackFn NDS9Callback, void* ctx)
 	{
+		NDS7_DMACallback = NDS7Callback;
 		NDS9_DMACallback = NDS9Callback;
 		DMAContext = ctx;
 	}
@@ -38,6 +39,8 @@ public:
 
 	void setNDS7AccessRights(bool val);
 	uint32_t getWordsLeft() { return (transferLength - bytesTransferred) / 4; }
+
+	static void onTransferReady(void* context);
 private:
 	void startTransfer();
 	void decodeKEY1Cmd();
@@ -49,6 +52,7 @@ private:
 	SPIDevice* m_backup;
 
 	callbackFn NDS9_DMACallback;
+	callbackFn NDS7_DMACallback;
 	void* DMAContext;
 
 	//KEY1 stuff
@@ -64,6 +68,7 @@ private:
 	uint32_t readGamecard();
 
 	InterruptManager* m_interruptManager;
+	Scheduler* m_scheduler;
 	uint16_t AUXSPICNT = {};
 	uint32_t ROMCTRL = {};
 

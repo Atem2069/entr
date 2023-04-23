@@ -468,7 +468,7 @@ void Bus::NDS9_doDMATransfer(int channel)
 		m_interruptManager->NDS9_requestInterrupt(interruptLUT[channel]);
 	}
 
-	if (repeat && startTiming != 0)
+	if (repeat && startTiming != 0 && startTiming != 5)
 	{
 		if (reloadDest)
 			m_NDS9Channels[channel].internalDest = m_NDS9Channels[channel].dest;

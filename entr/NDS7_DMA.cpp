@@ -142,16 +142,18 @@ void Bus::NDS7_writeDMAReg(uint32_t address, uint8_t value)
 		m_NDS7Channels[0].control &= 0xFF00; m_NDS7Channels[0].control |= value;
 		break;
 	case 0x040000BB:
-		if ((!(m_NDS7Channels[0].control >> 15)) && (value >> 7))
+	{
+		bool wasEnabled = (m_NDS7Channels[0].control >> 15);
+		m_NDS7Channels[0].control &= 0x00FF; m_NDS7Channels[0].control |= (value << 8);
+		if ((!wasEnabled) && (value >> 7))
 		{
 			m_NDS7Channels[0].internalSrc = m_NDS7Channels[0].src;
 			m_NDS7Channels[0].internalDest = m_NDS7Channels[0].dest;
 			m_NDS7Channels[0].internalWordCount = m_NDS7Channels[0].wordCount;
+			NDS7_checkDMAChannel(0);
 		}
-		m_NDS7Channels[0].control &= 0x00FF; m_NDS7Channels[0].control |= (value << 8);
-		NDS7_checkDMAChannel(0);
 		break;
-
+	}
 		//Channel 1
 	case 0x040000BC:
 		m_NDS7Channels[1].src &= 0xFFFFFF00; m_NDS7Channels[1].src |= value;
@@ -187,16 +189,18 @@ void Bus::NDS7_writeDMAReg(uint32_t address, uint8_t value)
 		m_NDS7Channels[1].control &= 0xFF00; m_NDS7Channels[1].control |= value;
 		break;
 	case 0x040000C7:
-		if ((!(m_NDS7Channels[1].control >> 15)) && (value >> 7))
+	{
+		bool wasEnabled = (m_NDS7Channels[1].control >> 15);
+		m_NDS7Channels[1].control &= 0x00FF; m_NDS7Channels[1].control |= (value << 8);
+		if ((!wasEnabled) && (value >> 7))
 		{
 			m_NDS7Channels[1].internalSrc = m_NDS7Channels[1].src;
 			m_NDS7Channels[1].internalDest = m_NDS7Channels[1].dest;
 			m_NDS7Channels[1].internalWordCount = m_NDS7Channels[1].wordCount;
+			NDS7_checkDMAChannel(1);
 		}
-		m_NDS7Channels[1].control &= 0x00FF; m_NDS7Channels[1].control |= (value << 8);
-		NDS7_checkDMAChannel(1);
 		break;
-
+	}
 		//Channel 2
 	case 0x040000C8:
 		m_NDS7Channels[2].src &= 0xFFFFFF00; m_NDS7Channels[2].src |= value;
@@ -232,16 +236,18 @@ void Bus::NDS7_writeDMAReg(uint32_t address, uint8_t value)
 		m_NDS7Channels[2].control &= 0xFF00; m_NDS7Channels[2].control |= value;
 		break;
 	case 0x040000D3:
-		if ((!(m_NDS7Channels[2].control >> 15)) && (value >> 7))
+	{
+		bool wasEnabled = (m_NDS7Channels[2].control >> 15);
+		m_NDS7Channels[2].control &= 0x00FF; m_NDS7Channels[2].control |= (value << 8);
+		if ((!wasEnabled) && (value >> 7))
 		{
 			m_NDS7Channels[2].internalSrc = m_NDS7Channels[2].src;
 			m_NDS7Channels[2].internalDest = m_NDS7Channels[2].dest;
 			m_NDS7Channels[2].internalWordCount = m_NDS7Channels[2].wordCount;
+			NDS7_checkDMAChannel(2);
 		}
-		m_NDS7Channels[2].control &= 0x00FF; m_NDS7Channels[2].control |= (value << 8);
-		NDS7_checkDMAChannel(2);
 		break;
-
+	}
 		//Channel 3
 	case 0x040000D4:
 		m_NDS7Channels[3].src &= 0xFFFFFF00; m_NDS7Channels[3].src |= value;
@@ -277,15 +283,18 @@ void Bus::NDS7_writeDMAReg(uint32_t address, uint8_t value)
 		m_NDS7Channels[3].control &= 0xFF00; m_NDS7Channels[3].control |= value;
 		break;
 	case 0x040000DF:
-		if ((!(m_NDS7Channels[3].control >> 15)) && (value >> 7))
+	{
+		bool wasEnabled = (m_NDS7Channels[3].control >> 15);
+		m_NDS7Channels[3].control &= 0x00FF; m_NDS7Channels[3].control |= (value << 8);
+		if ((!wasEnabled) && (value >> 7))
 		{
 			m_NDS7Channels[3].internalSrc = m_NDS7Channels[3].src;
 			m_NDS7Channels[3].internalDest = m_NDS7Channels[3].dest;
 			m_NDS7Channels[3].internalWordCount = m_NDS7Channels[3].wordCount;
+			NDS7_checkDMAChannel(3);
 		}
-		m_NDS7Channels[3].control &= 0x00FF; m_NDS7Channels[3].control |= (value << 8);
-		NDS7_checkDMAChannel(3);
 		break;
+	}
 	}
 }
 
@@ -331,6 +340,10 @@ void Bus::NDS7_doDMATransfer(int channel)
 	bool IRQ = (m_NDS7Channels[channel].control >> 14) & 0b1;
 	bool reloadDest = false;
 	static constexpr int offsetLUT[2] = { 2,4 };
+
+	//wtf is this shit??
+	if (startTiming == 2)
+		numWords = m_cartridge->getWordsLeft();
 
 	for (int i = 0; i < numWords; i++)
 	{
@@ -380,7 +393,7 @@ void Bus::NDS7_doDMATransfer(int channel)
 		m_interruptManager->NDS7_requestInterrupt(interruptLUT[channel]);
 	}
 
-	if (repeat && startTiming != 0)
+	if (repeat && startTiming != 0)	
 	{
 		if (reloadDest)
 			m_NDS7Channels[channel].internalDest = m_NDS7Channels[channel].dest;
@@ -388,4 +401,23 @@ void Bus::NDS7_doDMATransfer(int channel)
 	}
 	else
 		m_NDS7Channels[channel].control &= 0x7FFF;
+}
+
+void Bus::NDS7DMA_onCartridge()
+{
+	for (int i = 0; i < 4; i++)
+	{
+		DMAChannel curChannel = m_NDS7Channels[i];
+		bool channelEnabled = (curChannel.control >> 15) & 0b1;
+		uint8_t startTiming = (curChannel.control >> 12) & 0b11;
+		if (channelEnabled && (startTiming == 2))
+			NDS7_doDMATransfer(i);
+	}
+}
+
+
+void Bus::NDS7_CartridgeDMACallback(void* context)
+{
+	Bus* thisPtr = (Bus*)context;
+	thisPtr->NDS7DMA_onCartridge();
 }

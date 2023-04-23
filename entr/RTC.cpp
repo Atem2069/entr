@@ -61,7 +61,7 @@ void RTC::m_writeDataRegister(uint8_t value)
 
 	case GPIOState::Command:
 	{
-		if (sckRising)
+		if (sckFalling)
 		{
 			uint8_t serialData = (RTCReg) & 0b1;
 			m_command |= (serialData << m_shiftCount);
@@ -115,9 +115,12 @@ void RTC::m_writeDataRegister(uint8_t value)
 		if (sckFalling)	//lmao, what??
 		{
 			//data &= ~0b010;
-			RTCReg &= ~0b1;
-			uint64_t outBit = (m_dataLatch >> m_shiftCount) & 0b1;
-			RTCReg |= outBit;
+			if (!dataDirectionMask)
+			{
+				RTCReg &= ~0b1;
+				uint64_t outBit = (m_dataLatch >> m_shiftCount) & 0b1;
+				RTCReg |= outBit;
+			}
 			m_shiftCount++;
 		}
 
@@ -132,7 +135,7 @@ void RTC::m_writeDataRegister(uint8_t value)
 	case GPIOState::Write:
 	{
 		//todo
-		if (sckRising)
+		if (sckFalling)
 		{
 			uint64_t inBit = RTCReg & 0b1;
 			m_dataLatch |= (inBit << m_shiftCount);
