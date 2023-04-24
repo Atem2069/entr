@@ -64,6 +64,7 @@ void NDS::m_initialise()
 	bool directBoot = false;
 	if (directBoot)
 	{
+		m_cartridge.directBoot();
 		//load arm9/arm7 binaries
 		for (int i = 0; i < ARM9Size; i++)
 		{

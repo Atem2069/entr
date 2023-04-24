@@ -21,6 +21,7 @@ public:
 	~Cartridge();
 
 	void encryptSecureArea(uint8_t* keyBuf);
+	void directBoot() { m_encryptionState = CartEncryptionState::KEY2; }	//directly enter KEY2/main data mode if direct booting
 
 	void registerDMACallbacks(callbackFn NDS7Callback, callbackFn NDS9Callback, void* ctx)
 	{
@@ -40,10 +41,14 @@ public:
 	void setNDS7AccessRights(bool val);
 	uint32_t getWordsLeft() { return (transferLength - bytesTransferred) / 4; }
 
-	static void onTransferReady(void* context);
 private:
 	void startTransfer();
+	void decodeUnencryptedCmd();
 	void decodeKEY1Cmd();
+	void decodeKEY2Cmd();
+
+	void endTransfer();
+
 	CartEncryptionState m_encryptionState = CartEncryptionState::Unencrypted;
 	std::vector<uint8_t> m_cartData;	//vector probably sucks, but oh well
 	uint8_t read(uint32_t address);

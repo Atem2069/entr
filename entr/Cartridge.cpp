@@ -189,16 +189,7 @@ uint32_t Cartridge::readGamecard()
 		if (bytesTransferred == transferLength)
 		{
 			Logger::msg(LoggerSeverity::Info, "Transfer completed!");
-			transferInProgress = false;
-			ROMCTRL &= 0x7FFFFFFF;
-			if ((AUXSPICNT >> 14) & 0b1)
-			{
-				if (NDS7HasAccess)
-					m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
-				else
-					m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
-			}
-			ROMCTRL &= ~(1 << 23);
+			endTransfer();
 		}
 	}
 	return result;
@@ -218,73 +209,25 @@ void Cartridge::startTransfer()
 
 	Logger::msg(LoggerSeverity::Info, std::format("Gamecard transfer started. length={}", transferLength));
 
-	if (m_encryptionState == CartEncryptionState::KEY1)
+	switch (m_encryptionState)
+	{
+	case CartEncryptionState::Unencrypted:
+		decodeUnencryptedCmd();
+		break;
+	case CartEncryptionState::KEY1:
 	{
 		uint32_t temp[2] = { cartCommand & 0xFFFFFFFF,(cartCommand >> 32) & 0xFFFFFFFF };
 		KEY1_decrypt(temp);
 		cartCommand = temp[0] | ((uint64_t)(temp[1]) << 32);
 		Logger::msg(LoggerSeverity::Info, std::format("Decrypted KEY1 command: {:#x}", cartCommand));
 		decodeKEY1Cmd();
-		return;
-	}
-	uint8_t commandId = ((cartCommand >> 56) & 0xFF);
-	switch (commandId)
-	{
-	case 0x9F:
-		memset(readBuffer, 0xFF, 0x2000);
-		transferLength = 0x2000;
-		break;
-	case 0x00:
-		memcpy(readBuffer, &m_cartData[0], 0x200);
-		transferLength = 0x200;
-		break;
-	case 0xB7:
-	{
-		uint32_t baseAddr = ((cartCommand >> 24) & 0xFFFFFFFF);
-		memcpy(readBuffer, &m_cartData[baseAddr], transferLength);
 		break;
 	}
-	case 0xB8: case 0x90:
-	{
-		// 0x00001FC2
-		readBuffer[0] = 0xC2;
-		readBuffer[1] = 0x1F;
-		readBuffer[2] = 0;
-		readBuffer[3] = 0;
+	case CartEncryptionState::KEY2:
+		decodeKEY2Cmd();
 		break;
 	}
-	case 0x3c:					//activate KEY1
-		Logger::msg(LoggerSeverity::Info, "Entering KEY1 mode..");
-		m_encryptionState = CartEncryptionState::KEY1;
-		ROMCTRL &= ~(1 << 23);
-		ROMCTRL &= 0x7FFF;
-		if ((AUXSPICNT >> 14) & 0b1)
-		{
-			if (NDS7HasAccess)
-				m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
-			else
-				m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
-		}
-		transferInProgress = false;
-		KEY1_InitKeyCode(cartId, 2, 2);
-		break;
-	default:
-	{
-		ROMCTRL &= ~(1 << 23);
-		ROMCTRL &= 0x7FFF;
-		if ((AUXSPICNT >> 14) & 0b1)
-		{
-			if (NDS7HasAccess)
-				m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
-			else
-				m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
-		}
-		transferInProgress = false;
-		Logger::msg(LoggerSeverity::Error, std::format("Unknown cartridge command {:#x}",commandId));
-		memset(readBuffer, 0xFF, transferLength);
-		break;
-	}
-	}
+
 	if (transferInProgress)
 	{
 		switch (NDS7HasAccess)
@@ -295,28 +238,20 @@ void Cartridge::startTransfer()
 	}
 }
 
-void Cartridge::decodeKEY1Cmd()
+void Cartridge::decodeUnencryptedCmd()
 {
-	uint8_t commandId = ((cartCommand >> 60) & 0xF);
-
+	uint8_t commandId = ((cartCommand >> 56) & 0xFF);
 	switch (commandId)
 	{
-	case 0x4:
-	{
-		Logger::msg(LoggerSeverity::Info, "Enable KEY2..");
-		ROMCTRL &= ~(1 << 23);
-		ROMCTRL &= 0x7FFF;
-		if ((AUXSPICNT >> 14) & 0b1)
-		{
-			if (NDS7HasAccess)
-				m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
-			else
-				m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
-		}
-		transferInProgress = false;
+	case 0x9F:								//read dummy bytes
+		memset(readBuffer, 0xFF, 0x2000);
+		transferLength = 0x2000;
 		break;
-	}
-	case 0x1:
+	case 0x00:								//read header
+		memcpy(readBuffer, &m_cartData[0], 0x200);
+		transferLength = 0x200;
+		break;
+	case 0x90:								//chip id
 	{
 		// 0x00001FC2
 		readBuffer[0] = 0xC2;
@@ -325,55 +260,94 @@ void Cartridge::decodeKEY1Cmd()
 		readBuffer[3] = 0;
 		break;
 	}
-	case 0x2:
+	case 0x3c:								//activate KEY1
+		Logger::msg(LoggerSeverity::Info, "Entering KEY1 mode..");
+		m_encryptionState = CartEncryptionState::KEY1;
+		endTransfer();
+		KEY1_InitKeyCode(cartId, 2, 2);
+		break;
+	}
+}
+
+void Cartridge::decodeKEY1Cmd()
+{
+	uint8_t commandId = ((cartCommand >> 60) & 0xF);
+
+	switch (commandId)
 	{
-		Logger::msg(LoggerSeverity::Info, "read secure area");
+	case 0x4:								//activate KEY2
+	{
+		Logger::msg(LoggerSeverity::Info, "Enable KEY2..");
+		endTransfer();
+		break;
+	}
+	case 0x1:								//chip id
+	{
+		// 0x00001FC2
+		readBuffer[0] = 0xC2;
+		readBuffer[1] = 0x1F;
+		readBuffer[2] = 0;
+		readBuffer[3] = 0;
+		break;
+	}
+	case 0x2:								//read secure area
+	{
 		uint64_t baseBlock = ((cartCommand >> 44) & 0xF);
 		uint32_t baseAddr = baseBlock << 12;
 		memcpy(readBuffer, &m_cartData[baseAddr], 0x1000);
 		//transferLength = 0x1000;
 		break;
 	}
-	case 0xa:
+	case 0xa:								//enter main data mode
 	{
 		Logger::msg(LoggerSeverity::Info, "Enter main data..");
 		m_encryptionState = CartEncryptionState::KEY2;
-		ROMCTRL &= ~(1 << 23);
-		ROMCTRL &= 0x7FFF;
-		if ((AUXSPICNT >> 14) & 0b1)
-		{
-			if (NDS7HasAccess)
-				m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
-			else
-				m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
-		}
-		transferInProgress = false;
+		endTransfer();
 		break;
 	}
 	default:
-		ROMCTRL &= ~(1 << 23);
-		ROMCTRL &= 0x7FFF;
-		if ((AUXSPICNT >> 14) & 0b1)
-		{
-			if (NDS7HasAccess)
-				m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
-			else
-				m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
-		}
+		endTransfer();
 		Logger::msg(LoggerSeverity::Error, std::format("Unknown KEY1 command {:#x}", commandId));
-		while (true)
-			int a = 5;
 		break;
 	}
 
-	if (transferInProgress)
+}
+
+void Cartridge::decodeKEY2Cmd()
+{
+	uint8_t commandId = ((cartCommand >> 56) & 0xFF);
+	switch (commandId)
 	{
-		switch (NDS7HasAccess)
-		{
-		case 0:NDS9_DMACallback(DMAContext); break;
-		case 1:NDS7_DMACallback(DMAContext); break;
-		}
+	case 0xB7:								//read data
+	{
+		uint32_t baseAddr = ((cartCommand >> 24) & 0xFFFFFFFF);
+		memcpy(readBuffer, &m_cartData[baseAddr], transferLength);
+		break;
 	}
+	case 0xB8: case 0x90:					//chip id
+	{
+		// 0x00001FC2
+		readBuffer[0] = 0xC2;
+		readBuffer[1] = 0x1F;
+		readBuffer[2] = 0;
+		readBuffer[3] = 0;
+		break;
+	}
+	}
+}
+
+void Cartridge::endTransfer()
+{
+	ROMCTRL &= ~(1 << 23);
+	ROMCTRL &= 0x7FFFFFFF;
+	if ((AUXSPICNT >> 14) & 0b1)
+	{
+		if (NDS7HasAccess)
+			m_interruptManager->NDS7_requestInterrupt(InterruptType::GamecardTransferComplete);
+		else
+			m_interruptManager->NDS9_requestInterrupt(InterruptType::GamecardTransferComplete);
+	}
+	transferInProgress = false;
 }
 
 void Cartridge::KEY1_InitKeyCode(uint32_t idcode, int level, int mod)
