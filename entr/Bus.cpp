@@ -264,8 +264,7 @@ uint8_t Bus::NDS9_read8(uint32_t address)
 	case 7:
 		return m_mem->OAM[address & 0x7FF];
 	case 8: case 9: case 0xA:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
-		return 0;
+		return 0xFF;
 	case 0xFF:
 		if ((address & 0xFFFF) > 0x7FFF)
 			return 0;
@@ -309,7 +308,6 @@ void Bus::NDS9_write8(uint32_t address, uint8_t value)
 		m_mem->OAM[address & 0x7FF] = value;
 		break;
 	case 8: case 9: case 0xA:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space write! addr={:#x}", address));
 		break;
 	case 0xFF:
 		Logger::msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
@@ -348,8 +346,7 @@ uint16_t Bus::NDS9_read16(uint32_t address)
 	case 7:
 		return getValue16(m_mem->OAM,address & 0x7FF,0x7FF);
 	case 8: case 9: case 0xA:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
-		return 0;
+		return 0xFFFF;
 	case 0xFF:
 		if ((address & 0xFFFF) > 0x7FFF)
 			return 0;
@@ -394,7 +391,6 @@ void Bus::NDS9_write16(uint32_t address, uint16_t value)
 		setValue16(m_mem->OAM, address & 0x7FF, 0x7FF, value);
 		break;
 	case 8: case 9: case 0xA:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space write! addr={:#x}", address));
 		break;
 	case 0xFF:
 		Logger::msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
@@ -433,8 +429,7 @@ uint32_t Bus::NDS9_read32(uint32_t address)
 	case 7:
 		return getValue32(m_mem->OAM, address & 0x7FF, 0x7FF);
 	case 8: case 9: case 0xA:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space read! addr={:#x}", address));
-		return 0;
+		return 0xFFFFFFFF;
 	case 0xFF:
 		if ((address & 0xFFFF) > 0x7FFF)
 			return 0;
@@ -479,7 +474,6 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 		setValue32(m_mem->OAM, address & 0x7FF, 0x7FF, value);
 		break;
 	case 8: case 9: case 0xA:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented cartridge space write! addr={:#x}", address));
 		break;
 	case 0xFF:
 		Logger::msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
