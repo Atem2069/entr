@@ -174,16 +174,18 @@ void Bus::NDS9_writeDMAReg(uint32_t address, uint8_t value)
 		m_NDS9Channels[0].control &= 0xFF00; m_NDS9Channels[0].control |= value;
 		break;
 	case 0x040000BB:
-		if ((!(m_NDS9Channels[0].control >> 15)) && (value >> 7))
+	{
+		bool wasEnabled = (m_NDS9Channels[0].control >> 15);
+		m_NDS9Channels[0].control &= 0x00FF; m_NDS9Channels[0].control |= (value << 8);
+		if ((!wasEnabled) && (value >> 7))
 		{
 			m_NDS9Channels[0].internalSrc = m_NDS9Channels[0].src;
 			m_NDS9Channels[0].internalDest = m_NDS9Channels[0].dest;
 			m_NDS9Channels[0].internalWordCount = m_NDS9Channels[0].wordCount | ((m_NDS9Channels[0].control & 0x1F) << 16);
+			NDS9_checkDMAChannel(0);
 		}
-		m_NDS9Channels[0].control &= 0x00FF; m_NDS9Channels[0].control |= (value << 8);
-		NDS9_checkDMAChannel(0);
 		break;
-
+	}
 		//Channel 1
 	case 0x040000BC:
 		m_NDS9Channels[1].src &= 0xFFFFFF00; m_NDS9Channels[1].src |= value;
@@ -219,16 +221,18 @@ void Bus::NDS9_writeDMAReg(uint32_t address, uint8_t value)
 		m_NDS9Channels[1].control &= 0xFF00; m_NDS9Channels[1].control |= value;
 		break;
 	case 0x040000C7:
-		if ((!(m_NDS9Channels[1].control >> 15)) && (value >> 7))
+	{
+		bool wasEnabled = (m_NDS9Channels[1].control >> 15);
+		m_NDS9Channels[1].control &= 0x00FF; m_NDS9Channels[1].control |= (value << 8);
+		if ((!wasEnabled) && (value >> 7))
 		{
 			m_NDS9Channels[1].internalSrc = m_NDS9Channels[1].src;
 			m_NDS9Channels[1].internalDest = m_NDS9Channels[1].dest;
 			m_NDS9Channels[1].internalWordCount = m_NDS9Channels[1].wordCount | ((m_NDS9Channels[1].control & 0x1F) << 16);
+			NDS9_checkDMAChannel(1);
 		}
-		m_NDS9Channels[1].control &= 0x00FF; m_NDS9Channels[1].control |= (value << 8);
-		NDS9_checkDMAChannel(1);
 		break;
-
+	}
 		//Channel 2
 	case 0x040000C8:
 		m_NDS9Channels[2].src &= 0xFFFFFF00; m_NDS9Channels[2].src |= value;
@@ -264,16 +268,18 @@ void Bus::NDS9_writeDMAReg(uint32_t address, uint8_t value)
 		m_NDS9Channels[2].control &= 0xFF00; m_NDS9Channels[2].control |= value;
 		break;
 	case 0x040000D3:
-		if ((!(m_NDS9Channels[2].control >> 15)) && (value >> 7))
+	{
+		bool wasEnabled = (m_NDS9Channels[2].control >> 15);
+		m_NDS9Channels[2].control &= 0x00FF; m_NDS9Channels[2].control |= (value << 8);
+		if ((!wasEnabled) && (value >> 7))
 		{
 			m_NDS9Channels[2].internalSrc = m_NDS9Channels[2].src;
 			m_NDS9Channels[2].internalDest = m_NDS9Channels[2].dest;
 			m_NDS9Channels[2].internalWordCount = m_NDS9Channels[2].wordCount | ((m_NDS9Channels[2].control & 0x1F) << 16);
+			NDS9_checkDMAChannel(2);
 		}
-		m_NDS9Channels[2].control &= 0x00FF; m_NDS9Channels[2].control |= (value << 8);
-		NDS9_checkDMAChannel(2);
 		break;
-
+	}
 		//Channel 3
 	case 0x040000D4:
 		m_NDS9Channels[3].src &= 0xFFFFFF00; m_NDS9Channels[3].src |= value;
@@ -309,16 +315,18 @@ void Bus::NDS9_writeDMAReg(uint32_t address, uint8_t value)
 		m_NDS9Channels[3].control &= 0xFF00; m_NDS9Channels[3].control |= value;
 		break;
 	case 0x040000DF:
-		if ((!(m_NDS9Channels[3].control >> 15)) && (value >> 7))
+	{
+		bool wasEnabled = (m_NDS9Channels[3].control >> 15);
+		m_NDS9Channels[3].control &= 0x00FF; m_NDS9Channels[3].control |= (value << 8);
+		if ((!wasEnabled) && (value >> 7))
 		{
 			m_NDS9Channels[3].internalSrc = m_NDS9Channels[3].src;
 			m_NDS9Channels[3].internalDest = m_NDS9Channels[3].dest;
 			m_NDS9Channels[3].internalWordCount = m_NDS9Channels[3].wordCount | ((m_NDS9Channels[3].control & 0x1F) << 16);
+			NDS9_checkDMAChannel(3);
 		}
-		m_NDS9Channels[3].control &= 0x00FF; m_NDS9Channels[3].control |= (value << 8);
-		NDS9_checkDMAChannel(3);
 		break;
-
+	}
 		//scratchpad regs
 	case 0x040000E0:
 		m_NDS9Channels[0].scratchpad &= 0xFFFFFF00; m_NDS9Channels[0].scratchpad |= value;
@@ -468,7 +476,7 @@ void Bus::NDS9_doDMATransfer(int channel)
 		m_interruptManager->NDS9_requestInterrupt(interruptLUT[channel]);
 	}
 
-	if (repeat && startTiming != 0 && startTiming != 5)
+	if (repeat && startTiming != 0)
 	{
 		if (reloadDest)
 			m_NDS9Channels[channel].internalDest = m_NDS9Channels[channel].dest;
