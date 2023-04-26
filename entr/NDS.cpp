@@ -41,7 +41,7 @@ void NDS::notifyDetach()
 void NDS::m_initialise()
 {
 	m_scheduler.invalidateAll();
-	std::vector<uint8_t> romData = readFile("rom\\yoshi.nds");
+	std::vector<uint8_t> romData = readFile("rom\\pmd_eod.nds");
 	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
 	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
 

@@ -711,14 +711,11 @@ template<Engine engine> void PPU::renderSprites()
 	}
 	memset(m_spriteAttrBuffer, 0b00011111, 256);
 	memset(m_spriteLineBuffer, 0x80, 512);
-	//m_spriteCyclesElapsed = 0;
+
 	if (!((m_registers->DISPCNT >> 12) & 0b1))							
 		return;
 	bool extendedPalettes = ((m_registers->DISPCNT >> 31) & 0b1);
 	bool oneDimensionalMapping = ((m_registers->DISPCNT >> 4) & 0b1);	
-	//bool isBlendTarget1 = ((BLDCNT >> 4) & 0b1);
-	//bool isBlendTarget2 = ((BLDCNT >> 12) & 0b1);
-	//uint8_t blendMode = ((BLDCNT >> 6) & 0b11);
 
 	int mosaicHorizontal = 1;// ((MOSAIC >> 8) & 0xF) + 1;
 	int mosaicVertical = 1;// ((MOSAIC >> 12) & 0xF) + 1;
@@ -728,13 +725,11 @@ template<Engine engine> void PPU::renderSprites()
 
 	for (int i = 0; i < 128; i++)
 	{
-		//if (m_spriteCyclesElapsed > maxAllowedSpriteCycles)	//quit sprite rendering if we've spent too much time evaluating sprites
-		//	return;
 		uint32_t spriteBase = i * 8;	//each OAM entry is 8 bytes
 
 		OAMEntry* curSpriteEntry = (OAMEntry*)(m_mem->OAM + m_OAMBase + spriteBase);
 
-		if (curSpriteEntry->rotateScale)
+		if (curSpriteEntry->rotateScale || (curSpriteEntry->objMode==3))	//don't render affine or bitmap sprites, not supported yet.
 		{
 			//drawAffineSprite(curSpriteEntry);
 			continue;
@@ -743,7 +738,6 @@ template<Engine engine> void PPU::renderSprites()
 		if (curSpriteEntry->disableObj)
 			continue;
 
-		//uint8_t objMode = (curSpriteEntry->attr0 >> 10) & 0b11;	
 		bool isObjWindow = curSpriteEntry->objMode == 2;
 		//bool mosaic = (curSpriteEntry->attr0 >> 12) & 0b1;
 
@@ -845,11 +839,13 @@ template<Engine engine> void PPU::renderSprites()
 				if ((spritePriority >= priorityAtPixel) && (!renderedPixelTransparent || currentPixelTransparent))	//keep rendering if lower priority, BUT last pixel transparent
 					continue;
 
-				m_spriteAttrBuffer[plotCoord].priority = spritePriority & 0b11111;
-				m_spriteAttrBuffer[plotCoord].transparent = (curSpriteEntry->objMode == 1);
-				m_spriteAttrBuffer[plotCoord].mosaic = curSpriteEntry->mosaic;
 				if (!currentPixelTransparent)
+				{
+					m_spriteAttrBuffer[plotCoord].priority = spritePriority & 0b11111;
+					m_spriteAttrBuffer[plotCoord].transparent = (curSpriteEntry->objMode == 1);
+					m_spriteAttrBuffer[plotCoord].mosaic = curSpriteEntry->mosaic;
 					m_spriteLineBuffer[plotCoord] = col;
+				}
 			}
 		}
 
