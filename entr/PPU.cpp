@@ -275,8 +275,12 @@ template<Engine engine> void PPU::renderMode2()
 template<Engine engine> void PPU::renderMode3()
 {
 	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	PPURegisters* m_registers = &m_engineARegisters;
 	if (engine == Engine::B)
+	{
+		m_registers = &m_engineBRegisters;
 		m_backgroundLayers = m_engineBBgLayers;
+	}
 
 	renderSprites<engine>();
 	//bit messy, don't like too much..
@@ -290,14 +294,29 @@ template<Engine engine> void PPU::renderMode3()
 	if (m_backgroundLayers[2].enabled)
 		renderBackground<engine, 2>();
 	m_backgroundLayers[3].priority = 255;
-	//todo: render bg 3 (extended)
+	if (((m_registers->BG3CNT >> 7) & 0b1) && m_backgroundLayers[3].enabled)
+	{
+		switch ((m_registers->BG3CNT >> 2) & 0b1)
+		{
+		case 0:
+			render256ColorBitmap<engine, 3>();
+			break;
+		case 1:
+			renderDirectColorBitmap<engine, 3>();
+			break;
+		}
+	}
 }
 
 template<Engine engine> void PPU::renderMode4()
 {
 	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	PPURegisters* m_registers = &m_engineARegisters;
 	if (engine == Engine::B)
+	{
+		m_registers = &m_engineBRegisters;
 		m_backgroundLayers = m_engineBBgLayers;
+	}
 
 	renderSprites<engine>();
 	//bit messy, don't like too much..
@@ -309,14 +328,30 @@ template<Engine engine> void PPU::renderMode4()
 		renderBackground<engine, 1>();
 	m_backgroundLayers[2].priority = 255;
 	m_backgroundLayers[3].priority = 255;
-	//todo: render bg 2 (affine), bg 3 (extended)
+	//todo: render bg 2 (affine)
+	if (((m_registers->BG3CNT >> 7) & 0b1) && m_backgroundLayers[3].enabled)
+	{
+		switch ((m_registers->BG3CNT >> 2) & 0b1)
+		{
+		case 0:
+			render256ColorBitmap<engine, 3>();
+			break;
+		case 1:
+			renderDirectColorBitmap<engine, 3>();
+			break;
+		}
+	}
 }
 
 template<Engine engine> void PPU::renderMode5()
 {
 	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	PPURegisters* m_registers = &m_engineARegisters;
 	if (engine == Engine::B)
+	{
+		m_registers = &m_engineBRegisters;
 		m_backgroundLayers = m_engineBBgLayers;
+	}
 
 	renderSprites<engine>();
 	//bit messy, don't like too much..
@@ -327,8 +362,31 @@ template<Engine engine> void PPU::renderMode5()
 	if (m_backgroundLayers[1].enabled)
 		renderBackground<engine, 1>();
 	m_backgroundLayers[2].priority = 255;
+	if (((m_registers->BG2CNT >> 7) & 0b1) && m_backgroundLayers[2].enabled)
+	{
+		switch ((m_registers->BG2CNT >> 2) & 0b1)
+		{
+		case 0:
+			render256ColorBitmap<engine, 2>();
+			break;
+		case 1:
+			renderDirectColorBitmap<engine, 2>();
+			break;
+		}
+	}
 	m_backgroundLayers[3].priority = 255;
-	//todo: render bgs 2,3 (extended)
+	if (((m_registers->BG3CNT >> 7) & 0b1) && m_backgroundLayers[3].enabled)
+	{
+		switch ((m_registers->BG3CNT >> 2) & 0b1)
+		{
+		case 0:
+			render256ColorBitmap<engine, 3>();
+			break;
+		case 1:
+			renderDirectColorBitmap<engine, 3>();
+			break;
+		}
+	}
 }
 
 
@@ -376,18 +434,18 @@ template<Engine engine> void PPU::composeLayers()
 
 template<Engine engine, int bg> void PPU::renderBackground()
 {
-	PPURegisters m_regs = {};
+	PPURegisters* m_regs = {};
 	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
 	uint32_t screenBase = 0;
 	if (engine == Engine::A)
 	{
 		screenBase = (((m_engineARegisters.DISPCNT >> 27) & 0b111) * 65536);
-		m_regs = m_engineARegisters;
+		m_regs = &m_engineARegisters;
 	}
 	else
 	{
 		m_backgroundLayers = m_engineBBgLayers;
-		m_regs = m_engineBRegisters;
+		m_regs = &m_engineBRegisters;
 	}
 	uint16_t ctrlReg = 0;
 	uint32_t xScroll = 0, yScroll = 0;
@@ -395,32 +453,32 @@ template<Engine engine, int bg> void PPU::renderBackground()
 	switch (bg)
 	{
 	case 0:
-		ctrlReg = m_regs.BG0CNT;
-		xScroll = m_regs.BG0HOFS;
-		yScroll = m_regs.BG0VOFS;
+		ctrlReg = m_regs->BG0CNT;
+		xScroll = m_regs->BG0HOFS;
+		yScroll = m_regs->BG0VOFS;
 		extPalBlock = ((ctrlReg >> 13) & 0b1) << 1;	//0=slot 0,1=slot 2
 		break;
 	case 1:
-		ctrlReg = m_regs.BG1CNT;
-		xScroll = m_regs.BG1HOFS;
-		yScroll = m_regs.BG1VOFS;
+		ctrlReg = m_regs->BG1CNT;
+		xScroll = m_regs->BG1HOFS;
+		yScroll = m_regs->BG1VOFS;
 		extPalBlock = (((ctrlReg >> 13) & 0b1) << 1) + 1;	//0=slot 1, 1=slot 3
 		break;
 	case 2:
-		ctrlReg = m_regs.BG2CNT;
-		xScroll = m_regs.BG2HOFS;
-		yScroll = m_regs.BG2VOFS;
+		ctrlReg = m_regs->BG2CNT;
+		xScroll = m_regs->BG2HOFS;
+		yScroll = m_regs->BG2VOFS;
 		extPalBlock = 2;
 		break;
 	case 3:
-		ctrlReg = m_regs.BG3CNT;
-		xScroll = m_regs.BG3HOFS;
-		yScroll = m_regs.BG3VOFS;
+		ctrlReg = m_regs->BG3CNT;
+		xScroll = m_regs->BG3HOFS;
+		yScroll = m_regs->BG3VOFS;
 		extPalBlock = 3;
 		break;
 	}
 
-	bool extendedPalette = ((m_regs.DISPCNT >> 30) & 0b1);
+	bool extendedPalette = ((m_regs->DISPCNT >> 30) & 0b1);
 	int mosaicHorizontal = 0;// (MOSAIC & 0xF) + 1;
 	int mosaicVertical = 0;// ((MOSAIC >> 4) & 0xF) + 1;
 
@@ -551,21 +609,101 @@ template<Engine engine, int bg> void PPU::renderBackground()
 	}
 }
 
+template<Engine engine, int bg> void PPU::renderDirectColorBitmap()
+{
+	PPURegisters* m_regs = {};
+	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	if constexpr (engine == Engine::A)
+		m_regs = &m_engineARegisters;
+	else
+	{
+		m_backgroundLayers = m_engineBBgLayers;
+		m_regs = &m_engineBRegisters;
+	}
+
+	uint16_t ctrlReg = {};
+	switch (bg)
+	{
+	case 2:
+		ctrlReg = m_regs->BG2CNT;
+		break;
+	case 3:
+		ctrlReg = m_regs->BG3CNT;
+		break;
+	}
+
+	uint32_t screenBase = ((ctrlReg >> 8) & 0x1F) * 16384;
+	uint8_t bgPriority = ctrlReg & 0b11;
+	m_backgroundLayers[bg].priority = bgPriority;
+
+	for (int x = 0; x < 256; x++)		//todo: account for affine
+	{
+		uint32_t pixelBase = ((256 * VCOUNT * 2) + (x << 1));
+		uint8_t colLow = ppuReadBg<engine>(screenBase+pixelBase);
+		uint8_t colHigh = ppuReadBg<engine>(screenBase+pixelBase+1);
+		uint16_t res = (colHigh << 8) | colLow;
+		m_backgroundLayers[bg].lineBuffer[x] = res & 0x7FFF;		//bit 15 used as alpha flag for bitmap modes in nds, should handle at some point.
+	}
+}
+
+template<Engine engine, int bg> void PPU::render256ColorBitmap()
+{
+	PPURegisters* m_regs = {};
+	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
+	uint32_t paletteBase = 0;
+	if constexpr (engine == Engine::A)
+		m_regs = &m_engineARegisters;
+	else
+	{
+		paletteBase = 0x400;
+		m_backgroundLayers = m_engineBBgLayers;
+		m_regs = &m_engineBRegisters;
+	}
+
+	uint16_t ctrlReg = {};
+	switch (bg)
+	{
+	case 2:
+		ctrlReg = m_regs->BG2CNT;
+		break;
+	case 3:
+		ctrlReg = m_regs->BG3CNT;
+		break;
+	}
+	uint32_t screenBase = ((ctrlReg >> 8) & 0x1F) * 16384;
+	uint8_t bgPriority = ctrlReg & 0b11;
+	m_backgroundLayers[bg].priority = bgPriority;
+
+	for (int x = 0; x < 256; x++)
+	{
+		uint32_t pixelBase = ((256 * VCOUNT) + x);
+		uint8_t paletteId = ppuReadBg<engine>(screenBase+pixelBase);
+		uint16_t col = 0x8000;
+		if (paletteId)
+		{
+			uint8_t colLow = m_mem->PAL[paletteBase + ((uint32_t)(paletteId) << 1)];
+			uint8_t colHigh = m_mem->PAL[paletteBase + ((uint32_t)(paletteId) << 1) + 1];
+			col = (colHigh << 8) | colLow;
+		}
+		m_backgroundLayers[bg].lineBuffer[x] = col & 0x7FFF;
+	}
+}
+
 template<Engine engine> void PPU::renderSprites()
 {
 	uint32_t m_OAMBase = 0;
 	SpriteAttribute* m_spriteAttrBuffer = nullptr;
 	uint16_t* m_spriteLineBuffer = nullptr;
-	PPURegisters m_registers = {};
+	PPURegisters* m_registers = {};
 	switch (engine)
 	{
 	case Engine::A:
-		m_registers = m_engineARegisters;
+		m_registers = &m_engineARegisters;
 		m_spriteAttrBuffer = m_engineASpriteAttribBuffer;
 		m_spriteLineBuffer = m_engineASpriteLineBuffer;
 		break;
 	case Engine::B:
-		m_registers = m_engineBRegisters;
+		m_registers = &m_engineBRegisters;
 		m_spriteAttrBuffer = m_engineBSpriteAttribBuffer;
 		m_spriteLineBuffer = m_engineBSpriteLineBuffer;
 		m_OAMBase = 0x400;
@@ -574,10 +712,10 @@ template<Engine engine> void PPU::renderSprites()
 	memset(m_spriteAttrBuffer, 0b00011111, 256);
 	memset(m_spriteLineBuffer, 0x80, 512);
 	//m_spriteCyclesElapsed = 0;
-	if (!((m_registers.DISPCNT >> 12) & 0b1))							
+	if (!((m_registers->DISPCNT >> 12) & 0b1))							
 		return;
-	bool extendedPalettes = ((m_registers.DISPCNT >> 31) & 0b1);
-	bool oneDimensionalMapping = ((m_registers.DISPCNT >> 4) & 0b1);	
+	bool extendedPalettes = ((m_registers->DISPCNT >> 31) & 0b1);
+	bool oneDimensionalMapping = ((m_registers->DISPCNT >> 4) & 0b1);	
 	//bool isBlendTarget1 = ((BLDCNT >> 4) & 0b1);
 	//bool isBlendTarget2 = ((BLDCNT >> 12) & 0b1);
 	//uint8_t blendMode = ((BLDCNT >> 6) & 0b11);
@@ -585,7 +723,7 @@ template<Engine engine> void PPU::renderSprites()
 	int mosaicHorizontal = 1;// ((MOSAIC >> 8) & 0xF) + 1;
 	int mosaicVertical = 1;// ((MOSAIC >> 12) & 0xF) + 1;
 
-	bool limitSpriteCycles = ((m_registers.DISPCNT >> 5) & 0b1);
+	bool limitSpriteCycles = ((m_registers->DISPCNT >> 5) & 0b1);
 	int maxAllowedSpriteCycles = (limitSpriteCycles) ? 954 : 1210;	//with h-blank interval free set, then less cycles can be spent rendering sprites
 
 	for (int i = 0; i < 128; i++)
@@ -651,7 +789,7 @@ template<Engine engine> void PPU::renderSprites()
 			rowPitch *= 2;
 
 		uint32_t tileObjBoundary = 32;
-		int tileObjBoundarySelect = ((m_registers.DISPCNT >> 20) & 0b11);
+		int tileObjBoundarySelect = ((m_registers->DISPCNT >> 20) & 0b11);
 		if (oneDimensionalMapping && tileObjBoundarySelect > 0)	//clean this up, kinda messy
 		{
 			static constexpr int tileObjBoundaryLUT[4] = { 32,64,128,256 };
@@ -724,10 +862,10 @@ template<Engine engine>uint16_t PPU::extractColorFromTile(uint32_t tileBase, uin
 	uint32_t paletteMemoryAddr = 0;
 	if (sprite)							//need to remove this. tbh rewrite this function entirely.
 		paletteMemoryAddr = 0x200;
-	PPURegisters m_regs = m_engineARegisters;
+	PPURegisters* m_regs = &m_engineARegisters;
 	if constexpr (engine == Engine::B)
 	{
-		m_regs = m_engineBRegisters;
+		m_regs = &m_engineBRegisters;
 		paletteMemoryAddr = 0x600;
 	}
 	if (!hiColor)
@@ -754,7 +892,7 @@ template<Engine engine>uint16_t PPU::extractColorFromTile(uint32_t tileBase, uin
 		uint8_t tileData = ppuReadObj<engine>(tileBase);
 		if (!tileData)
 			return 0x8000;
-		if ((m_regs.DISPCNT >> 31) & 0b1)
+		if ((m_regs->DISPCNT >> 31) & 0b1)
 		{
 			paletteMemoryAddr = palette * 512;
 			paletteMemoryAddr += tileData * 2;
