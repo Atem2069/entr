@@ -64,6 +64,7 @@ private:
 	uint32_t storedKeyBuffer[0x412];
 	uint32_t KEY1_KeyBuffer[0x412];	
 	uint32_t cartId = 0;
+	uint32_t m_chipID = 0x00001FC2;
 	void KEY1_InitKeyCode(uint32_t idcode, int level, int mod);
 	void KEY1_ApplyKeyCode(uint32_t* keycode, int mod);
 	void KEY1_encrypt(uint32_t* data);

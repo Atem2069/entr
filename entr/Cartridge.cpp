@@ -193,7 +193,6 @@ uint32_t Cartridge::readGamecard()
 		}
 	}
 	return result;
-	//return 0xFFFFFFFF;	//should send data according to command :)
 }
 
 void Cartridge::startTransfer()
@@ -215,14 +214,8 @@ void Cartridge::startTransfer()
 		decodeUnencryptedCmd();
 		break;
 	case CartEncryptionState::KEY1:
-	{
-		uint32_t temp[2] = { cartCommand & 0xFFFFFFFF,(cartCommand >> 32) & 0xFFFFFFFF };
-		KEY1_decrypt(temp);
-		cartCommand = temp[0] | ((uint64_t)(temp[1]) << 32);
-		Logger::msg(LoggerSeverity::Info, std::format("Decrypted KEY1 command: {:#x}", cartCommand));
 		decodeKEY1Cmd();
 		break;
-	}
 	case CartEncryptionState::KEY2:
 		decodeKEY2Cmd();
 		break;
@@ -252,14 +245,8 @@ void Cartridge::decodeUnencryptedCmd()
 		transferLength = 0x200;
 		break;
 	case 0x90:								//chip id
-	{
-		// 0x00001FC2
-		readBuffer[0] = 0xC2;
-		readBuffer[1] = 0x1F;
-		readBuffer[2] = 0;
-		readBuffer[3] = 0;
+		memcpy(readBuffer, &m_chipID, 4);
 		break;
-	}
 	case 0x3c:								//activate KEY1
 		Logger::msg(LoggerSeverity::Info, "Entering KEY1 mode..");
 		m_encryptionState = CartEncryptionState::KEY1;
@@ -271,6 +258,12 @@ void Cartridge::decodeUnencryptedCmd()
 
 void Cartridge::decodeKEY1Cmd()
 {
+	//command is KEY1 encrypted, so decrypt first before decoding
+	uint32_t temp[2] = { cartCommand & 0xFFFFFFFF,(cartCommand >> 32) & 0xFFFFFFFF };
+	KEY1_decrypt(temp);
+	cartCommand = temp[0] | ((uint64_t)(temp[1]) << 32);
+	Logger::msg(LoggerSeverity::Info, std::format("Decrypted KEY1 command: {:#x}", cartCommand));
+
 	uint8_t commandId = ((cartCommand >> 60) & 0xF);
 
 	switch (commandId)
@@ -282,14 +275,8 @@ void Cartridge::decodeKEY1Cmd()
 		break;
 	}
 	case 0x1:								//chip id
-	{
-		// 0x00001FC2
-		readBuffer[0] = 0xC2;
-		readBuffer[1] = 0x1F;
-		readBuffer[2] = 0;
-		readBuffer[3] = 0;
+		memcpy(readBuffer, &m_chipID, 4);
 		break;
-	}
 	case 0x2:								//read secure area
 	{
 		uint64_t baseBlock = ((cartCommand >> 44) & 0xF);
@@ -324,15 +311,9 @@ void Cartridge::decodeKEY2Cmd()
 		memcpy(readBuffer, &m_cartData[baseAddr], transferLength);
 		break;
 	}
-	case 0xB8: case 0x90:					//chip id
-	{
-		// 0x00001FC2
-		readBuffer[0] = 0xC2;
-		readBuffer[1] = 0x1F;
-		readBuffer[2] = 0;
-		readBuffer[3] = 0;
+	case 0xB8:								//chip id
+		memcpy(readBuffer, &m_chipID, 4);
 		break;
-	}
 	}
 }
 
