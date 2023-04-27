@@ -441,6 +441,8 @@ template<Engine engine, int bg> void PPU::renderBackground()
 	{
 		screenBase = (((m_engineARegisters.DISPCNT >> 27) & 0b111) * 65536);
 		m_regs = &m_engineARegisters;
+		if (((m_regs->DISPCNT >> 3) & 0b1) && bg==0)		//do not render BG0 if 3d bit set
+			return;
 	}
 	else
 	{
