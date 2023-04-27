@@ -21,7 +21,7 @@ int main()
 
 	while (!m_display.getShouldClose())
 	{
-		void* data = m_nds->getPPUData();
+		void* data = PPU::m_safeDisplayBuffer;
 		if (data != nullptr)
 			m_display.update(data);
 		m_display.draw();
