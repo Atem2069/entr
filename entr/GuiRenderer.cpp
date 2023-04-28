@@ -31,10 +31,10 @@ void GuiRenderer::render()
 				ImGui::MenuItem("Exit", nullptr, nullptr);
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Debug"))
+			if (ImGui::BeginMenu("System"))
 			{
 				m_menuItemSelected = true;
-				//ImGui::MenuItem("Disable vid sync", nullptr, &Config::GBA.disableVideoSync);
+				ImGui::MenuItem("Direct Boot", nullptr, &Config::NDS.directBoot);
 				ImGui::EndMenu();
 			}
 		}
@@ -43,6 +43,7 @@ void GuiRenderer::render()
 
 	if (m_openFileDialog)
 	{
+		//this is all legacy garbage, should ideally use IFileOpenDialog at some point
 		OPENFILENAMEA ofn = {};
 		CHAR szFile[255] = { 0 };
 
@@ -50,7 +51,7 @@ void GuiRenderer::render()
 		ofn.hwndOwner = NULL;
 		ofn.lpstrFile = szFile;
 		ofn.nMaxFile = sizeof(szFile);
-		ofn.lpstrFilter = "Nintendo DS ROM Files\0*.nds\0";
+		ofn.lpstrFilter = "Nintendo DS ROM Files (*.nds)\0*.nds\0";
 		ofn.nFilterIndex = 1;
 		ofn.lpstrFileTitle = NULL;
 		ofn.nMaxFileTitle = 0;

@@ -39,7 +39,7 @@ void NDS::notifyDetach()
 
 bool NDS::initialise()
 {
-	Logger::msg(LoggerSeverity::Info, std::format("Create new NDS instance. ROM={}", Config::NDS.RomName));
+	Logger::msg(LoggerSeverity::Info, std::format("Create new NDS instance. ROM={} direct boot={}", Config::NDS.RomName,Config::NDS.directBoot));
 	m_scheduler.invalidateAll();
 	std::vector<uint8_t> romData;
 	std::vector<uint8_t> nds7bios;
@@ -73,8 +73,7 @@ bool NDS::initialise()
 	m_cartridge.init(romData, &m_interruptManager);
 	m_bus.init(nds7bios, nds9bios, &m_cartridge, &m_scheduler, &m_interruptManager, &m_ppu, &m_input);
 
-	bool directBoot = false;
-	if (directBoot)
+	if (Config::NDS.directBoot)
 	{
 		m_cartridge.directBoot();
 		//load arm9/arm7 binaries
