@@ -22,4 +22,5 @@ private:
 	static bool m_openFileDialog;
 	static bool m_autoHideMenu;
 	static bool m_menuItemSelected;
+	static bool m_showSaveTypeDialog;
 };

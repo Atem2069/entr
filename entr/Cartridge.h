@@ -5,6 +5,7 @@
 #include"Scheduler.h"
 #include"Flash.h"
 #include"EEPROM.h"
+#include"Config.h"
 
 enum class CartEncryptionState
 {

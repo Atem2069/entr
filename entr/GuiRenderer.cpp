@@ -6,6 +6,8 @@ void GuiRenderer::init(GLFWwindow* window)
 	ImGui::StyleColorsClassic();
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
+
+	ImGui::GetIO().IniFilename = NULL;
 }
 
 void GuiRenderer::prepareFrame()
@@ -35,6 +37,7 @@ void GuiRenderer::render()
 			{
 				m_menuItemSelected = true;
 				ImGui::MenuItem("Direct Boot", nullptr, &Config::NDS.directBoot);
+				ImGui::MenuItem("Emulation settings", nullptr, &m_showSaveTypeDialog);
 				ImGui::EndMenu();
 			}
 		}
@@ -68,6 +71,16 @@ void GuiRenderer::render()
 		m_openFileDialog = false;
 	}
 
+	if (m_showSaveTypeDialog)
+	{
+		ImGui::Begin("Emulation settings", &m_showSaveTypeDialog, ImGuiWindowFlags_NoCollapse);
+		//should account for different save sizes (e.g. can have small EEPROM variants)
+		ImGui::Text("Cartridge Savetype");
+		if (ImGui::RadioButton("EEPROM", Config::NDS.saveType == 0)) { Config::NDS.saveType = 0; }
+		if (ImGui::RadioButton("Flash", Config::NDS.saveType == 1)) { Config::NDS.saveType = 1; }
+		ImGui::End();
+	}
+
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
@@ -75,3 +88,4 @@ void GuiRenderer::render()
 bool GuiRenderer::m_openFileDialog = false;
 bool GuiRenderer::m_autoHideMenu = true;
 bool GuiRenderer::m_menuItemSelected = false;
+bool GuiRenderer::m_showSaveTypeDialog = false;

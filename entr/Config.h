@@ -8,6 +8,7 @@ struct SystemConfig
 	std::string RomName;
 	bool shouldReset;
 	bool directBoot;
+	int saveType;
 };
 
 struct Config
