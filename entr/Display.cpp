@@ -93,7 +93,7 @@ Display::Display(int scaleFactor)
 	glfwSwapInterval(1);
 
 
-	//GuiRenderer::init(m_window);
+	GuiRenderer::init(m_window);
 }
 
 Display::~Display()
@@ -112,7 +112,7 @@ void Display::draw()
 	glfwPollEvents();
 
 
-	//GuiRenderer::prepareFrame();
+	GuiRenderer::prepareFrame();
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(m_program);
@@ -121,7 +121,7 @@ void Display::draw()
 	glBindTexture(GL_TEXTURE_2D, m_texHandle);
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
-	//GuiRenderer::render();
+	GuiRenderer::render();
 
 	glfwSwapBuffers(m_window);
 }

@@ -123,7 +123,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\Henry\source\repos\entr\lib\glad\include;C:\Users\Henry\source\repos\entr\lib\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Henry\source\repos\entr\lib\imgui;C:\Users\Henry\source\repos\entr\lib\glad\include;C:\Users\Henry\source\repos\entr\lib\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
     </ClCompile>
     <Link>
@@ -136,6 +136,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\lib\imgui\imgui.cpp" />
+    <ClCompile Include="..\lib\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\lib\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\lib\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\lib\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\lib\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\lib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ARM7\ARM7TDMI.cpp" />
     <ClCompile Include="ARM7\ARM7_ARMOps.cpp" />
     <ClCompile Include="ARM7\ARM7_BarrelShifter.cpp" />
@@ -151,6 +158,7 @@
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="EEPROM.cpp" />
     <ClCompile Include="Flash.cpp" />
+    <ClCompile Include="GuiRenderer.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="InterruptManager.cpp" />
     <ClCompile Include="IPC.cpp" />
@@ -170,6 +178,15 @@
     <ClCompile Include="Touchscreen.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\lib\imgui\imconfig.h" />
+    <ClInclude Include="..\lib\imgui\imgui.h" />
+    <ClInclude Include="..\lib\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\lib\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\lib\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\lib\imgui\imgui_internal.h" />
+    <ClInclude Include="..\lib\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\lib\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\lib\imgui\imstb_truetype.h" />
     <ClInclude Include="ARM7\ARM7TDMI.h" />
     <ClInclude Include="ARM9\ARM946E.h" />
     <ClInclude Include="Bus.h" />
@@ -177,6 +194,7 @@
     <ClInclude Include="Display.h" />
     <ClInclude Include="EEPROM.h" />
     <ClInclude Include="Flash.h" />
+    <ClInclude Include="GuiRenderer.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="InterruptManager.h" />
     <ClInclude Include="IPC.h" />
