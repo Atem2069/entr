@@ -55,15 +55,13 @@ void GuiRenderer::render()
 		ofn.lpstrFileTitle = NULL;
 		ofn.nMaxFileTitle = 0;
 		ofn.lpstrInitialDir = NULL;
-		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
 		if (GetOpenFileNameA(&ofn) == TRUE)
 		{
 			std::string filename = szFile;
-			//Config::GBA.RomName = filename;
-			//Config::GBA.shouldReset = true;
-			//Config::GB.System.RomName = filename;
-			//Config::GB.System.reset = true;
+			Config::NDS.RomName = filename;
+			Config::NDS.shouldReset = true;
 		}
 
 		m_openFileDialog = false;

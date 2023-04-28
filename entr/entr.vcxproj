@@ -155,6 +155,7 @@
     <ClCompile Include="ARM9\ARM9_ThumbOps.cpp" />
     <ClCompile Include="Bus.cpp" />
     <ClCompile Include="Cartridge.cpp" />
+    <ClCompile Include="Config.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="EEPROM.cpp" />
     <ClCompile Include="Flash.cpp" />
@@ -191,6 +192,7 @@
     <ClInclude Include="ARM9\ARM946E.h" />
     <ClInclude Include="Bus.h" />
     <ClInclude Include="Cartridge.h" />
+    <ClInclude Include="Config.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="EEPROM.h" />
     <ClInclude Include="Flash.h" />

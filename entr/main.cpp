@@ -4,6 +4,7 @@
 #include"Display.h"
 #include"NDS.h"
 #include"Logger.h"
+#include"Config.h"
 
 std::shared_ptr<NDS> m_nds;
 InputState* m_inputState;
@@ -13,6 +14,7 @@ void emuWorkerThread();
 
 int main()
 {
+	Config::NDS.shouldReset = false;
 	Logger::msg(LoggerSeverity::Info, "Hello world!");
 
 	Display m_display(2);
@@ -21,6 +23,15 @@ int main()
 
 	while (!m_display.getShouldClose())
 	{
+		if (Config::NDS.shouldReset)
+		{
+			Config::NDS.shouldReset = false;
+			m_nds->notifyDetach();
+			m_workerThread.join();
+			m_nds.reset();
+			m_nds = std::make_shared<NDS>();
+			m_workerThread = std::thread(&emuWorkerThread);
+		}
 		void* data = PPU::m_safeDisplayBuffer;
 		if (data != nullptr)
 			m_display.update(data);
