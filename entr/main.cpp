@@ -19,7 +19,9 @@ int main()
 
 	Display m_display(2);
 	m_nds = std::make_shared<NDS>();
-	std::thread m_workerThread(&emuWorkerThread);
+	std::thread m_workerThread;
+	if(m_nds->initialise())								//not a huge fan of this, could simplify/cleanup
+		m_workerThread = std::thread(&emuWorkerThread);
 
 	while (!m_display.getShouldClose())
 	{
@@ -27,10 +29,12 @@ int main()
 		{
 			Config::NDS.shouldReset = false;
 			m_nds->notifyDetach();
-			m_workerThread.join();
+			if(m_workerThread.joinable())
+				m_workerThread.join();
 			m_nds.reset();
 			m_nds = std::make_shared<NDS>();
-			m_workerThread = std::thread(&emuWorkerThread);
+			if(m_nds->initialise())
+				m_workerThread = std::thread(&emuWorkerThread);
 		}
 		void* data = PPU::m_safeDisplayBuffer;
 		if (data != nullptr)

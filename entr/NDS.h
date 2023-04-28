@@ -12,12 +12,15 @@
 #include"Input.h"
 #include"Scheduler.h"
 #include"Cartridge.h"
+#include"Config.h"
 
 class NDS
 {
 public:
 	NDS();
 	~NDS();
+
+	bool initialise();
 
 	void run();
 	void notifyDetach();	
@@ -33,11 +36,10 @@ private:
 	Scheduler m_scheduler;
 	Cartridge m_cartridge;
 
-	void m_initialise();
 	void m_destroy();
 
 	void frameEventHandler();
 	bool m_shouldStop = false;
 
-	std::vector<uint8_t> readFile(const char* name);
+	bool readFile(std::vector<uint8_t>& vec, const char* name);
 };

@@ -2,8 +2,7 @@
 
 NDS::NDS()
 {
-	m_initialise();
-	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
+
 }
 
 NDS::~NDS()
@@ -38,12 +37,25 @@ void NDS::notifyDetach()
 	m_shouldStop = true;
 }
 
-void NDS::m_initialise()
+bool NDS::initialise()
 {
+	Logger::msg(LoggerSeverity::Info, std::format("Create new NDS instance. ROM={}", Config::NDS.RomName));
 	m_scheduler.invalidateAll();
-	std::vector<uint8_t> romData = readFile("rom\\nsmb.nds");
-	std::vector<uint8_t> nds7bios = readFile("rom\\biosnds7.bin");
-	std::vector<uint8_t> nds9bios = readFile("rom\\biosnds9.bin");
+	std::vector<uint8_t> romData;
+	std::vector<uint8_t> nds7bios;
+	std::vector<uint8_t> nds9bios;
+	if (!readFile(romData, Config::NDS.RomName.c_str()))	//silently fail, not a huge issue
+		return false;
+	if (!readFile(nds7bios, "rom\\biosnds7.bin"))
+	{
+		Logger::msg(LoggerSeverity::Error, "Couldn't load NDS7 BIOS..");
+		return false;
+	}
+	if (!readFile(nds9bios, "rom\\biosnds9.bin"))
+	{
+		Logger::msg(LoggerSeverity::Error, "Couldn't load NDS9 BIOS..");
+		return false;
+	}
 
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
 	uint32_t ARM9Entry = romData[0x024] | (romData[0x025] << 8) | (romData[0x026] << 16) | (romData[0x027] << 24);
@@ -112,7 +124,8 @@ void NDS::m_initialise()
 	m_ppu.init(&m_interruptManager, &m_scheduler);
 	ARM9.init(ARM9Entry, &m_bus, &m_interruptManager, &m_scheduler);
 	ARM7.init(ARM7Entry, &m_bus, &m_interruptManager, &m_scheduler);
-
+	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
+	return true;
 }
 
 void NDS::m_destroy()
@@ -121,10 +134,12 @@ void NDS::m_destroy()
 	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
 }
 
-std::vector<uint8_t> NDS::readFile(const char* name)
+bool NDS::readFile(std::vector<uint8_t>& vec, const char* name)
 {
 	// open the file:
 	std::ifstream file(name, std::ios::binary);
+	if (!file)
+		return false;
 
 	// Stop eating new lines in binary mode!!!
 	file.unsetf(std::ios::skipws);
@@ -137,7 +152,6 @@ std::vector<uint8_t> NDS::readFile(const char* name)
 	file.seekg(0, std::ios::beg);
 
 	// reserve capacity
-	std::vector<uint8_t> vec;
 	vec.reserve(fileSize);
 
 	// read the data:
@@ -147,7 +161,7 @@ std::vector<uint8_t> NDS::readFile(const char* name)
 
 	file.close();
 
-	return vec;
+	return true;
 }
 
 void NDS::onEvent(void* context)
