@@ -18,10 +18,10 @@ void NDS::run()
 		ARM7.run(32);
 		m_scheduler.addCycles(32);
 		m_scheduler.tick();	//<--should probably remove this 'tick' logic, remnant from agbe
-	}
 
-	if (m_bus.ARM7_halt && ARM9.getHalted())
-		m_scheduler.jumpToNextEvent();
+		if (m_bus.ARM7_halt && ARM9.getHalted())
+			m_scheduler.jumpToNextEvent();
+	}
 }
 
 void NDS::frameEventHandler()
