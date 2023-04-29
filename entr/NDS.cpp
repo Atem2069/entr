@@ -39,11 +39,12 @@ void NDS::notifyDetach()
 
 bool NDS::initialise()
 {
-	Logger::msg(LoggerSeverity::Info, std::format("Create new NDS instance. ROM={} direct boot={}", Config::NDS.RomName,Config::NDS.directBoot));
+	Logger::msg(LoggerSeverity::Info, std::format("Create new NDS instance. directBoot={} ROM path={}",Config::NDS.directBoot, Config::NDS.RomName));
 	m_scheduler.invalidateAll();
 	std::vector<uint8_t> romData;
 	std::vector<uint8_t> nds7bios;
 	std::vector<uint8_t> nds9bios;
+	std::vector<uint8_t> firmware;	//don't like this tbh.
 	if (!readFile(romData, Config::NDS.RomName.c_str()))	//silently fail, not a huge issue
 		return false;
 	if (!readFile(nds7bios, "rom\\biosnds7.bin"))
@@ -56,6 +57,8 @@ bool NDS::initialise()
 		Logger::msg(LoggerSeverity::Error, "Couldn't load NDS9 BIOS..");
 		return false;
 	}
+	if (!readFile(firmware, "rom\\firmware.bin"))
+		return false;
 
 	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
 	uint32_t ARM9Entry = romData[0x024] | (romData[0x025] << 8) | (romData[0x026] << 16) | (romData[0x027] << 24);
@@ -90,11 +93,11 @@ bool NDS::initialise()
 		Logger::msg(LoggerSeverity::Info, "Mapped ARM9/ARM7 binaries into memory!");
 
 		//copy over rom header
-		for (int i = 0; i < 0x200; i++)
+		for (int i = 0; i < 0x170; i++)
 			m_bus.NDS9_write8(0x027FFE00 + i, romData[i]);
 		//copy firmware user data (e.g. tsc calibration)
 		for (int i = 0; i < 0xF0; i++)
-			m_bus.NDS9_write8(0x027FFC80 + i, romData[0x3FE00 + i]);
+			m_bus.NDS9_write8(0x027FFC80 + i, firmware[0x3FE00 + i]);
 
 		//misc values from gbatek (bios ram usage)
 		m_bus.NDS7_write8(0x04000300, 1);
