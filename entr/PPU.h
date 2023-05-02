@@ -156,7 +156,7 @@ private:
 	template<Engine engine> void renderAffineSprite(OAMEntry* curSpriteEntry);
 	template<Engine engine> void composeLayers();
 
-	template<Engine engine> uint16_t extractColorFromTile(uint32_t tileBase, uint32_t xOffset, bool hiColor, bool sprite, uint32_t palette);
+	template<Engine engine> uint16_t extractColorFromTile(uint32_t tileBase, uint32_t xOffset, bool hiColor, uint32_t palette);
 
 	template<Engine engine> uint8_t ppuReadBg(uint32_t address)
 	{

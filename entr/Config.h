@@ -9,6 +9,7 @@ struct SystemConfig
 	bool shouldReset;
 	bool directBoot;
 	int saveType;
+	double fps;
 };
 
 struct Config

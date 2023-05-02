@@ -42,4 +42,5 @@ private:
 	bool m_shouldStop = false;
 
 	bool readFile(std::vector<uint8_t>& vec, const char* name);
+	std::chrono::steady_clock::time_point m_lastTime;
 };

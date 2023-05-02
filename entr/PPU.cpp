@@ -827,7 +827,7 @@ template<Engine engine> void PPU::renderSprites()
 				if (plotCoord > 255 || plotCoord < 0)
 					continue;
 
-				uint16_t col = extractColorFromTile<engine>(tileMapLookupAddr, baseX, hiColor, true, curSpriteEntry->paletteNumber);
+				uint16_t col = extractColorFromTile<engine>(tileMapLookupAddr, baseX, hiColor, curSpriteEntry->paletteNumber);
 
 				if (isObjWindow)
 				{
@@ -946,25 +946,6 @@ template<Engine engine> void PPU::renderAffineSprite(OAMEntry* curSpriteEntry)
 		if (py >= spriteHeight || px >= spriteWidth)
 			continue;
 
-		/**uint32_t baseTileId = tileId;
-		uint32_t yCorrection = 0;
-		uint32_t yOffs = py;
-		while (yOffs >= 8)
-		{
-			yOffs -= 8;
-			if (!oneDimensionalMapping)
-				baseTileId += 32;	//add 32 to get to next tile row with 2d mapping
-			else
-				baseTileId += rowPitch; //otherwise, add the row pitch (which says how many tiles exist per row)
-		}
-		uint32_t objBaseAddress = (baseTileId * 32);
-		yCorrection = (yOffs * ((hiColor) ? 8 : 4));
-
-
-		int curXSpanTile = px / 8;
-		int xOffsIntoTile = px & 7;
-		uint32_t tileMapLookupAddr = objBaseAddress + yCorrection + (curXSpanTile * ((hiColor) ? 64 : 32));
-		*/
 		uint32_t objAddress = objBase;
 		uint32_t yOffs = py;
 		while (yOffs >= 8)
@@ -987,7 +968,7 @@ template<Engine engine> void PPU::renderAffineSprite(OAMEntry* curSpriteEntry)
 			continue;
 
 		//uint16_t col = extractColorFromTile(tileMapLookupAddr, xOffsIntoTile, hiColor, true, curSpriteEntry->paletteNumber);
-		uint16_t col = extractColorFromTile<engine>(tileMapLookupAddr, xOffsIntoTile, hiColor, true, curSpriteEntry->paletteNumber);
+		uint16_t col = extractColorFromTile<engine>(tileMapLookupAddr, xOffsIntoTile, hiColor, curSpriteEntry->paletteNumber);
 		if (isObjWindow)
 		{
 			if (!(col >> 15))
@@ -1011,12 +992,10 @@ template<Engine engine> void PPU::renderAffineSprite(OAMEntry* curSpriteEntry)
 
 }
 
-template<Engine engine>uint16_t PPU::extractColorFromTile(uint32_t tileBase, uint32_t xOffset, bool hiColor, bool sprite, uint32_t palette)
+template<Engine engine>uint16_t PPU::extractColorFromTile(uint32_t tileBase, uint32_t xOffset, bool hiColor, uint32_t palette)
 {
 	uint16_t col = 0;
-	uint32_t paletteMemoryAddr = 0;
-	if (sprite)							//need to remove this. tbh rewrite this function entirely.
-		paletteMemoryAddr = 0x200;
+	uint32_t paletteMemoryAddr = 0x200;
 	PPURegisters* m_regs = &m_engineARegisters;
 	if constexpr (engine == Engine::B)
 	{

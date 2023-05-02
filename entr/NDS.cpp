@@ -12,6 +12,7 @@ NDS::~NDS()
 
 void NDS::run()
 {
+	m_lastTime = std::chrono::high_resolution_clock::now();
 	while (!m_shouldStop)
 	{
 		ARM9.run(64);	//ARM9 runs twice the no. cycles as the ARM7, as it runs at twice the clock speed
@@ -26,10 +27,14 @@ void NDS::run()
 
 void NDS::frameEventHandler()
 {
+	auto curTime = std::chrono::high_resolution_clock::now();
+	double timeDiff = std::chrono::duration<double, std::milli>(curTime - m_lastTime).count();
+	Config::NDS.fps = 1.0 / (timeDiff / 1000);
 	//handle video sync at some point..
 	m_ppu.updateDisplayOutput();
 	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, m_scheduler.getEventTime()+560190);
 	m_input.tick();
+	m_lastTime = curTime;
 }
 
 void NDS::notifyDetach()
