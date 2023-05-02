@@ -730,10 +730,11 @@ template<Engine engine> void PPU::renderSprites()
 		uint32_t spriteBase = i * 8;	//each OAM entry is 8 bytes
 
 		OAMEntry* curSpriteEntry = (OAMEntry*)(m_mem->OAM + m_OAMBase + spriteBase);
-
-		if (curSpriteEntry->rotateScale || (curSpriteEntry->objMode==3))	//don't render affine or bitmap sprites, not supported yet.
+		if (curSpriteEntry->objMode == 3)
+			continue;
+		if (curSpriteEntry->rotateScale)	
 		{
-			//drawAffineSprite(curSpriteEntry);
+			renderAffineSprite<engine>(curSpriteEntry);
 			continue;
 		}
 
@@ -852,6 +853,162 @@ template<Engine engine> void PPU::renderSprites()
 		}
 
 	}
+}
+
+template<Engine engine> void PPU::renderAffineSprite(OAMEntry* curSpriteEntry)
+{
+	PPURegisters* m_registers = &m_engineARegisters;
+	SpriteAttribute* m_spriteAttrBuffer = m_engineASpriteAttribBuffer;
+	uint16_t* m_spriteLineBuffer = m_engineASpriteLineBuffer;
+	uint32_t m_oamBase = 0;
+	if constexpr (engine == Engine::B)
+	{
+		m_spriteAttrBuffer = m_engineBSpriteAttribBuffer;
+		m_spriteLineBuffer = m_engineBSpriteLineBuffer;
+		m_oamBase = 0x400;
+		m_registers = &m_engineBRegisters;
+	}
+	bool oneDimensionalMapping = ((m_registers->DISPCNT >> 4) & 0b1);
+	bool isObjWindow = (curSpriteEntry->objMode == 2);
+	bool doubleSize = curSpriteEntry->disableObj;	//odd: bit 9 is 'double-size' flag with affine sprites
+
+	int spriteTop = curSpriteEntry->yCoord;
+	if (spriteTop >= 192)
+		spriteTop -= 256;
+	int spriteLeft = curSpriteEntry->xCoord;
+	if (spriteLeft >= 256)
+		spriteLeft -= 512;
+
+	if (spriteTop > VCOUNT)
+		return;
+
+	int spriteBottom = 0, spriteRight = 0;
+	int rowPitch = 1;	//find out how many lines we have to 'cross' to get to next row (in 1d mapping)
+
+	//need to find out dimensions first to figure out whether to ignore this object
+	int spriteBoundsLookupId = (curSpriteEntry->shape << 2) | curSpriteEntry->size;
+	static constexpr int spriteXBoundsLUT[12] = { 8,16,32,64,16,32,32,64,8,8,16,32 };
+	static constexpr int spriteYBoundsLUT[12] = { 8,16,32,64,8,8,16,32,16,32,32,64 };
+	static constexpr int xPitchLUT[12] = { 1,2,4,8,2,4,4,8,1,1,2,4 };
+
+
+	spriteRight = spriteLeft + spriteXBoundsLUT[spriteBoundsLookupId];
+	spriteBottom = spriteTop + spriteYBoundsLUT[spriteBoundsLookupId];
+	rowPitch = xPitchLUT[spriteBoundsLookupId];
+	int doubleSizeOffset = ((spriteBottom - spriteTop)) * doubleSize;
+	if (VCOUNT >= (spriteBottom + doubleSizeOffset))	//nope, we're past it.
+		return;
+
+	uint32_t tileId = curSpriteEntry->charName;
+	bool hiColor = curSpriteEntry->bitDepth;
+	if (hiColor)
+		rowPitch *= 2;
+	int yOffsetIntoSprite = VCOUNT - spriteTop;
+	int xBase = 0;
+
+	int halfWidth = (spriteRight - spriteLeft) / 2;
+	int halfHeight = (spriteBottom - spriteTop) / 2;
+	int spriteWidth = halfWidth * 2;
+	int spriteHeight = halfHeight * 2;	//find out how big sprite is
+
+	//get affine parameters
+	uint32_t parameterSelection = (curSpriteEntry->data >> 25) & 0x1F;
+	parameterSelection *= 0x20;
+	parameterSelection += 6;
+	int16_t PA = m_mem->OAM[m_oamBase + parameterSelection] | ((m_mem->OAM[m_oamBase + parameterSelection + 1]) << 8);
+	int16_t PB = m_mem->OAM[m_oamBase + parameterSelection + 8] | ((m_mem->OAM[m_oamBase + parameterSelection + 9]) << 8);
+	int16_t PC = m_mem->OAM[m_oamBase + parameterSelection + 16] | ((m_mem->OAM[m_oamBase + parameterSelection + 17]) << 8);
+	int16_t PD = m_mem->OAM[m_oamBase + parameterSelection + 24] | ((m_mem->OAM[m_oamBase + parameterSelection + 25]) << 8);
+
+	uint32_t tileObjBoundary = 32;
+	int tileObjBoundarySelect = ((m_registers->DISPCNT >> 20) & 0b11);
+	if (oneDimensionalMapping && tileObjBoundarySelect > 0)	//clean this up, kinda messy
+	{
+		static constexpr int tileObjBoundaryLUT[4] = { 32,64,128,256 };
+		tileObjBoundary = tileObjBoundaryLUT[tileObjBoundarySelect];
+	}
+
+	uint32_t objBase = tileId * tileObjBoundary;
+
+	for (int x = 0; x < spriteWidth * ((doubleSize) ? 2 : 1); x++)
+	{
+		int ix = (x - halfWidth);
+		int iy = (yOffsetIntoSprite - halfHeight);
+		if (doubleSize)
+		{
+			ix = (x - spriteWidth);
+			iy = (yOffsetIntoSprite - spriteHeight);
+		}
+
+		uint32_t px = ((PA * ix + PB * iy) >> 8);
+		uint32_t py = ((PC * ix + PD * iy) >> 8);
+		px += halfWidth; py += halfHeight;
+		if (py >= spriteHeight || px >= spriteWidth)
+			continue;
+
+		/**uint32_t baseTileId = tileId;
+		uint32_t yCorrection = 0;
+		uint32_t yOffs = py;
+		while (yOffs >= 8)
+		{
+			yOffs -= 8;
+			if (!oneDimensionalMapping)
+				baseTileId += 32;	//add 32 to get to next tile row with 2d mapping
+			else
+				baseTileId += rowPitch; //otherwise, add the row pitch (which says how many tiles exist per row)
+		}
+		uint32_t objBaseAddress = (baseTileId * 32);
+		yCorrection = (yOffs * ((hiColor) ? 8 : 4));
+
+
+		int curXSpanTile = px / 8;
+		int xOffsIntoTile = px & 7;
+		uint32_t tileMapLookupAddr = objBaseAddress + yCorrection + (curXSpanTile * ((hiColor) ? 64 : 32));
+		*/
+		uint32_t objAddress = objBase;
+		uint32_t yOffs = py;
+		while (yOffs >= 8)
+		{
+			yOffs -= 8;
+			if (!oneDimensionalMapping)
+				objAddress += (32 * 32);
+			else
+				objAddress += (rowPitch * 32);
+		}
+		uint32_t yCorrection = ((py&7) * ((hiColor) ? 8 : 4));
+
+		int curXSpanTile = px / 8;
+		int xOffsIntoTile = px & 7;
+
+		uint32_t tileMapLookupAddr = objAddress + yCorrection + (curXSpanTile * ((hiColor) ? 64 : 32));
+
+		int plotCoord = x + spriteLeft;
+		if (plotCoord > 255 || plotCoord < 0)
+			continue;
+
+		//uint16_t col = extractColorFromTile(tileMapLookupAddr, xOffsIntoTile, hiColor, true, curSpriteEntry->paletteNumber);
+		uint16_t col = extractColorFromTile<engine>(tileMapLookupAddr, xOffsIntoTile, hiColor, true, curSpriteEntry->paletteNumber);
+		if (isObjWindow)
+		{
+			if (!(col >> 15))
+				m_spriteAttrBuffer[plotCoord].objWindow = 1;
+			continue;
+		}
+
+		uint8_t priorityAtPixel = m_spriteAttrBuffer[plotCoord].priority;
+		bool renderedPixelTransparent = m_spriteLineBuffer[plotCoord] >> 15;
+		bool currentPixelTransparent = col >> 15;
+		if ((curSpriteEntry->priority >= priorityAtPixel) && (!renderedPixelTransparent || currentPixelTransparent))	//same as for normal, only stop if we're transparent (and lower priority)
+			continue;																						//...or last pixel isn't transparent
+		if (!currentPixelTransparent)
+		{
+			m_spriteAttrBuffer[plotCoord].priority = curSpriteEntry->priority & 0b11111;
+			m_spriteAttrBuffer[plotCoord].transparent = (curSpriteEntry->objMode == 1);
+			m_spriteAttrBuffer[plotCoord].mosaic = curSpriteEntry->mosaic;
+			m_spriteLineBuffer[plotCoord] = col;
+		}
+	}
+
 }
 
 template<Engine engine>uint16_t PPU::extractColorFromTile(uint32_t tileBase, uint32_t xOffset, bool hiColor, bool sprite, uint32_t palette)

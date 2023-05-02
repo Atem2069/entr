@@ -153,6 +153,7 @@ private:
 	template<Engine engine, int bg> void renderDirectColorBitmap();
 	template<Engine engine, int bg> void render256ColorBitmap();
 	template<Engine engine> void renderSprites();
+	template<Engine engine> void renderAffineSprite(OAMEntry* curSpriteEntry);
 	template<Engine engine> void composeLayers();
 
 	template<Engine engine> uint16_t extractColorFromTile(uint32_t tileBase, uint32_t xOffset, bool hiColor, bool sprite, uint32_t palette);
