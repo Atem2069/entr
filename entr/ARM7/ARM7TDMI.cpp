@@ -108,7 +108,7 @@ void ARM7TDMI::run(int cycles)
 		}
 		else
 			refillPipeline();
-		m_scheduler->addCycles(1);
+		//m_scheduler->addCycles(1);
 	}
 	m_scheduler->setTimestamp(cyclesBefore);
 }

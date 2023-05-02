@@ -70,7 +70,7 @@ consteval std::array<ARM946E::instructionFn, 1024> ARM946E::genThumbTable()
 	return thumbTable;
 }
 
-void ARM946E::run(int cycles)
+int ARM946E::run(int cycles)
 {
 	uint64_t cyclesBefore = m_scheduler->getCurrentTimestamp();
 	for (int i = 0; i < cycles; i++)
@@ -80,7 +80,7 @@ void ARM946E::run(int cycles)
 			if (m_interruptManager->NDS9_getInterrupt() && m_interruptManager->NDS9_getInterruptsEnabled())
 				m_halted = false;
 			else
-				return;
+				return cycles;
 		}
 		fetch();
 
@@ -98,9 +98,10 @@ void ARM946E::run(int cycles)
 		}
 		dispatchInterrupt();
 		m_pipelineFlushed = false;
-		m_scheduler->addCycles((i & 0b1));
 	}
+	int cyclesRan = (m_scheduler->getCurrentTimestamp() - cyclesBefore);
 	m_scheduler->setTimestamp(cyclesBefore);
+	return cyclesRan;
 }
 
 void ARM946E::fetch()
@@ -160,7 +161,10 @@ uint16_t ARM946E::m_fetch16(uint32_t address)
 {
 	address &= 0xFFFFFFFE;
 	if (address >= ITCM_Base && address < (ITCM_Base + ITCM_Size) && (ITCM_enabled && !ITCM_load))
+	{
+		m_scheduler->addCycles(1);
 		return Bus::getValue16(ITCM, address & 0x7FFF, 0x7FFF);
+	}
 	return m_bus->NDS9_read16(address);
 }
 
@@ -168,7 +172,10 @@ uint32_t ARM946E::m_fetch32(uint32_t address)
 {
 	address &= 0xFFFFFFFC;
 	if (address >= ITCM_Base && address < (ITCM_Base + ITCM_Size) && (ITCM_enabled && !ITCM_load))
+	{
+		m_scheduler->addCycles(1);
 		return Bus::getValue32(ITCM, address & 0x7FFF, 0x7FFF);
+	}
 	return m_bus->NDS9_read32(address);
 }
 
