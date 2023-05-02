@@ -16,7 +16,7 @@ public:
 	void init(uint32_t entry, Bus* bus, InterruptManager* interruptManager, Scheduler* scheduler);
 	~ARM946E();
 
-	int run(int cycles);
+	void run(int cycles);
 
 	bool getHalted() { return m_halted; };
 private:

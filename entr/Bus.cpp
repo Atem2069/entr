@@ -41,7 +41,6 @@ Bus::~Bus()
 
 uint8_t Bus::NDS7_read8(uint32_t address)
 {
-	m_scheduler->addCycles(1);
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
@@ -76,7 +75,6 @@ uint8_t Bus::NDS7_read8(uint32_t address)
 
 void Bus::NDS7_write8(uint32_t address, uint8_t value)
 {
-	m_scheduler->addCycles(1);
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
@@ -108,7 +106,6 @@ void Bus::NDS7_write8(uint32_t address, uint8_t value)
 
 uint16_t Bus::NDS7_read16(uint32_t address)
 {
-	m_scheduler->addCycles(1);
 	address &= 0xFFFFFFFE;
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
@@ -144,7 +141,6 @@ uint16_t Bus::NDS7_read16(uint32_t address)
 
 void Bus::NDS7_write16(uint32_t address, uint16_t value)
 {
-	m_scheduler->addCycles(1);
 	address &= 0xFFFFFFFE;
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
@@ -177,7 +173,6 @@ void Bus::NDS7_write16(uint32_t address, uint16_t value)
 
 uint32_t Bus::NDS7_read32(uint32_t address)
 {
-	m_scheduler->addCycles(1);
 	address &= 0xFFFFFFFC;
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
@@ -213,7 +208,6 @@ uint32_t Bus::NDS7_read32(uint32_t address)
 
 void Bus::NDS7_write32(uint32_t address, uint32_t value)
 {
-	m_scheduler->addCycles(1);
 	address &= 0xFFFFFFFC;
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
@@ -246,7 +240,6 @@ void Bus::NDS7_write32(uint32_t address, uint32_t value)
 
 uint8_t Bus::NDS9_read8(uint32_t address)
 {
-	m_scheduler->addCycles(2);
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
@@ -286,7 +279,6 @@ uint8_t Bus::NDS9_read8(uint32_t address)
 
 void Bus::NDS9_write8(uint32_t address, uint8_t value)
 {
-	m_scheduler->addCycles(2);
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
@@ -329,7 +321,6 @@ void Bus::NDS9_write8(uint32_t address, uint8_t value)
 
 uint16_t Bus::NDS9_read16(uint32_t address)
 {
-	m_scheduler->addCycles(2);
 	address &= 0xFFFFFFFE;
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
@@ -370,7 +361,6 @@ uint16_t Bus::NDS9_read16(uint32_t address)
 
 void Bus::NDS9_write16(uint32_t address, uint16_t value)
 {
-	m_scheduler->addCycles(2);
 	address &= 0xFFFFFFFE;
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
@@ -414,7 +404,6 @@ void Bus::NDS9_write16(uint32_t address, uint16_t value)
 
 uint32_t Bus::NDS9_read32(uint32_t address)
 {
-	m_scheduler->addCycles(2);
 	address &= 0xFFFFFFFC;
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
@@ -455,7 +444,6 @@ uint32_t Bus::NDS9_read32(uint32_t address)
 
 void Bus::NDS9_write32(uint32_t address, uint32_t value)
 {
-	m_scheduler->addCycles(2);
 	address &= 0xFFFFFFFC;
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
