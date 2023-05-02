@@ -7,7 +7,9 @@ Cartridge::Cartridge()
 
 void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptManager)
 {
-	m_cartData = cartData;
+	//m_cartData = cartData;
+	m_cartData = new uint8_t[cartData.size()];
+	std::copy(cartData.begin(), cartData.end(), m_cartData);
 	m_interruptManager = interruptManager;
 	switch (Config::NDS.saveType)		//should use some sort of database for savetypes at some point, use this as override
 	{

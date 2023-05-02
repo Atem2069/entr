@@ -5,12 +5,13 @@ Flash::Flash(std::string fileName)
 	if (fileName.length() > 0)
 	{
 		writeback = true;
-		m_data = readFile(fileName.c_str());
+		std::vector<uint8_t> temp = readFile(fileName.c_str());
+		std::copy(temp.begin(), temp.end(), m_data);
+		m_saveSize = temp.size();
 	}
 	else
 	{
-		m_data.reserve(16777216);	//hack..
-		for (int i = 0; i < m_data.size(); i++)
+		for (int i = 0; i < 1048576; i++)
 			m_data[i] = 0xFF;
 	}
 }
@@ -21,7 +22,7 @@ Flash::~Flash()
 	{
 		Logger::msg(LoggerSeverity::Info, "Saving flash data..");
 		std::ofstream fout("rom\\firmware.bin", std::ios::out | std::ios::binary);
-		fout.write((char*)&m_data[0], m_data.size());
+		fout.write((char*)&m_data[0], m_saveSize);
 		fout.close();
 	}
 }

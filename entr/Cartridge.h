@@ -51,7 +51,8 @@ private:
 	void endTransfer();
 
 	CartEncryptionState m_encryptionState = CartEncryptionState::Unencrypted;
-	std::vector<uint8_t> m_cartData;	//vector probably sucks, but oh well
+	//std::vector<uint8_t> m_cartData;	//vector probably sucks, but oh well
+	uint8_t* m_cartData;
 	uint8_t read(uint32_t address);
 	void write(uint32_t address, uint8_t value);
 
