@@ -38,6 +38,8 @@ public:
 	void init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, Cartridge* cartridge, Scheduler* scheduler, InterruptManager* interruptManager, PPU* ppu, Input* input);
 	~Bus();
 
+	void mapVRAMPages();
+
 	//NDS7 read/write handlers
 	uint8_t NDS7_read8(uint32_t address);
 	void NDS7_write8(uint32_t address, uint8_t value);
@@ -170,6 +172,11 @@ private:
 	uint8_t NDS9_POSTFLG = 0;
 	uint16_t hack_soundBias = 0;
 
-	void setByteInWord(uint32_t* word, uint8_t byte, int pos);
-	void setByteInHalfword(uint16_t* halfword, uint8_t byte, int pos);
+	inline void setByteInWord(uint32_t* word, uint8_t byte, int pos);
+	inline void setByteInHalfword(uint16_t* halfword, uint8_t byte, int pos);
+
+	inline uint32_t addressToPage(uint32_t address) { return address >> 14; }
+	inline uint32_t addressToOffset(uint32_t address) { return address & 0x3FFF; }
+
+	uint8_t* m_ARM9PageTable[0x40000];
 };

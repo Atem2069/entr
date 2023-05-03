@@ -31,11 +31,35 @@ void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, C
 
 	memcpy(m_mem->NDS7_BIOS, &NDS7_BIOS[0], NDS7_BIOS.size());
 	memcpy(m_mem->NDS9_BIOS, &NDS9_BIOS[0], NDS9_BIOS.size());
+
+	memset(m_ARM9PageTable, 0, 0x40000);
+	//build beginning of ARM9 page table
+	for (uint32_t i = 0; i < 0x01000000; i += 16384)
+	{
+		uint32_t page = addressToPage(i + 0x02000000);
+		m_ARM9PageTable[page] = m_mem->RAM + (i & 0x3FFFFF);
+	}
+	m_ARM9PageTable[addressToPage(0xFFFF0000)] = m_mem->NDS9_BIOS;
 }
 
 Bus::~Bus()
 {
 	delete m_mem;
+}
+
+void Bus::mapVRAMPages()
+{
+	for (uint32_t i = 0; i < addressToPage(0x00200000); i++)
+	{
+		m_ARM9PageTable[addressToPage(0x06000000) + i] = m_mem->ABGPageTable[i & 31];
+		m_ARM9PageTable[addressToPage(0x06200000) + i] = m_mem->BBGPageTable[i & 7];
+		m_ARM9PageTable[addressToPage(0x06400000) + i] = m_mem->AObjPageTable[i & 15];
+		m_ARM9PageTable[addressToPage(0x06600000) + i] = m_mem->BObjPageTable[i & 7];
+	}
+	for (uint32_t i = 0; i < addressToPage(0x00800000); i++)
+	{
+		m_ARM9PageTable[addressToPage(0x06800000) + i] = m_mem->LCDCPageTable[i % 41];		//might not be right.
+	}
 }
 
 
@@ -240,35 +264,20 @@ void Bus::NDS7_write32(uint32_t address, uint32_t value)
 
 uint8_t Bus::NDS9_read8(uint32_t address)
 {
+	uint8_t* ptr = m_ARM9PageTable[addressToPage(address)];
+	if (ptr)
+		return ptr[addressToOffset(address)];
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 2:
-		return m_mem->RAM[address & 0x3FFFFF];
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (!bank)
-			return 0;
-		return bank[address & 0x3FFF];
-	}
 	case 4:
 		return NDS9_readIO8(address);
 	case 5:
 		return m_mem->PAL[address & 0x7FF];
-	case 6:
-	{
-		uint8_t* addr = getVRAMAddr(address);
-		return addr[0];
-	}
 	case 7:
 		return m_mem->OAM[address & 0x7FF];
 	case 8: case 9: case 0xA:
 		return 0xFF;
-	case 0xFF:
-		if ((address & 0xFFFF) > 0x7FFF)
-			return 0;
-		return m_mem->NDS9_BIOS[address & 0x7FFF];
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
@@ -279,38 +288,25 @@ uint8_t Bus::NDS9_read8(uint32_t address)
 
 void Bus::NDS9_write8(uint32_t address, uint8_t value)
 {
+	uint8_t* ptr = m_ARM9PageTable[addressToPage(address)];
+	if (ptr)
+	{
+		ptr[addressToOffset(address)] = value;
+		return;
+	}
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 2:
-		m_mem->RAM[address & 0x3FFFFF] = value;
-		break;
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (bank)
-			bank[address & 0x3FFF] = value;
-		break;
-	}
 	case 4:
 		NDS9_writeIO8(address,value);
 		break;
 	case 5:
 		m_mem->PAL[address & 0x7FF] = value;
 		break;
-	case 6:
-	{
-		uint8_t* addr = getVRAMAddr(address);
-		addr[0] = value;
-		break;
-	}
 	case 7:
 		m_mem->OAM[address & 0x7FF] = value;
 		break;
 	case 8: case 9: case 0xA:
-		break;
-	case 0xFF:
-		Logger::msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
 		break;
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
@@ -322,35 +318,22 @@ void Bus::NDS9_write8(uint32_t address, uint8_t value)
 uint16_t Bus::NDS9_read16(uint32_t address)
 {
 	address &= 0xFFFFFFFE;
+
+	uint8_t* ptr = m_ARM9PageTable[addressToPage(address)];
+	if (ptr)
+		return getValue16(ptr, addressToOffset(address), 0xFFFFFFFF);
+
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 2:
-		return getValue16(m_mem->RAM,address & 0x3FFFFF,0x3FFFFF);
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (!bank)
-			return 0;
-		return getValue16(bank, address & 0x3FFF, 0x3FFF);
-	}
 	case 4:
 		return NDS9_readIO16(address);
 	case 5:
 		return getValue16(m_mem->PAL,address & 0x7FF,0x7FF);
-	case 6:
-	{
-		uint8_t* addr = getVRAMAddr(address);
-		return getValue16(addr, 0, 0xFFFF);
-	}
 	case 7:
 		return getValue16(m_mem->OAM,address & 0x7FF,0x7FF);
 	case 8: case 9: case 0xA:
 		return 0xFFFF;
-	case 0xFF:
-		if ((address & 0xFFFF) > 0x7FFF)
-			return 0;
-		return getValue16(m_mem->NDS9_BIOS, address & 0x7FFF, 0x7FFF);
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
@@ -362,38 +345,27 @@ uint16_t Bus::NDS9_read16(uint32_t address)
 void Bus::NDS9_write16(uint32_t address, uint16_t value)
 {
 	address &= 0xFFFFFFFE;
+
+	uint8_t* ptr = m_ARM9PageTable[addressToPage(address)];
+	if (ptr)
+	{
+		setValue16(ptr, addressToOffset(address), 0xFFFFFFFF, value);
+		return;
+	}
+
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 2:
-		setValue16(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF, value);
-		break;
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (bank)
-			setValue16(bank, address & 0x3FFF, 0x3FFF, value);
-		break;
-	}
 	case 4:
 		NDS9_writeIO16(address, value);
 		break;
 	case 5:
 		setValue16(m_mem->PAL, address & 0x7FF, 0x7FF, value);
 		break;
-	case 6:
-	{
-		uint8_t* addr = getVRAMAddr(address);
-		setValue16(addr, 0, 0xFFFF,value);
-		break;
-	}
 	case 7:
 		setValue16(m_mem->OAM, address & 0x7FF, 0x7FF, value);
 		break;
 	case 8: case 9: case 0xA:
-		break;
-	case 0xFF:
-		Logger::msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
 		break;
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
@@ -405,35 +377,22 @@ void Bus::NDS9_write16(uint32_t address, uint16_t value)
 uint32_t Bus::NDS9_read32(uint32_t address)
 {
 	address &= 0xFFFFFFFC;
+
+	uint8_t* ptr = m_ARM9PageTable[addressToPage(address)];
+	if (ptr)
+		return getValue32(ptr, addressToOffset(address), 0xFFFFFFFF);
+
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 2:
-		return getValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF);
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (!bank)
-			return 0;
-		return getValue32(bank, address & 0x3FFF, 0x3FFF);
-	}
 	case 4:
 		return NDS9_readIO32(address);
 	case 5:
 		return getValue32(m_mem->PAL, address & 0x7FF, 0x7FF);
-	case 6:
-	{
-		uint8_t* addr = getVRAMAddr(address);
-		return getValue32(addr, 0, 0xFFFF);
-	}
 	case 7:
 		return getValue32(m_mem->OAM, address & 0x7FF, 0x7FF);
 	case 8: case 9: case 0xA:
 		return 0xFFFFFFFF;
-	case 0xFF:
-		if ((address & 0xFFFF) > 0x7FFF)
-			return 0;
-		return getValue32(m_mem->NDS9_BIOS, address & 0x7FFF, 0x7FFF);
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
@@ -445,38 +404,27 @@ uint32_t Bus::NDS9_read32(uint32_t address)
 void Bus::NDS9_write32(uint32_t address, uint32_t value)
 {
 	address &= 0xFFFFFFFC;
+
+	uint8_t* ptr = m_ARM9PageTable[addressToPage(address)];
+	if (ptr)
+	{
+		setValue32(ptr, addressToOffset(address), 0xFFFFFFFF, value);
+		return;
+	}
+
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 2:
-		setValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF, value);
-		break;
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS9_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (bank)
-			setValue32(bank, address & 0x3FFF, 0x3FFF, value);
-		break;
-	}
 	case 4:
 		NDS9_writeIO32(address, value);
 		break;
 	case 5:
 		setValue32(m_mem->PAL, address & 0x7FF, 0x7FF, value);
 		break;
-	case 6:
-	{
-		uint8_t* addr = getVRAMAddr(address);
-		setValue32(addr, 0, 0xFFFF,value);
-		break;
-	}
 	case 7:
 		setValue32(m_mem->OAM, address & 0x7FF, 0x7FF, value);
 		break;
 	case 8: case 9: case 0xA:
-		break;
-	case 0xFF:
-		Logger::msg(LoggerSeverity::Error, "Unimplemented ARM9 BIOS write!!");
 		break;
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
@@ -691,7 +639,7 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 {
 	//horrible...
-	if (address==0x04000304 || address == 0x04000305 || (address >= 0x04000000 && address <= 0x04000058) || (address >= 0x04000240 && address <= 0x04000249 && address!=0x04000247) || (address >= 0x04001000 && address <= 0x04001058))
+	if (address==0x04000304 || address == 0x04000305 || (address >= 0x04000000 && address <= 0x04000058) || (address >= 0x04001000 && address <= 0x04001058))
 	{
 		m_ppu->writeIO(address, value);
 		return;
@@ -722,6 +670,10 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000214: case 0x04000215: case 0x04000216: case 0x04000217:
 		m_interruptManager->NDS9_writeIO(address,value);
 		break;
+	case 0x04000240: case 0x04000241: case 0x04000242: case 0x04000243: case 0x04000244: case 0x04000245: case 0x04000246: case 0x04000248: case 0x04000249:
+		m_ppu->writeIO(address, value);
+		mapVRAMPages();
+		break;
 	case 0x04000247:
 	{
 		WRAMCNT = value & 0b11;
@@ -729,24 +681,38 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		switch (WRAMCNT)
 		{
 		case 0:
+			for (uint32_t i = addressToPage(0x03000000); i < addressToPage(0x04000000); i += 2)
+			{
+				m_ARM9PageTable[i] = m_mem->WRAM[0];
+				m_ARM9PageTable[i + 1] = m_mem->WRAM[1];
+			}
 			m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[0];
 			m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[1];
 			m_mem->NDS7_sharedWRAMPtrs[0] = nullptr;
 			m_mem->NDS7_sharedWRAMPtrs[1] = nullptr;
 			break;
 		case 1:
+			for (uint32_t i = addressToPage(0x03000000); i < addressToPage(0x04000000); i++)
+			{
+				m_ARM9PageTable[i] = m_mem->WRAM[1];
+			}
 			m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[1];
 			m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[1];
 			m_mem->NDS7_sharedWRAMPtrs[0] = m_mem->WRAM[0];
 			m_mem->NDS7_sharedWRAMPtrs[1] = m_mem->WRAM[0];
 			break;
 		case 2:
+			for (uint32_t i = addressToPage(0x03000000); i < addressToPage(0x04000000); i++)
+			{
+				m_ARM9PageTable[i] = m_mem->WRAM[0];
+			}
 			m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[0];
 			m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[0];
 			m_mem->NDS7_sharedWRAMPtrs[0] = m_mem->WRAM[1];
 			m_mem->NDS7_sharedWRAMPtrs[1] = m_mem->WRAM[1];
 			break;
 		case 3:
+			memset(m_ARM9PageTable + addressToPage(0x03000000), 0, addressToPage(0x01000000));
 			m_mem->NDS9_sharedWRAMPtrs[0] = nullptr;
 			m_mem->NDS9_sharedWRAMPtrs[1] = nullptr;
 			m_mem->NDS7_sharedWRAMPtrs[0] = m_mem->WRAM[0];
