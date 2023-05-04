@@ -85,9 +85,6 @@ void ARM7TDMI::run(int cycles)
 				return;
 		}
 		fetch();
-		if (dispatchInterrupt())	//if interrupt was dispatched then fetch new opcode (dispatchInterrupt already flushes pipeline !)
-			continue;
-
 		int exPipelinePtr = m_pipelinePtr + 1;
 		if (exPipelinePtr == 3)			//seems faster than using modulus
 			exPipelinePtr = 0;
@@ -108,6 +105,9 @@ void ARM7TDMI::run(int cycles)
 		}
 		else
 			refillPipeline();
+
+		dispatchInterrupt();
+
 		m_scheduler->addCycles(1);
 	}
 	m_scheduler->setTimestamp(cyclesBefore);

@@ -58,6 +58,8 @@ void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, C
 Bus::~Bus()
 {
 	delete m_mem;
+	delete[] m_ARM9PageTable;
+	delete[] m_ARM7PageTable;
 }
 
 void Bus::mapVRAMPages()
