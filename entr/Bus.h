@@ -178,5 +178,6 @@ private:
 	inline uint32_t addressToPage(uint32_t address) { return address >> 14; }
 	inline uint32_t addressToOffset(uint32_t address) { return address & 0x3FFF; }
 
-	uint8_t* m_ARM9PageTable[0x40000];
+	uint8_t** m_ARM9PageTable;
+	uint8_t** m_ARM7PageTable;
 };

@@ -28,6 +28,7 @@ void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptM
 Cartridge::~Cartridge()
 {
 	delete m_backup;
+	delete[] m_cartData;
 }
 
 void Cartridge::encryptSecureArea(uint8_t* keyBuf)

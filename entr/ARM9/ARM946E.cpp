@@ -92,10 +92,8 @@ void ARM946E::run(int cycles)
 			executeThumb(); break;
 		}
 
-		if (!m_pipelineFlushed)
-		{
-			R[15] += incrAmountLUT[m_inThumbMode];
-		}
+		static constexpr uint32_t incrLUT[4] = { 4,2,0,0 };
+		R[15] += incrLUT[(m_inThumbMode&0b1) + ((m_pipelineFlushed&0b1)<<1)];
 		dispatchInterrupt();
 		m_pipelineFlushed = false;
 		m_scheduler->addCycles((i & 0b1));

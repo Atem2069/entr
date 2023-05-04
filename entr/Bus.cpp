@@ -31,15 +31,28 @@ void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, C
 
 	memcpy(m_mem->NDS7_BIOS, &NDS7_BIOS[0], NDS7_BIOS.size());
 	memcpy(m_mem->NDS9_BIOS, &NDS9_BIOS[0], NDS9_BIOS.size());
-
+	m_ARM9PageTable = new uint8_t * [0x40000];
+	m_ARM7PageTable = new uint8_t * [0x40000];
 	memset(m_ARM9PageTable, 0, 0x40000);
-	//build beginning of ARM9 page table
+	memset(m_ARM7PageTable, 0, 0x40000);
+	//build beginning of page tables
 	for (uint32_t i = 0; i < 0x01000000; i += 16384)
 	{
 		uint32_t page = addressToPage(i + 0x02000000);
 		m_ARM9PageTable[page] = m_mem->RAM + (i & 0x3FFFFF);
+		m_ARM7PageTable[page] = m_mem->RAM + (i & 0x3FFFFF);
 	}
-	m_ARM9PageTable[addressToPage(0xFFFF0000)] = m_mem->NDS9_BIOS;
+	for (uint32_t i = 0; i < addressToPage(0x00800000); i += 4)
+	{
+		m_ARM7PageTable[addressToPage(0x03800000) + i] = m_mem->ARM7_WRAM;
+		m_ARM7PageTable[addressToPage(0x03800000) + i + 1] = m_mem->ARM7_WRAM + 16384;
+		m_ARM7PageTable[addressToPage(0x03800000) + i + 2] = m_mem->ARM7_WRAM + 32768;
+		m_ARM7PageTable[addressToPage(0x03800000) + i + 3] = m_mem->ARM7_WRAM + 49152;
+	}
+
+	m_ARM9PageTable[addressToPage(0xFFFF0000)] = m_mem->NDS9_BIOS;		//might have to keep these on slowmem, because they're not writeable.
+	m_ARM7PageTable[0] = m_mem->NDS7_BIOS;
+	
 }
 
 Bus::~Bus()
@@ -60,34 +73,36 @@ void Bus::mapVRAMPages()
 	{
 		m_ARM9PageTable[addressToPage(0x06800000) + i] = m_mem->LCDCPageTable[i % 41];		//might not be right.
 	}
+
+	//somewhat messy.
+	for (uint32_t i = 0; i < 64; i++)
+	{
+		uint32_t baseAddr = 0x06000000 + (i * 262144);
+		uint32_t upperBase = baseAddr + 131072;
+		for (uint32_t j = 0; j < 8; j++)
+		{
+			m_ARM7PageTable[addressToPage(baseAddr)+j] = nullptr;
+			m_ARM7PageTable[addressToPage(upperBase)+j] = nullptr;
+			if(m_mem->ARM7VRAMPageTable[0])
+				m_ARM7PageTable[addressToPage(baseAddr) + j] =  m_mem->ARM7VRAMPageTable[0] + (j * 16384);
+			if(m_mem->ARM7VRAMPageTable[1])
+				m_ARM7PageTable[addressToPage(upperBase) + j] = m_mem->ARM7VRAMPageTable[1] + (j * 16384);
+		}
+	}
 }
 
 
 uint8_t Bus::NDS7_read8(uint32_t address)
 {
+	uint8_t* ptr = m_ARM7PageTable[addressToPage(address)];
+	if (ptr)
+		return ptr[addressToOffset(address)];
+
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 0:
-		if (address > 0x3FFF)
-			return 0;
-		return m_mem->NDS7_BIOS[address];
-	case 2:
-		return m_mem->RAM[address & 0x3FFFFF];
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (!bank || address >= 0x03800000)
-			return m_mem->ARM7_WRAM[address & 0xFFFF];
-		return bank[address & 0x3FFF];
-	}
 	case 4:
 		return NDS7_readIO8(address);
-	case 6:
-	{
-		uint8_t* addr = m_ppu->mapARM7Address(address);
-		return addr[0];
-	}
 	case 8: case 9:
 		return ((address >> 1) & 0xFFFF) >> ((address & 0b1)<<3);
 	default:
@@ -99,30 +114,18 @@ uint8_t Bus::NDS7_read8(uint32_t address)
 
 void Bus::NDS7_write8(uint32_t address, uint8_t value)
 {
+	uint8_t* ptr = m_ARM7PageTable[addressToPage(address)];
+	if (ptr)
+	{
+		ptr[addressToOffset(address)] = value;
+		return;
+	}
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 2:
-		m_mem->RAM[address & 0x3FFFFF] = value;
-		break;
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (!bank || address >= 0x03800000)
-			m_mem->ARM7_WRAM[address & 0xFFFF] = value;
-		else
-			bank[address & 0x3FFF] = value;
-		break;
-	}
 	case 4:
 		NDS7_writeIO8(address,value);
 		break;
-	case 6:
-	{
-		uint8_t* addr = m_ppu->mapARM7Address(address);
-		addr[0] = value;
-		break;
-	}
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
@@ -131,29 +134,16 @@ void Bus::NDS7_write8(uint32_t address, uint8_t value)
 uint16_t Bus::NDS7_read16(uint32_t address)
 {
 	address &= 0xFFFFFFFE;
+
+	uint8_t* ptr = m_ARM7PageTable[addressToPage(address)];
+	if (ptr)
+		return getValue16(ptr, addressToOffset(address), 0xFFFFFFFF);
+
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 0:
-		if (address > 0x3FFF)
-			return 0;
-		return getValue16(m_mem->NDS7_BIOS, address, 0x3FFF);
-	case 2:
-		return getValue16(m_mem->RAM,address & 0x3FFFFF,0x3FFFFF);
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (!bank || address >= 0x03800000)
-			return getValue16(m_mem->ARM7_WRAM, address & 0xFFFF, 0xFFFF);
-		return getValue16(bank, address & 0x3FFF, 0x3FFF);
-	}
 	case 4:
 		return NDS7_readIO16(address);
-	case 6:
-	{
-		uint8_t* addr = m_ppu->mapARM7Address(address);
-		return getValue16(addr, 0, 0xFFFF);
-	}
 	case 8: case 9:
 		return (address >> 1) & 0xFFFF;
 	default:
@@ -166,30 +156,20 @@ uint16_t Bus::NDS7_read16(uint32_t address)
 void Bus::NDS7_write16(uint32_t address, uint16_t value)
 {
 	address &= 0xFFFFFFFE;
+
+	uint8_t* ptr = m_ARM7PageTable[addressToPage(address)];
+	if (ptr)
+	{
+		setValue16(ptr, addressToOffset(address), 0xFFFFFFFF, value);
+		return;
+	}
+
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 2:
-		setValue16(m_mem->RAM,address & 0x3FFFFF,0x3FFFFF, value);
-		break;
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (!bank || address >= 0x03800000)
-			setValue16(m_mem->ARM7_WRAM, address & 0xFFFF, 0xFFFF, value);
-		else
-			setValue16(bank, address & 0x3FFF, 0x3FFF, value);
-		break;
-	}
 	case 4:
 		NDS7_writeIO16(address, value);
 		break;
-	case 6:
-	{
-		uint8_t* addr = m_ppu->mapARM7Address(address);
-		setValue16(addr, 0, 0xFFFF, value);
-		break;
-	}
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
@@ -198,29 +178,16 @@ void Bus::NDS7_write16(uint32_t address, uint16_t value)
 uint32_t Bus::NDS7_read32(uint32_t address)
 {
 	address &= 0xFFFFFFFC;
+
+	uint8_t* ptr = m_ARM7PageTable[addressToPage(address)];
+	if (ptr)
+		return getValue32(ptr, addressToOffset(address), 0xFFFFFFFF);
+
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 0:
-		if (address > 0x3FFF)
-			return 0;
-		return getValue32(m_mem->NDS7_BIOS, address, 0x3FFF);
-	case 2:
-		return getValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF);
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (!bank || address >= 0x03800000)
-			return getValue32(m_mem->ARM7_WRAM, address & 0xFFFF, 0xFFFF);
-		return getValue32(bank, address & 0x3FFF, 0x3FFF);
-	}
 	case 4:
 		return NDS7_readIO32(address);
-	case 6:
-	{
-		uint8_t* addr = m_ppu->mapARM7Address(address);
-		return getValue32(addr, 0, 0xFFFF);
-	}
 	case 8: case 9:
 		return ((address >> 1) & 0xFFFF) | ((((address + 2) >> 1) & 0xFFFF) << 16);
 	default:
@@ -233,30 +200,20 @@ uint32_t Bus::NDS7_read32(uint32_t address)
 void Bus::NDS7_write32(uint32_t address, uint32_t value)
 {
 	address &= 0xFFFFFFFC;
+
+	uint8_t* ptr = m_ARM7PageTable[addressToPage(address)];
+	if (ptr)
+	{
+		setValue32(ptr, addressToOffset(address), 0xFFFFFFFF,value);
+		return;
+	}
+
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
-	case 2:
-		setValue32(m_mem->RAM, address & 0x3FFFFF, 0x3FFFFF, value);
-		break;
-	case 3:
-	{
-		uint8_t* bank = m_mem->NDS7_sharedWRAMPtrs[(address >> 14) & 0b1];
-		if (!bank || address >= 0x03800000)
-			setValue32(m_mem->ARM7_WRAM, address & 0xFFFF, 0xFFFF, value);
-		else
-			setValue32(bank, address & 0x3FFF, 0x3FFF, value);
-		break;
-	}
 	case 4:
 		NDS7_writeIO32(address, value);
 		break;
-	case 6:
-	{
-		uint8_t* addr = m_ppu->mapARM7Address(address);
-		setValue32(addr, 0, 0xFFFF, value);
-		break;
-	}
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
@@ -681,42 +638,67 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		switch (WRAMCNT)
 		{
 		case 0:
+		{
 			for (uint32_t i = addressToPage(0x03000000); i < addressToPage(0x04000000); i += 2)
 			{
 				m_ARM9PageTable[i] = m_mem->WRAM[0];
 				m_ARM9PageTable[i + 1] = m_mem->WRAM[1];
+			}
+			for (uint32_t i = 0; i < addressToPage(0x00800000); i += 4)
+			{
+				m_ARM7PageTable[addressToPage(0x03000000) + i] = m_mem->ARM7_WRAM;
+				m_ARM7PageTable[addressToPage(0x03000000) + i + 1] = m_mem->ARM7_WRAM + 16384;
+				m_ARM7PageTable[addressToPage(0x03000000) + i + 2] = m_mem->ARM7_WRAM + 32768;
+				m_ARM7PageTable[addressToPage(0x03000000) + i + 3] = m_mem->ARM7_WRAM + 49152;
 			}
 			m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[0];
 			m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[1];
 			m_mem->NDS7_sharedWRAMPtrs[0] = nullptr;
 			m_mem->NDS7_sharedWRAMPtrs[1] = nullptr;
 			break;
+		}
 		case 1:
+		{
 			for (uint32_t i = addressToPage(0x03000000); i < addressToPage(0x04000000); i++)
-			{
 				m_ARM9PageTable[i] = m_mem->WRAM[1];
-			}
+			for (uint32_t i = addressToPage(0x03000000); i < addressToPage(0x03800000); i++)
+				m_ARM7PageTable[i] = m_mem->WRAM[0];
 			m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[1];
 			m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[1];
 			m_mem->NDS7_sharedWRAMPtrs[0] = m_mem->WRAM[0];
 			m_mem->NDS7_sharedWRAMPtrs[1] = m_mem->WRAM[0];
 			break;
+		}
 		case 2:
+		{
 			for (uint32_t i = addressToPage(0x03000000); i < addressToPage(0x04000000); i++)
-			{
 				m_ARM9PageTable[i] = m_mem->WRAM[0];
-			}
+			for (uint32_t i = addressToPage(0x03000000); i < addressToPage(0x03800000); i++)
+				m_ARM7PageTable[i] = m_mem->WRAM[1];
 			m_mem->NDS9_sharedWRAMPtrs[0] = m_mem->WRAM[0];
 			m_mem->NDS9_sharedWRAMPtrs[1] = m_mem->WRAM[0];
 			m_mem->NDS7_sharedWRAMPtrs[0] = m_mem->WRAM[1];
 			m_mem->NDS7_sharedWRAMPtrs[1] = m_mem->WRAM[1];
 			break;
+		}
 		case 3:
-			memset(m_ARM9PageTable + addressToPage(0x03000000), 0, addressToPage(0x01000000));
+		{
+			for (uint32_t i = addressToPage(0x03000000); i < addressToPage(0x04000000); i += 2)
+			{
+				m_ARM9PageTable[i] = nullptr;
+				m_ARM9PageTable[i + 1] = nullptr;
+			}
+			for (uint32_t i = addressToPage(0x03000000); i < addressToPage(0x03800000); i += 2)
+			{
+				m_ARM7PageTable[i] = m_mem->WRAM[0];
+				m_ARM7PageTable[i + 1] = m_mem->WRAM[1];
+			}
 			m_mem->NDS9_sharedWRAMPtrs[0] = nullptr;
 			m_mem->NDS9_sharedWRAMPtrs[1] = nullptr;
 			m_mem->NDS7_sharedWRAMPtrs[0] = m_mem->WRAM[0];
 			m_mem->NDS7_sharedWRAMPtrs[1] = m_mem->WRAM[1];
+			break;
+		}
 		}
 		break;
 	}
