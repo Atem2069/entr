@@ -84,31 +84,42 @@ void ARM7TDMI::run(int cycles)
 			else
 				return;
 		}
-		fetch();
+		//fetch();
 		int exPipelinePtr = m_pipelinePtr + 1;
 		if (exPipelinePtr == 3)			//seems faster than using modulus
 			exPipelinePtr = 0;
 		m_currentOpcode = m_pipeline[exPipelinePtr].opcode;
+		m_pipeline[m_pipelinePtr].state = PipelineState::FILLED;
+		//code duplication not amazing, but seems faster on profiler !
 		switch (m_inThumbMode)
 		{
 		case 0:
-			executeARM(); break;
+			m_pipeline[m_pipelinePtr].opcode = m_bus->NDS7_read32(R[15]);
+			executeARM();
+			if (!m_pipelineFlushed)
+			{
+				R[15] += 4;
+				m_pipelinePtr = exPipelinePtr;
+			}
+			else
+				refillPipeline();
+			break;
 		case 1:
-			executeThumb(); break;
+			m_pipeline[m_pipelinePtr].opcode = m_bus->NDS7_read16(R[15]);
+			executeThumb(); 
+			if (!m_pipelineFlushed)
+			{
+				R[15] += 2;
+				m_pipelinePtr = exPipelinePtr;
+			}
+			else
+				refillPipeline();
+			break;
 		}
-
-		if (!m_pipelineFlushed)
-		{
-			R[15] += incrAmountLUT[m_inThumbMode];
-			m_pipelinePtr = exPipelinePtr;
-			m_pipelineFlushed = false;
-		}
-		else
-			refillPipeline();
 
 		dispatchInterrupt();
 
-		m_scheduler->addCycles(1);
+		m_scheduler->addCycles(2);
 	}
 	m_scheduler->setTimestamp(cyclesBefore);
 }

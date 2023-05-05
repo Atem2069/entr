@@ -82,21 +82,28 @@ void ARM946E::run(int cycles)
 			else
 				return;
 		}
-		fetch();
-
+		//fetch();
 		switch (m_inThumbMode)
 		{
 		case 0:
-			executeARM(); break;
+			m_currentOpcode = m_fetch32(R[15] - 8);
+			executeARM(); 
+			if (!m_pipelineFlushed)
+				R[15] += 4;
+			break;
 		case 1:
-			executeThumb(); break;
+			m_currentOpcode = m_fetch16(R[15] - 4);
+			executeThumb(); 
+			if (!m_pipelineFlushed)
+				R[15] += 2;
+			break;
 		}
 
-		static constexpr uint32_t incrLUT[4] = { 4,2,0,0 };
-		R[15] += incrLUT[(m_inThumbMode&0b1) + ((m_pipelineFlushed&0b1)<<1)];
+		//static constexpr uint32_t incrLUT[4] = { 4,2,0,0 };
+		//R[15] += incrLUT[(m_inThumbMode&0b1) + ((m_pipelineFlushed&0b1)<<1)];
 		dispatchInterrupt();
 		m_pipelineFlushed = false;
-		m_scheduler->addCycles((i & 0b1));
+		m_scheduler->addCycles(1);
 	}
 	m_scheduler->setTimestamp(cyclesBefore);
 }

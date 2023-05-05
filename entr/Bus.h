@@ -83,26 +83,22 @@ public:
 	//helper functions for reading/writing wide values etc.
 	static inline uint16_t getValue16(uint8_t* arr, int base, int mask)
 	{
-		return (uint16_t)arr[base] | ((arr[(base + 1) & mask]) << 8);
+		return *(uint16_t*)(arr + base);
 	}
 
 	static inline void setValue16(uint8_t* arr, int base, int mask, uint16_t val)
 	{
-		arr[base] = val & 0xFF;
-		arr[(base + 1) & mask] = ((val >> 8) & 0xFF);
+		*(uint16_t*)(arr + base) = val;
 	}
 
 	static inline uint32_t getValue32(uint8_t* arr, int base, int mask)
 	{
-		return (uint32_t)arr[base] | ((arr[(base + 1) & mask]) << 8) | ((arr[(base + 2) & mask]) << 16) | ((arr[(base + 3) & mask]) << 24);
+		return *(uint32_t*)(arr + base);
 	}
 
 	static inline void setValue32(uint8_t* arr, int base, int mask, uint32_t val)
 	{
-		arr[base] = val & 0xFF;
-		arr[(base + 1) & mask] = ((val >> 8) & 0xFF);
-		arr[(base + 2) & mask] = ((val >> 16) & 0xFF);
-		arr[(base + 3) & mask] = ((val >> 24) & 0xFF);
+		*(uint32_t*)(arr + base) = val;
 	}
 
 	inline uint8_t* getVRAMAddr(uint32_t address)
