@@ -83,6 +83,20 @@ bool NDS::initialise()
 
 	if (Config::NDS.directBoot)
 	{
+		//misc values from gbatek (bios ram usage)
+		m_bus.NDS7_write8(0x04000300, 1);
+		m_bus.NDS9_write8(0x04000300, 1);
+		m_bus.NDS9_write8(0x04000247, 0x03);
+		m_bus.NDS9_write32(0x027FF800, 0x00001FC2);
+		m_bus.NDS9_write32(0x027FF804, 0x00001FC2);
+		m_bus.NDS9_write16(0x027FF850, 0x5835);
+		m_bus.NDS9_write16(0x027FF880, 0x0007);
+		m_bus.NDS9_write16(0x027FF884, 0x0006);
+		m_bus.NDS9_write32(0x027FFC00, 0x00001FC2);
+		m_bus.NDS9_write32(0x027FFC04, 0x00001FC2);
+		m_bus.NDS9_write16(0x027FFC10, 0x5835);
+		m_bus.NDS9_write16(0x027FFC40, 0x0001);
+
 		m_cartridge.directBoot();
 		//load arm9/arm7 binaries
 		for (int i = 0; i < ARM9Size; i++)
@@ -103,20 +117,6 @@ bool NDS::initialise()
 		//copy firmware user data (e.g. tsc calibration)
 		for (int i = 0; i < 0xF0; i++)
 			m_bus.NDS9_write8(0x027FFC80 + i, firmware[0x3FE00 + i]);
-
-		//misc values from gbatek (bios ram usage)
-		m_bus.NDS7_write8(0x04000300, 1);
-		m_bus.NDS9_write8(0x04000300, 1);
-		m_bus.NDS9_write8(0x04000247, 0x03);
-		m_bus.NDS9_write32(0x027FF800, 0x00001FC2);
-		m_bus.NDS9_write32(0x027FF804, 0x00001FC2);
-		m_bus.NDS9_write16(0x027FF850, 0x5835);
-		m_bus.NDS9_write16(0x027FF880, 0x0007);
-		m_bus.NDS9_write16(0x027FF884, 0x0006);
-		m_bus.NDS9_write32(0x027FFC00, 0x00001FC2);
-		m_bus.NDS9_write32(0x027FFC04, 0x00001FC2);
-		m_bus.NDS9_write16(0x027FFC10, 0x5835);
-		m_bus.NDS9_write16(0x027FFC40, 0x0001);
 	}
 	else
 	{
