@@ -51,7 +51,7 @@ void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, C
 	}
 
 	m_ARM9PageTable[addressToPage(0xFFFF0000)] = m_mem->NDS9_BIOS;		//might have to keep these on slowmem, because they're not writeable.
-	m_ARM7PageTable[0] = m_mem->NDS7_BIOS;
+	//m_ARM7PageTable[0] = m_mem->NDS7_BIOS;
 	
 }
 
@@ -103,6 +103,10 @@ uint8_t Bus::NDS7_read8(uint32_t address)
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
+	case 0:
+		if (address <= 0x3FFF)
+			return m_mem->NDS7_BIOS[address];
+		return 0;
 	case 4:
 		return NDS7_readIO8(address);
 	case 8: case 9:
@@ -144,6 +148,10 @@ uint16_t Bus::NDS7_read16(uint32_t address)
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
+	case 0:
+		if (address <= 0x3FFF)
+			return getValue16(m_mem->NDS7_BIOS, address, 0xFFFFFFFF);
+		return 0;
 	case 4:
 		return NDS7_readIO16(address);
 	case 8: case 9:
@@ -188,6 +196,10 @@ uint32_t Bus::NDS7_read32(uint32_t address)
 	uint8_t page = (address >> 24) & 0xFF;
 	switch (page)
 	{
+	case 0:
+		if (address <= 0x3FFF)
+			return getValue32(m_mem->NDS7_BIOS, address, 0xFFFFFFFF);
+		return 0;
 	case 4:
 		return NDS7_readIO32(address);
 	case 8: case 9:
