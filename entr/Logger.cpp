@@ -2,7 +2,7 @@
 
 void Logger::msg(LoggerSeverity severity, std::string msg, const std::source_location location)
 {
-	//return;
+	return;
 	std::string funcOrigin = location.function_name();
 	std::string prefix = "[" + funcOrigin + "]";
 	switch (severity)

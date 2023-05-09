@@ -1137,6 +1137,20 @@ uint8_t PPU::readIO(uint32_t address)
 
 void PPU::writeIO(uint32_t address, uint8_t value)
 {
+	PPURegisters* m_registers = nullptr;
+	BackgroundLayer* m_bgLayers = nullptr;
+	switch ((address >> 12) & 0xF)
+	{
+	case 0:
+		m_bgLayers = m_engineABgLayers;
+		m_registers = &m_engineARegisters;
+		break;
+	case 1:
+		address &= ~0xF000;				//unset bits 12-15 (so addresses alias engine a regs)
+		m_bgLayers = m_engineBBgLayers;		//
+		m_registers = &m_engineBRegisters;	//writes modify engine b regs/layers instead
+		break;
+	}
 	switch (address)
 	{
 		//POWCNT1
@@ -1194,22 +1208,22 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		rebuildPageTables();
 		break;
 	case 0x04000000:
-		m_engineARegisters.DISPCNT &= 0xFFFFFF00; m_engineARegisters.DISPCNT |= value;
+		m_registers->DISPCNT &= 0xFFFFFF00; m_registers->DISPCNT |= value;
 		break;
 	case 0x04000001:
-		m_engineARegisters.DISPCNT &= 0xFFFF00FF; m_engineARegisters.DISPCNT |= (value << 8);
+		m_registers->DISPCNT &= 0xFFFF00FF; m_registers->DISPCNT |= (value << 8);
 		for (int i = 8; i < 12; i++)
 		{
-			m_engineABgLayers[i-8].enabled = false;
-			if ((m_engineARegisters.DISPCNT >> i) & 0b1)
-				m_engineABgLayers[i-8].enabled = true;
+			m_bgLayers[i-8].enabled = false;
+			if ((m_registers->DISPCNT >> i) & 0b1)
+				m_bgLayers[i-8].enabled = true;
 		}
 		break;
 	case 0x04000002:
-		m_engineARegisters.DISPCNT &= 0xFF00FFFF; m_engineARegisters.DISPCNT |= (value << 16);
+		m_registers->DISPCNT &= 0xFF00FFFF; m_registers->DISPCNT |= (value << 16);
 		break;
 	case 0x04000003:
-		m_engineARegisters.DISPCNT &= 0x00FFFFFF; m_engineARegisters.DISPCNT |= (value << 24);
+		m_registers->DISPCNT &= 0x00FFFFFF; m_registers->DISPCNT |= (value << 24);
 		break;
 	case 0x04000004:
 		DISPSTAT &= 0xFF07; DISPSTAT |= (value & 0xF8);
@@ -1219,166 +1233,76 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		checkVCOUNTInterrupt();
 		break;
 	case 0x04000008:
-		m_engineARegisters.BG0CNT &= 0xFF00; m_engineARegisters.BG0CNT |= value;
+		m_registers->BG0CNT &= 0xFF00; m_registers->BG0CNT |= value;
 		break;
 	case 0x04000009:
-		m_engineARegisters.BG0CNT &= 0x00FF; m_engineARegisters.BG0CNT |= (value << 8);
+		m_registers->BG0CNT &= 0x00FF; m_registers->BG0CNT |= (value << 8);
 		break;
 	case 0x0400000A:
-		m_engineARegisters.BG1CNT &= 0xFF00; m_engineARegisters.BG1CNT |= value;
+		m_registers->BG1CNT &= 0xFF00; m_registers->BG1CNT |= value;
 		break;
 	case 0x0400000B:
-		m_engineARegisters.BG1CNT &= 0x00FF; m_engineARegisters.BG1CNT |= (value << 8);
+		m_registers->BG1CNT &= 0x00FF; m_registers->BG1CNT |= (value << 8);
 		break;
 	case 0x0400000C:
-		m_engineARegisters.BG2CNT &= 0xFF00; m_engineARegisters.BG2CNT |= value;
+		m_registers->BG2CNT &= 0xFF00; m_registers->BG2CNT |= value;
 		break;
 	case 0x0400000D:
-		m_engineARegisters.BG2CNT &= 0x00FF; m_engineARegisters.BG2CNT |= (value << 8);
+		m_registers->BG2CNT &= 0x00FF; m_registers->BG2CNT |= (value << 8);
 		break;
 	case 0x0400000E:
-		m_engineARegisters.BG3CNT &= 0xFF00; m_engineARegisters.BG3CNT |= value;
+		m_registers->BG3CNT &= 0xFF00; m_registers->BG3CNT |= value;
 		break;
 	case 0x0400000F:
-		m_engineARegisters.BG3CNT &= 0x00FF; m_engineARegisters.BG3CNT |= (value << 8);
+		m_registers->BG3CNT &= 0x00FF; m_registers->BG3CNT |= (value << 8);
 		break;
 	case 0x04000010:
-		m_engineARegisters.BG0HOFS &= 0xFF00; m_engineARegisters.BG0HOFS |= value;
+		m_registers->BG0HOFS &= 0xFF00; m_registers->BG0HOFS |= value;
 		break;
 	case 0x04000011:
-		m_engineARegisters.BG0HOFS &= 0x00FF; m_engineARegisters.BG0HOFS |= ((value & 0b1) << 8);
+		m_registers->BG0HOFS &= 0x00FF; m_registers->BG0HOFS |= ((value & 0b1) << 8);
 		break;
 	case 0x04000012:
-		m_engineARegisters.BG0VOFS &= 0xFF00; m_engineARegisters.BG0VOFS |= value;
+		m_registers->BG0VOFS &= 0xFF00; m_registers->BG0VOFS |= value;
 		break;
 	case 0x04000013:
-		m_engineARegisters.BG0VOFS &= 0x00FF; m_engineARegisters.BG0VOFS |= ((value & 0b1) << 8);
+		m_registers->BG0VOFS &= 0x00FF; m_registers->BG0VOFS |= ((value & 0b1) << 8);
 		break;
 	case 0x04000014:
-		m_engineARegisters.BG1HOFS &= 0xFF00; m_engineARegisters.BG1HOFS |= value;
+		m_registers->BG1HOFS &= 0xFF00; m_registers->BG1HOFS |= value;
 		break;
 	case 0x04000015:
-		m_engineARegisters.BG1HOFS &= 0x00FF; m_engineARegisters.BG1HOFS |= ((value & 0b1) << 8);
+		m_registers->BG1HOFS &= 0x00FF; m_registers->BG1HOFS |= ((value & 0b1) << 8);
 		break;
 	case 0x04000016:
-		m_engineARegisters.BG1VOFS &= 0xFF00; m_engineARegisters.BG1VOFS |= value;
+		m_registers->BG1VOFS &= 0xFF00; m_registers->BG1VOFS |= value;
 		break;
 	case 0x04000017:
-		m_engineARegisters.BG1VOFS &= 0x00FF; m_engineARegisters.BG1VOFS |= ((value & 0b1) << 8);
+		m_registers->BG1VOFS &= 0x00FF; m_registers->BG1VOFS |= ((value & 0b1) << 8);
 		break;
 	case 0x04000018:
-		m_engineARegisters.BG2HOFS &= 0xFF00; m_engineARegisters.BG2HOFS |= value;
+		m_registers->BG2HOFS &= 0xFF00; m_registers->BG2HOFS |= value;
 		break;
 	case 0x04000019:
-		m_engineARegisters.BG2HOFS &= 0x00FF; m_engineARegisters.BG2HOFS |= ((value & 0b1) << 8);
+		m_registers->BG2HOFS &= 0x00FF; m_registers->BG2HOFS |= ((value & 0b1) << 8);
 		break;
 	case 0x0400001A:
-		m_engineARegisters.BG2VOFS &= 0xFF00; m_engineARegisters.BG2VOFS |= value;
+		m_registers->BG2VOFS &= 0xFF00; m_registers->BG2VOFS |= value;
 		break;
 	case 0x0400001B:
-		m_engineARegisters.BG2VOFS &= 0x00FF; m_engineARegisters.BG2VOFS |= ((value & 0b1) << 8);
+		m_registers->BG2VOFS &= 0x00FF; m_registers->BG2VOFS |= ((value & 0b1) << 8);
 		break;
 	case 0x0400001C:
-		m_engineARegisters.BG3HOFS &= 0xFF00; m_engineARegisters.BG3HOFS |= value;
+		m_registers->BG3HOFS &= 0xFF00; m_registers->BG3HOFS |= value;
 		break;
 	case 0x0400001D:
-		m_engineARegisters.BG3HOFS &= 0x00FF; m_engineARegisters.BG3HOFS |= ((value & 0b1) << 8);
+		m_registers->BG3HOFS &= 0x00FF; m_registers->BG3HOFS |= ((value & 0b1) << 8);
 		break;
 	case 0x0400001E:
-		m_engineARegisters.BG3VOFS &= 0xFF00; m_engineARegisters.BG3VOFS |= value;
+		m_registers->BG3VOFS &= 0xFF00; m_registers->BG3VOFS |= value;
 		break;
 	case 0x0400001F:
-		m_engineARegisters.BG3VOFS &= 0x00FF; m_engineARegisters.BG3VOFS |= ((value & 0b1) << 8);
-		break;
-	case 0x04001000:
-		m_engineBRegisters.DISPCNT &= 0xFFFFFF00; m_engineBRegisters.DISPCNT |= value;
-		break;
-	case 0x04001001:
-		m_engineBRegisters.DISPCNT &= 0xFFFF00FF; m_engineBRegisters.DISPCNT |= (value << 8);
-		for (int i = 8; i < 12; i++)
-		{
-			m_engineBBgLayers[i-8].enabled = false;
-			if ((m_engineBRegisters.DISPCNT >> i) & 0b1)
-				m_engineBBgLayers[i-8].enabled = true;
-		}
-		break;
-	case 0x04001002:
-		m_engineBRegisters.DISPCNT &= 0xFF00FFFF; m_engineBRegisters.DISPCNT |= (value << 16);
-		break;
-	case 0x04001003:
-		m_engineBRegisters.DISPCNT &= 0x00FFFFFF; m_engineBRegisters.DISPCNT |= (value << 24);
-		break;
-	case 0x04001008:
-		m_engineBRegisters.BG0CNT &= 0xFF00; m_engineBRegisters.BG0CNT |= value;
-		break;
-	case 0x04001009:
-		m_engineBRegisters.BG0CNT &= 0x00FF; m_engineBRegisters.BG0CNT |= (value << 8);
-		break;
-	case 0x0400100A:
-		m_engineBRegisters.BG1CNT &= 0xFF00; m_engineBRegisters.BG1CNT |= value;
-		break;
-	case 0x0400100B:
-		m_engineBRegisters.BG1CNT &= 0x00FF; m_engineBRegisters.BG1CNT |= (value << 8);
-		break;
-	case 0x0400100C:
-		m_engineBRegisters.BG2CNT &= 0xFF00; m_engineBRegisters.BG2CNT |= value;
-		break;
-	case 0x0400100D:
-		m_engineBRegisters.BG2CNT &= 0x00FF; m_engineBRegisters.BG2CNT |= (value << 8);
-		break;
-	case 0x0400100E:
-		m_engineBRegisters.BG3CNT &= 0xFF00; m_engineBRegisters.BG3CNT |= value;
-		break;
-	case 0x0400100F:
-		m_engineBRegisters.BG3CNT &= 0x00FF; m_engineBRegisters.BG3CNT |= (value << 8);
-		break;
-	case 0x04001010:
-		m_engineBRegisters.BG0HOFS &= 0xFF00; m_engineBRegisters.BG0HOFS |= value;
-		break;
-	case 0x04001011:
-		m_engineBRegisters.BG0HOFS &= 0x00FF; m_engineBRegisters.BG0HOFS |= ((value & 0b1) << 8);
-		break;
-	case 0x04001012:
-		m_engineBRegisters.BG0VOFS &= 0xFF00; m_engineBRegisters.BG0VOFS |= value;
-		break;
-	case 0x04001013:
-		m_engineBRegisters.BG0VOFS &= 0x00FF; m_engineBRegisters.BG0VOFS |= ((value & 0b1) << 8);
-		break;
-	case 0x04001014:
-		m_engineBRegisters.BG1HOFS &= 0xFF00; m_engineBRegisters.BG1HOFS |= value;
-		break;
-	case 0x04001015:
-		m_engineBRegisters.BG1HOFS &= 0x00FF; m_engineBRegisters.BG1HOFS |= ((value & 0b1) << 8);
-		break;
-	case 0x04001016:
-		m_engineBRegisters.BG1VOFS &= 0xFF00; m_engineBRegisters.BG1VOFS |= value;
-		break;
-	case 0x04001017:
-		m_engineBRegisters.BG1VOFS &= 0x00FF; m_engineBRegisters.BG1VOFS |= ((value & 0b1) << 8);
-		break;
-	case 0x04001018:
-		m_engineBRegisters.BG2HOFS &= 0xFF00; m_engineBRegisters.BG2HOFS |= value;
-		break;
-	case 0x04001019:
-		m_engineBRegisters.BG2HOFS &= 0x00FF; m_engineBRegisters.BG2HOFS |= ((value & 0b1) << 8);
-		break;
-	case 0x0400101A:
-		m_engineBRegisters.BG2VOFS &= 0xFF00; m_engineBRegisters.BG2VOFS |= value;
-		break;
-	case 0x0400101B:
-		m_engineBRegisters.BG2VOFS &= 0x00FF; m_engineBRegisters.BG2VOFS |= ((value & 0b1) << 8);
-		break;
-	case 0x0400101C:
-		m_engineBRegisters.BG3HOFS &= 0xFF00; m_engineBRegisters.BG3HOFS |= value;
-		break;
-	case 0x0400101D:
-		m_engineBRegisters.BG3HOFS &= 0x00FF; m_engineBRegisters.BG3HOFS |= ((value & 0b1) << 8);
-		break;
-	case 0x0400101E:
-		m_engineBRegisters.BG3VOFS &= 0xFF00; m_engineBRegisters.BG3VOFS |= value;
-		break;
-	case 0x0400101F:
-		m_engineBRegisters.BG3VOFS &= 0x00FF; m_engineBRegisters.BG3VOFS |= ((value & 0b1) << 8);
+		m_registers->BG3VOFS &= 0x00FF; m_registers->BG3VOFS |= ((value & 0b1) << 8);
 		break;
 	//default:
 	//	Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));
