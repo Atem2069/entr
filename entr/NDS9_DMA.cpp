@@ -420,10 +420,6 @@ void Bus::NDS9_doDMATransfer(int channel)
 	bool reloadDest = false;
 	static constexpr int offsetLUT[2] = { 2,4 };
 
-	//i hate this hack....
-	if (startTiming == 5)
-		numWords = m_cartridge->getWordsLeft();
-
 	for (int i = 0; i < numWords; i++)
 	{
 		if (wordTransfer)

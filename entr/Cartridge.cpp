@@ -5,12 +5,13 @@ Cartridge::Cartridge()
 
 }
 
-void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptManager)
+void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptManager, Scheduler* scheduler)
 {
 	//m_cartData = cartData;
 	m_cartData = new uint8_t[cartData.size()];
 	std::copy(cartData.begin(), cartData.end(), m_cartData);
 	m_interruptManager = interruptManager;
+	m_scheduler = scheduler;
 	switch (Config::NDS.saveType)		//should use some sort of database for savetypes at some point, use this as override
 	{
 	case 0:
@@ -195,6 +196,7 @@ void Cartridge::write(uint32_t address, uint8_t value)
 
 uint32_t Cartridge::readGamecard()
 {
+	m_scheduler->addEvent(Event::Gamecard, (callbackFn)&Cartridge::transferEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
 	uint32_t result = 0;
 	if (transferInProgress)
 	{
@@ -235,14 +237,7 @@ void Cartridge::startTransfer()
 		break;
 	}
 
-	if (transferInProgress)
-	{
-		switch (NDS7HasAccess)
-		{
-		case 0:NDS9_DMACallback(DMAContext); break;
-		case 1:NDS7_DMACallback(DMAContext); break;
-		}
-	}
+	onTransferEvent();
 }
 
 void Cartridge::decodeUnencryptedCmd()
@@ -422,4 +417,22 @@ uint32_t Cartridge::KEY1_ByteSwap(uint32_t in)
 	uint32_t d = (in >> 24) & 0xFF;
 
 	return d | (c << 8) | (b << 16) | (a << 24);
+}
+
+void Cartridge::onTransferEvent()
+{
+	if (!transferInProgress)
+		return;
+
+	switch (NDS7HasAccess)
+	{
+	case 1: NDS7_DMACallback(DMAContext); break;
+	case 0: NDS9_DMACallback(DMAContext); break;
+	}
+}
+
+void Cartridge::transferEventHandler(void* context)
+{
+	Cartridge* thisPtr = (Cartridge*)context;
+	thisPtr->onTransferEvent();
 }

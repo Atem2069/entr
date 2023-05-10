@@ -78,7 +78,7 @@ bool NDS::initialise()
 	Logger::msg(LoggerSeverity::Info, std::format("ARM9 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM9Offs, ARM9Entry, ARM9LoadAddr, ARM9Size));
 	Logger::msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
 
-	m_cartridge.init(romData, &m_interruptManager);
+	m_cartridge.init(romData, &m_interruptManager,&m_scheduler);
 	m_bus.init(nds7bios, nds9bios, &m_cartridge, &m_scheduler, &m_interruptManager, &m_ppu, &m_input);
 
 	if (Config::NDS.directBoot)

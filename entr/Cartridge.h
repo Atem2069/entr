@@ -18,7 +18,7 @@ class Cartridge
 {
 public:
 	Cartridge();
-	void init(std::vector<uint8_t> cartData, InterruptManager* interruptManager);
+	void init(std::vector<uint8_t> cartData, InterruptManager* interruptManager, Scheduler* scheduler);
 	~Cartridge();
 
 	void encryptSecureArea(uint8_t* keyBuf);
@@ -40,7 +40,8 @@ public:
 	uint32_t NDS9_readGamecard();
 
 	void setNDS7AccessRights(bool val);
-	uint32_t getWordsLeft() { return (transferLength - bytesTransferred) / 4; }
+
+	static void transferEventHandler(void* context);
 
 private:
 	void startTransfer();
@@ -49,6 +50,8 @@ private:
 	void decodeKEY2Cmd();
 
 	void endTransfer();
+
+	void onTransferEvent();
 
 	CartEncryptionState m_encryptionState = CartEncryptionState::Unencrypted;
 	//std::vector<uint8_t> m_cartData;	//vector probably sucks, but oh well
