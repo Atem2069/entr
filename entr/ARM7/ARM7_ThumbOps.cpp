@@ -536,21 +536,14 @@ void ARM7TDMI::Thumb_MultipleLoadStore()
 {
 	bool loadStore = (m_currentOpcode >> 11) & 0b1;
 	uint8_t baseRegIdx = ((m_currentOpcode >> 8) & 0b111);
-	uint8_t regList = m_currentOpcode & 0xFF;
+	uint16_t regList = m_currentOpcode & 0xFF;
 
 	bool writeback = true;								//writeback implied, except for some odd LDM behaviour
 	bool baseIsFirst = false;
 	int transferCount = 0;
 
-	for (int i = 0; i < 8; i++)
-	{
-		if ((regList >> i) & 0b1)
-		{
-			transferCount++;
-			if (transferCount == 1 && (i == baseRegIdx))	//base reg first to be transferred? 
-				baseIsFirst = true;
-		}
-	}
+	transferCount = __popcnt16(regList);
+	baseIsFirst = ((regList >> baseRegIdx) & 0b1) && !((regList << (8 - baseRegIdx))&0xFF);
 
 	uint32_t base = R[baseRegIdx];
 	uint32_t finalBase = base + (transferCount * 4);	//figure out final val of base address
