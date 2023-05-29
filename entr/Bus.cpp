@@ -420,7 +420,7 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	case 0x04000100: case 0x04000101: case 0x04000102: case 0x04000103: case 0x04000104: case 0x04000105: case 0x04000106: case 0x04000107:
 	case 0x04000108: case 0x04000109: case 0x0400010A: case 0x0400010B: case 0x0400010C: case 0x0400010D: case 0x0400010E: case 0x0400010F:
 		return m_NDS7Timer.readIO(address);
-	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133:
+	case 0x04000130: case 0x04000131: case 0x04000132: case 0x04000133: case 0x04000136: case 0x04000137:
 		return m_input->readIORegister(address);
 	case 0x04000138: case 0x04000139:	//4000139 to shut up console
 		return m_rtc.read(address);
@@ -448,8 +448,6 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return hack_soundBias & 0xFF;
 	case 0x04000505:
 		return ((hack_soundBias >> 8) & 0b11);
-	case 0x04000136: case 0x04000137:
-		return m_input->readIORegister(address);
 	//	return 1;
 	}
 	Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
