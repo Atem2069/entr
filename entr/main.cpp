@@ -57,10 +57,10 @@ int main()
 		m_display.getCursorPos(x, y);
 		if ((x >= 0 && x < 512) && (y >= 384 && y < 768) && m_display.getLeftMouseClick())
 		{
-			Input::extInputState.penDown = true;
-			Touchscreen::pressed = true;
 			Touchscreen::screenX = x/2;
 			Touchscreen::screenY = (y/2)-192;
+			Touchscreen::pressed = true;
+			Input::extInputState.penDown = true;
 		}
 		else
 		{

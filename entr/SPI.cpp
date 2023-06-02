@@ -43,7 +43,7 @@ void SPI::write(uint32_t address, uint8_t value)
 	switch (address)
 	{
 	case 0x040001C0:
-		SPICNT &= 0xFF00; SPICNT |= value;
+		SPICNT &= 0xFF80; SPICNT |= (value&0x7F);
 		break;
 	case 0x040001C1:
 	{
@@ -57,6 +57,13 @@ void SPI::write(uint32_t address, uint8_t value)
 		deviceSelect = ((SPICNT >> 8) & 0b11);
 		if (oldDeviceSelect != deviceSelect)
 			m_SPIDevices[oldDeviceSelect]->deselect();
+		if (enable_old && !enabled)
+		{
+			//deselect all SPI devices whenever SPI disabled
+			m_SPIDevices[0]->deselect();
+			m_SPIDevices[1]->deselect();
+			m_SPIDevices[2]->deselect();
+		}
 		//Logger::msg(LoggerSeverity::Info, std::format("New SPI settings. enabled={} irq={} chipselect hold = {} device={}", enabled, irq, chipSelectHold, deviceSelect));
 		break;
 	}
