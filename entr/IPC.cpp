@@ -43,16 +43,26 @@ void IPC::NDS7_write8(uint32_t address, uint8_t value)
 			m_interruptManager->NDS9_requestInterrupt(InterruptType::IPCSync);
 		break;
 	case 0x04000184:
+	{
+		bool lastIRQStatus = NDS7_IPCFIFO.IRQOnEmpty;
 		NDS7_IPCFIFO.IRQOnEmpty = ((value >> 2) & 0b1);
 		if ((value >> 3) & 0b1)
 			NDS7_IPCFIFO.clear();
+		if (!lastIRQStatus && NDS7_IPCFIFO.IRQOnEmpty && NDS7_IPCFIFO.size == 0)
+			m_interruptManager->NDS7_requestInterrupt(InterruptType::IPCSend);
 		break;
+	}
 	case 0x04000185:
+	{
+		bool lastIRQStatus = NDS7_IPCFIFO.IRQOnReceive;
 		NDS7_IPCFIFO.IRQOnReceive = ((value >> 2) & 0b1);
 		if ((value >> 6) & 0b1)
 			NDS7_IPCFIFO.error = false;
 		NDS7_IPCFIFO.enabled = ((value >> 7) & 0b1);
+		if (!lastIRQStatus && NDS7_IPCFIFO.IRQOnReceive && NDS9_IPCFIFO.size > 0)
+			m_interruptManager->NDS7_requestInterrupt(InterruptType::IPCReceive);
 		break;
+	}
 	}
 }
 
@@ -81,16 +91,26 @@ void IPC::NDS9_write8(uint32_t address, uint8_t value)
 			m_interruptManager->NDS7_requestInterrupt(InterruptType::IPCSync);
 		break;
 	case 0x04000184:
+	{
+		bool lastIRQStatus = NDS9_IPCFIFO.IRQOnEmpty;
 		NDS9_IPCFIFO.IRQOnEmpty = ((value >> 2) & 0b1);
 		if ((value >> 3) & 0b1)
 			NDS9_IPCFIFO.clear();
+		if (!lastIRQStatus && NDS9_IPCFIFO.IRQOnEmpty && NDS9_IPCFIFO.size == 0)
+			m_interruptManager->NDS9_requestInterrupt(InterruptType::IPCSend);
 		break;
+	}
 	case 0x04000185:
+	{
+		bool lastIRQStatus = NDS9_IPCFIFO.IRQOnReceive;
 		NDS9_IPCFIFO.IRQOnReceive = ((value >> 2) & 0b1);
 		if ((value >> 6) & 0b1)
 			NDS9_IPCFIFO.error = false;
 		NDS9_IPCFIFO.enabled = ((value >> 7) & 0b1);
+		if (!lastIRQStatus && NDS9_IPCFIFO.IRQOnReceive && NDS7_IPCFIFO.size > 0)
+			m_interruptManager->NDS9_requestInterrupt(InterruptType::IPCReceive);
 		break;
+	}
 	}
 }
 
