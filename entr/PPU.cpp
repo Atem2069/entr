@@ -59,7 +59,7 @@ void PPU::HDraw()
 	uint8_t displayMode = (m_engineARegisters.DISPCNT >> 16) & 0b11;
 	if (displayMode == 2)
 		renderLCDCMode();
-	else if(displayMode==1)
+	else if (displayMode == 1)
 	{
 		uint8_t mode = m_engineARegisters.DISPCNT & 0b111;
 		switch (mode)
@@ -82,11 +82,11 @@ void PPU::HDraw()
 		case 5:
 			renderMode5<Engine::A>();
 			break;
-		//default:
-		//	Logger::msg(LoggerSeverity::Error, std::format("Unknown mode {}",(int)mode));
 		}
 		composeLayers<Engine::A>();
 	}
+	else
+		composeLayers<Engine::A>();		//not a fan of this approach. could check for switch to display mode 0, then just clear framebuffer white..
 
 	displayMode = (m_engineBRegisters.DISPCNT >> 16) & 0b11;
 	if (displayMode == 1)
@@ -112,11 +112,13 @@ void PPU::HDraw()
 		case 5:
 			renderMode5<Engine::B>();
 			break;
-		//default:
-		//	Logger::msg(LoggerSeverity::Error, std::format("Unknown mode {}",(int)mode));
+			//default:
+			//	Logger::msg(LoggerSeverity::Error, std::format("Unknown mode {}",(int)mode));
 		}
 		composeLayers<Engine::B>();
 	}
+	else
+		composeLayers<Engine::B>();
 
 	//line=2130 cycles. hdraw=1606 cycles? hblank=524 cycles
 	setHBlankFlag(true);
@@ -395,8 +397,10 @@ template<Engine engine> void PPU::composeLayers()
 	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
 	uint16_t* spriteLineBuffer = m_engineASpriteLineBuffer;
 	SpriteAttribute* spriteAttributeBuffer = m_engineASpriteAttribBuffer;
-	if (engine == Engine::B)
+	PPURegisters* m_regs = &m_engineARegisters;
+	if constexpr (engine == Engine::B)
 	{
+		m_regs = &m_engineBRegisters;
 		m_backgroundLayers = m_engineBBgLayers;
 		spriteLineBuffer = m_engineBSpriteLineBuffer;
 		spriteAttributeBuffer = m_engineBSpriteAttribBuffer;
@@ -406,6 +410,18 @@ template<Engine engine> void PPU::composeLayers()
 
 	for (int i = 0; i < 256; i++)
 	{
+		//offset into framebuffer to render into.
+		//each engine is assigned a screen (top/bottom) to render to - the framebuffer consists of both screens (bottom screen rendered directly below top)
+		uint32_t renderBase = (engine == Engine::A) ? EngineA_RenderBase : EngineB_RenderBase;
+
+		//no display if either force blank bit set, or display mode==0
+		bool noDisplay = ((m_regs->DISPCNT >> 7) & 0b1) || (((m_regs->DISPCNT >> 16) & 0b11) == 0);
+		if (noDisplay)		
+		{
+			m_renderBuffer[pageIdx][renderBase + (256 * VCOUNT) + i] = 0xFFFFFFFF;
+			continue;
+		}
+		
 		uint16_t finalCol = backdrop;
 		uint8_t bestPriority = 255;
 		for (int j = 3; j >= 0; j--)
@@ -426,8 +442,6 @@ template<Engine engine> void PPU::composeLayers()
 		if ((!(spritePixel >> 15)) && spriteAttributeBuffer[i].priority <= bestPriority)
 			finalCol = spritePixel;
 
-
-		uint32_t renderBase = (engine == Engine::A) ? EngineA_RenderBase : EngineB_RenderBase;
 		m_renderBuffer[pageIdx][renderBase + (256 * VCOUNT) + i] = col16to32(finalCol);
 	}
 }
