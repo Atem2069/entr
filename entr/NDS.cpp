@@ -65,15 +65,16 @@ bool NDS::initialise()
 	if (!readFile(firmware, "rom\\firmware.bin"))
 		return false;
 
-	uint32_t ARM9Offs = romData[0x020] | (romData[0x021] << 8) | (romData[0x022] << 16) | (romData[0x023] << 24);
-	uint32_t ARM9Entry = romData[0x024] | (romData[0x025] << 8) | (romData[0x026] << 16) | (romData[0x027] << 24);
-	uint32_t ARM9LoadAddr = romData[0x028] | (romData[0x029] << 8) | (romData[0x02A] << 16) | (romData[0x02B] << 24);
-	uint32_t ARM9Size = romData[0x02C] | (romData[0x02D] << 8) | (romData[0x02E] << 16) | (romData[0x02F] << 24);
+	uint32_t ARM9Offs = *(uint32_t*)&romData[0x20];
+	uint32_t ARM9Entry = *(uint32_t*)&romData[0x24];
+	uint32_t ARM9LoadAddr = *(uint32_t*)&romData[0x28];
+	uint32_t ARM9Size = *(uint32_t*)&romData[0x2c];
 
-	uint32_t ARM7Offs = romData[0x030] | (romData[0x031] << 8) | (romData[0x032] << 16) | (romData[0x033] << 24);
-	uint32_t ARM7Entry = romData[0x034] | (romData[0x035] << 8) | (romData[0x036] << 16) | (romData[0x037] << 24);
-	uint32_t ARM7LoadAddr = romData[0x038] | (romData[0x039] << 8) | (romData[0x03A] << 16) | (romData[0x03B] << 24);
-	uint32_t ARM7Size = romData[0x03C] | (romData[0x03D] << 8) | (romData[0x03E] << 16) | (romData[0x03F] << 24);
+	uint32_t ARM7Offs = *(uint32_t*)&romData[0x30];
+	uint32_t ARM7Entry = *(uint32_t*)&romData[0x34];
+	uint32_t ARM7LoadAddr = *(uint32_t*)&romData[0x38];
+	uint32_t ARM7Size = *(uint32_t*)&romData[0x3c];
+
 
 	Logger::msg(LoggerSeverity::Info, std::format("ARM9 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM9Offs, ARM9Entry, ARM9LoadAddr, ARM9Size));
 	Logger::msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
