@@ -668,11 +668,18 @@ void ARM7TDMI::ARM_SingleDataTransfer()
 
 void ARM7TDMI::ARM_Undefined()
 {
-	Logger::msg(LoggerSeverity::Error, std::format("Undefined instruction!! PC={}",getReg(15)-4));
+	//Logger::msg(LoggerSeverity::Error, std::format("Undefined instruction!! PC={}",getReg(15)-4));
 	uint32_t oldCPSR = CPSR;
-	uint32_t oldPC = R[15] - 4;	
+	uint32_t oldPC = R[15] - 4;
+	if (m_inThumbMode)
+	{
+		oldPC = R[15] - 2;
+		m_inThumbMode = false;
+	}
 
-	CPSR &= 0xFFFFFFE0;	//clear mode bits (0-4)
+	Logger::msg(LoggerSeverity::Error, std::format("Undefined instruction {:#x} R15={:#x}", m_currentOpcode, oldPC));
+
+	CPSR &= 0xFFFFFFC0;	//clear thumb + mode bits (0-5)
 	CPSR |= 0b0011011;	//set und bits (11011)
 	swapBankedRegisters();
 
