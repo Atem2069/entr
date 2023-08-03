@@ -5,11 +5,12 @@ Bus::Bus()
 
 }
 
-void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, Cartridge* cartridge, Scheduler* scheduler, InterruptManager* interruptManager, PPU* ppu, Input* input)
+void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, Cartridge* cartridge, Scheduler* scheduler, InterruptManager* interruptManager, PPU* ppu, GPU* gpu, Input* input)
 {
 	m_interruptManager = interruptManager;
 	m_scheduler = scheduler;
 	m_ppu = ppu;
+	m_gpu = gpu;
 	m_input = input;
 	m_cartridge = cartridge;
 
@@ -777,6 +778,18 @@ void Bus::NDS9_writeIO32(uint32_t address, uint32_t value)
 	if (address == 0x04000188)
 	{
 		m_ipc.NDS9_write32(address, value);
+		return;
+	}
+	
+	//special case: gxfifo
+	if (address == 0x04000400)
+	{
+		m_gpu->writeGXFIFO(value);
+		return;
+	}
+	if (address >= 0x04000440 && address <= 0x0400058c)
+	{
+		m_gpu->writeCmdPort(address, value);
 		return;
 	}
 	NDS9_writeIO16(address, value & 0xFFFF);

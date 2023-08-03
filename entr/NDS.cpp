@@ -80,7 +80,7 @@ bool NDS::initialise()
 	Logger::msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
 
 	m_cartridge.init(romData, &m_interruptManager,&m_scheduler);
-	m_bus.init(nds7bios, nds9bios, &m_cartridge, &m_scheduler, &m_interruptManager, &m_ppu, &m_input);
+	m_bus.init(nds7bios, nds9bios, &m_cartridge, &m_scheduler, &m_interruptManager, &m_ppu, &m_gpu, &m_input);
 
 	if (Config::NDS.directBoot)
 	{
@@ -130,6 +130,7 @@ bool NDS::initialise()
 	}
 
 	m_ppu.init(&m_interruptManager, &m_scheduler);
+	m_gpu.init(&m_interruptManager, &m_scheduler);
 	ARM9.init(ARM9Entry, &m_bus, &m_interruptManager, &m_scheduler);
 	ARM7.init(ARM7Entry, &m_bus, &m_interruptManager, &m_scheduler);
 	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);

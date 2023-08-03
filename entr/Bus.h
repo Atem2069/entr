@@ -3,6 +3,7 @@
 #include"NDSMem.h"
 #include"Logger.h"
 #include"PPU.h"
+#include"GPU.h"
 #include"Input.h"
 #include"IPC.h"
 #include"Math.h"
@@ -35,7 +36,7 @@ class Bus
 {
 public:
 	Bus();
-	void init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, Cartridge* cartridge, Scheduler* scheduler, InterruptManager* interruptManager, PPU* ppu, Input* input);
+	void init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, Cartridge* cartridge, Scheduler* scheduler, InterruptManager* interruptManager, PPU* ppu, GPU* gpu, Input* input);
 	~Bus();
 
 	void mapVRAMPages();
@@ -136,6 +137,7 @@ private:
 	Scheduler* m_scheduler;
 	InterruptManager* m_interruptManager;
 	PPU* m_ppu;
+	GPU* m_gpu;
 	Input* m_input;
 	IPC m_ipc;
 	DSMath m_math;

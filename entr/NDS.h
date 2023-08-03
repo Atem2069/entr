@@ -8,6 +8,7 @@
 #include"ARM7/ARM7TDMI.h"
 #include"ARM9/ARM946E.h"
 #include"PPU.h"
+#include"GPU.h"
 #include"InterruptManager.h"
 #include"Input.h"
 #include"Scheduler.h"
@@ -30,6 +31,7 @@ private:
 	ARM7TDMI ARM7;
 	Bus m_bus;
 	PPU m_ppu;
+	GPU m_gpu;
 	InterruptManager m_interruptManager;
 	Input m_input;
 	InputState m_inputState;
