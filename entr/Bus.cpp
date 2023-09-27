@@ -560,6 +560,8 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 	//this is horrible, need to move into switch statement.
 	if (address==0x04000304 || address==0x04000305 || address >= 0x04000000 && address <= 0x04000058 || (address >= 0x04000240 && address <= 0x04000249 && address != 0x04000247) || (address >= 0x04001000 && address <= 0x04001058))
 		return m_ppu->readIO(address);
+	if (address >= 0x04000320 && address <= 0x040006a3)
+		return m_gpu->read(address);
 	switch (address)
 	{
 	case 0x040000B0: case 0x040000B1: case 0x040000B2: case 0x040000B3: case 0x040000B4: case 0x040000B5: case 0x040000B6: case 0x040000B7:
@@ -612,6 +614,11 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	if (address==0x04000304 || address == 0x04000305 || (address >= 0x04000000 && address <= 0x04000058) || (address >= 0x04001000 && address <= 0x04001058))
 	{
 		m_ppu->writeIO(address, value);
+		return;
+	}
+	if (address >= 0x04000320 && address <= 0x040006a3)
+	{
+		m_gpu->write(address, value);
 		return;
 	}
 	switch (address)
@@ -782,7 +789,7 @@ void Bus::NDS9_writeIO32(uint32_t address, uint32_t value)
 	}
 	
 	//special case: gxfifo
-	if (address == 0x04000400)
+	if (address >= 0x04000400 && address <= 0x0400043f)	//gxfifo mirrored for 16 words?
 	{
 		m_gpu->writeGXFIFO(value);
 		return;

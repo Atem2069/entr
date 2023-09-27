@@ -3,6 +3,13 @@
 #include"Logger.h"
 #include"InterruptManager.h"
 #include"Scheduler.h"
+#include<queue>
+
+struct GXFIFOCommand
+{
+	uint8_t command;		//encodes command - only used for initial cmd value pushed to gxfifo
+	uint32_t parameter;		//encodes parameters for command
+};
 
 class GPU
 {
@@ -18,7 +25,18 @@ public:
 	void writeGXFIFO(uint32_t value);
 	void writeCmdPort(uint32_t address, uint32_t value);
 
+	static void GXFIFOEventHandler(void* context);
+
 private:
 	InterruptManager* m_interruptManager;
 	Scheduler* m_scheduler;
+
+	void onProcessCommandEvent();
+
+	void processCommand();
+
+	std::queue<GXFIFOCommand> GXFIFO;
+
+	uint32_t GXSTAT = {};
+
 };

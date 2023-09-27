@@ -14,26 +14,89 @@ void GPU::init(InterruptManager* interruptManager, Scheduler* scheduler)
 {
 	m_interruptManager = interruptManager;
 	m_scheduler = scheduler;
+
+	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, 1);	//schedule event to handle GXFIFO commands
 }
 
 uint8_t GPU::read(uint32_t address)
 {
-	Logger::msg(LoggerSeverity::Warn, std::format("Unhandled GPU read: {:#x}", address));
-	return 0;
+	switch (address)
+	{
+	case 0x04000600:
+		return GXSTAT & 0xFF;
+	case 0x04000601:
+		return (GXSTAT >> 8) & 0xFF;
+	case 0x04000602:
+		return (GXSTAT >> 16) & 0xFF;
+	case 0x04000603:
+		return (GXSTAT >> 24) & 0xFF;
+	}
 }
 
 void GPU::write(uint32_t address, uint8_t value)
 {
-	Logger::msg(LoggerSeverity::Warn, std::format("Unhandled GPU write: {:#x}", address));
+	switch (address)
+	{
+	case 0x04000601:
+		GXSTAT &= 0xFFFFDFFF; GXSTAT |= (value & 0x20) << 8;		//todo: handle bit 15 being 'writeable'
+		break;
+	case 0x04000603:
+		GXSTAT &= 0x3FFFFFFF; GXSTAT |= (value & 0xC0) << 24;
+		break;
+	}
 }
 
 void GPU::writeGXFIFO(uint32_t value)
 {
-	std::cout << "Unhandled GXFIFO write: " << std::hex << value << std::endl;
+	//this is dumb, just a placeholder
+	GXFIFOCommand cmd = {};
+	GXFIFO.push(cmd);
 }
 
 void GPU::writeCmdPort(uint32_t address, uint32_t value)
 {
 	//todo: figure out port from address, some way to enqueue..
 	//hopefully parameters are sent to the port too? that would probably make my life easier.
+}
+
+//calling this every cycle is probably slow - could deschedule/schedule depending on whether
+//processing is stopped (SwapBuffers), or we know GXFIFO is empty..
+void GPU::onProcessCommandEvent()
+{
+	processCommand();
+	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
+}
+
+void GPU::processCommand()
+{
+	GXSTAT &= ~(1 << 24);
+	GXSTAT &= ~(1 << 25);
+	GXSTAT &= ~(1 << 26);
+	GXSTAT &= ~(1 << 27);
+
+	uint8_t IRQMode = (GXSTAT >> 30) & 0b11;
+	if (GXFIFO.size() < 128)
+	{
+		GXSTAT |= (1 << 25);
+		if (IRQMode == 1)
+			m_interruptManager->NDS9_requestInterrupt(InterruptType::GXFIFO);
+	}
+	if (GXFIFO.size() == 0)
+	{
+		GXSTAT |= (1 << 26);
+		if (IRQMode == 2)
+			m_interruptManager->NDS9_requestInterrupt(InterruptType::GXFIFO);
+	}
+
+	if (GXFIFO.empty())
+		return;
+
+	GXFIFO.pop();
+	GXSTAT |= (1 << 27);
+}
+
+void GPU::GXFIFOEventHandler(void* context)
+{
+	GPU* thisPtr = (GPU*)context;
+	thisPtr->onProcessCommandEvent();
 }

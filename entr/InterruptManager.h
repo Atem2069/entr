@@ -22,6 +22,7 @@ enum class InterruptType
 	IPCSend = (1 << 17),
 	IPCReceive = (1 << 18),
 	GamecardTransferComplete = (1<<19),
+	GXFIFO=(1<<21),
 	SPI=(1<<23)
 	//todo: more interrupt sources
 };
