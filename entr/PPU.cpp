@@ -1318,7 +1318,119 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	case 0x0400001F:
 		m_registers->BG3VOFS &= 0x00FF; m_registers->BG3VOFS |= ((value & 0b1) << 8);
 		break;
-	//default:
+	case 0x04000020:
+		m_registers->BG2PA &= 0xFF00; m_registers->BG2PA |= value;
+		break;
+	case 0x04000021:
+		m_registers->BG2PA &= 0x00FF; m_registers->BG2PA |= (value << 8);
+		break;
+	case 0x04000022:
+		m_registers->BG2PB &= 0xFF00; m_registers->BG2PB |= value;
+		break;
+	case 0x04000023:
+		m_registers->BG2PB &= 0x00FF; m_registers->BG2PB |= (value << 8);
+		break;
+	case 0x04000024:
+		m_registers->BG2PC &= 0xFF00; m_registers->BG2PC |= value;
+		break;
+	case 0x04000025:
+		m_registers->BG2PC &= 0x00FF; m_registers->BG2PC |= (value<<8);
+		break;
+	case 0x04000026:
+		m_registers->BG2PD &= 0xFF00; m_registers->BG2PD |= value;
+		break;
+	case 0x04000027:
+		m_registers->BG2PD &= 0x00FF; m_registers->BG2PD |= (value << 8);
+		break;
+	case 0x04000028:
+		m_registers->reg_BG2X &= 0xFFFFFF00; m_registers->reg_BG2X |= value;
+		m_registers->BG2X_dirty = true;
+		break;
+	case 0x04000029:
+		m_registers->reg_BG2X &= 0xFFFF00FF; m_registers->reg_BG2X |= (value << 8);
+		m_registers->BG2X_dirty = true;
+		break;
+	case 0x0400002A:
+		m_registers->reg_BG2X &= 0xFF00FFFF; m_registers->reg_BG2X |= (value << 16);
+		m_registers->BG2X_dirty = true;
+		break;
+	case 0x0400002B:
+		m_registers->reg_BG2X &= 0x00FFFFFF; m_registers->reg_BG2X |= (value << 24);
+		m_registers->BG2X_dirty = true;
+		break;
+	case 0x0400002C:
+		m_registers->reg_BG2Y &= 0xFFFFFF00; m_registers->reg_BG2Y |= value;
+		m_registers->BG2Y_dirty = true;
+		break;
+	case 0x0400002D:
+		m_registers->reg_BG2Y &= 0xFFFF00FF; m_registers->reg_BG2Y |= (value << 8);
+		m_registers->BG2Y_dirty = true;
+		break;
+	case 0x0400002E:
+		m_registers->reg_BG2Y &= 0xFF00FFFF; m_registers->reg_BG2Y |= (value << 16);
+		m_registers->BG2Y_dirty = true;
+		break;
+	case 0x0400002F:
+		m_registers->reg_BG2Y &= 0x00FFFFFF; m_registers->reg_BG2Y |= (value << 24);
+		m_registers->BG2Y_dirty = true;
+		break;
+	case 0x04000030:
+		m_registers->BG3PA &= 0xFF00; m_registers->BG3PA |= value;
+		break;
+	case 0x04000031:
+		m_registers->BG3PA &= 0x00FF; m_registers->BG3PA |= (value << 8);
+		break;
+	case 0x04000032:
+		m_registers->BG3PB &= 0xFF00; m_registers->BG3PB |= value;
+		break;
+	case 0x04000033:
+		m_registers->BG3PB &= 0x00FF; m_registers->BG3PB |= (value << 8);
+		break;
+	case 0x04000034:
+		m_registers->BG3PC &= 0xFF00; m_registers->BG3PC |= value;
+		break;
+	case 0x04000035:
+		m_registers->BG3PC &= 0x00FF; m_registers->BG3PC |= (value << 8);
+		break;
+	case 0x04000036:
+		m_registers->BG3PD &= 0xFF00; m_registers->BG3PD |= value;
+		break;
+	case 0x04000037:
+		m_registers->BG3PD &= 0x00FF; m_registers->BG3PD |= (value << 8);
+		break;
+	case 0x04000038:
+		m_registers->reg_BG3X &= 0xFFFFFF00; m_registers->reg_BG3X |= value;
+		m_registers->BG3X_dirty = true;
+		break;
+	case 0x04000039:
+		m_registers->reg_BG3X &= 0xFFFF00FF; m_registers->reg_BG3X |= (value << 8);
+		m_registers->BG3X_dirty = true;
+		break;
+	case 0x0400003A:
+		m_registers->reg_BG3X &= 0xFF00FFFF; m_registers->reg_BG3X |= (value << 16);
+		m_registers->BG3X_dirty = true;
+		break;
+	case 0x0400003B:
+		m_registers->reg_BG3X &= 0x00FFFFFF; m_registers->reg_BG3X |= (value << 24);
+		m_registers->BG3X_dirty = true;
+		break;
+	case 0x0400003C:
+		m_registers->reg_BG3Y &= 0xFFFFFF00; m_registers->reg_BG3Y |= value;
+		m_registers->BG3Y_dirty = true;
+		break;
+	case 0x0400003D:
+		m_registers->reg_BG3Y &= 0xFFFF00FF; m_registers->reg_BG3Y |= (value << 8);
+		m_registers->BG3Y_dirty = true;
+		break;
+	case 0x0400003E:
+		m_registers->reg_BG3Y &= 0xFF00FFFF; m_registers->reg_BG3Y |= (value << 16);
+		m_registers->BG3Y_dirty = true;
+		break;
+	case 0x0400003F:
+		m_registers->reg_BG3Y &= 0x00FFFFFF; m_registers->reg_BG3Y |= (value << 24);
+		m_registers->BG3Y_dirty = true;
+		break;
+		//default:
 	//	Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));
 	}
 }

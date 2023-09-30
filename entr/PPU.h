@@ -27,6 +27,23 @@ struct PPURegisters
 	uint16_t BG2VOFS;
 	uint16_t BG3HOFS;
 	uint16_t BG3VOFS;
+	//reg_BGnX/Y is the value the CPU writes. BGnX/Y is the latched value the PPU reads.
+	uint32_t reg_BG2X = {}, BG2X = {};
+	uint32_t reg_BG2Y = {}, BG2Y = {};
+	uint32_t reg_BG3X = {}, BG3X = {};
+	uint32_t reg_BG3Y = {}, BG3Y = {};
+	bool BG2X_dirty = false, BG2Y_dirty = false, BG3X_dirty = false, BG3Y_dirty = false;	//'dirty' flags to determine if reference points were written.
+
+	//dx=1,dmy=1 might not be right. just using identity matrix for default vals
+	uint16_t BG2PA = 1;
+	uint16_t BG2PB = 0;
+	uint16_t BG2PC = 0;
+	uint16_t BG2PD = 1;
+
+	uint16_t BG3PA = 1;
+	uint16_t BG3PB = 0;
+	uint16_t BG3PC = 0;
+	uint16_t BG3PD = 1;
 };
 
 enum class Engine
