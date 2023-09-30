@@ -10,20 +10,28 @@ void ARM7TDMI::init(uint32_t entry, Bus* bus, InterruptManager* interruptManager
 	m_bus = bus;
 	m_interruptManager = interruptManager;
 	m_scheduler = scheduler;
-	CPSR = 0x1F;				//we're direct booting, so maybe starts in sys or whatever?
-	m_lastCheckModeBits = 0x1F;
 	for (int i = 0; i < 16; i++)
 		R[i] = 0;
 
-	R[12] = entry; R[14] = entry;
-	R[13] = 0x0380FD80;
-	irqBankedRegisters[0] = 0x0380FF80;
-	irqBankedRegisters[1] = 0;
-	svcBankedRegisters[0] = 0x0380FFC0;
-	svcBankedRegisters[1] = 0;
+	if (entry == 0)
+	{
+		CPSR = 0x13;				//CPU starts in svc on cold boot
+		m_lastCheckModeBits = 0x13;
+	}
+	else
+	{
+		CPSR = 0x1F;				//setup CPSR=sys on direct boot, init stack pointers, etc.
+		m_lastCheckModeBits = 0x1F;
+		R[12] = entry; R[14] = entry;
+		R[13] = 0x0380FD80;
+		irqBankedRegisters[0] = 0x0380FF80;
+		irqBankedRegisters[1] = 0;
+		svcBankedRegisters[0] = 0x0380FFC0;
+		svcBankedRegisters[1] = 0;
 
-	//27FFE34h/27FFE24h
-	m_bus->NDS7_write32(0x027FFE34, entry);
+		//27FFE34h/27FFE24h
+		m_bus->NDS7_write32(0x027FFE34, entry);
+	}
 
 	R[15] = entry;
 	flushPipeline();

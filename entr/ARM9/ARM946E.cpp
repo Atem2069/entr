@@ -10,20 +10,29 @@ void ARM946E::init(uint32_t entry, Bus* bus, InterruptManager* interruptManager,
 	m_bus = bus;
 	m_interruptManager = interruptManager;
 	m_scheduler = scheduler;
-	CPSR = 0x1F;				//we're direct booting, so maybe starts in sys or whatever?
-	m_lastCheckModeBits = 0x1F;
 	for (int i = 0; i < 16; i++)
 		R[i] = 0;
+							
+	if (entry == 0xFFFF0000)		//not an ideal solution :)
+	{
+		CPSR = 0x13;				//CPU starts in svc mode upon cold boot
+		m_lastCheckModeBits = 0x13;
+	}
+	else
+	{
+		CPSR = 0x1F;				//CPU is in sys when direct booting, stack pointers, LR, etc. should be certain values
+		m_lastCheckModeBits = 0x1F;	
 
-	R[12] = entry; R[14] = entry;
-	R[13] = 0x03002F7C;
-	irqBankedRegisters[0] = 0x03003F80;
-	irqBankedRegisters[1] = 0;
-	svcBankedRegisters[0] = 0x03003FC0;
-	svcBankedRegisters[1] = 0;
+		R[12] = entry; R[14] = entry;
+		R[13] = 0x03002F7C;
+		irqBankedRegisters[0] = 0x03003F80;
+		irqBankedRegisters[1] = 0;
+		svcBankedRegisters[0] = 0x03003FC0;
+		svcBankedRegisters[1] = 0;
 
-	//27FFE34h/27FFE24h
-	m_bus->NDS9_write32(0x027FFE24, entry);
+		//27FFE34h/27FFE24h
+		m_bus->NDS9_write32(0x027FFE24, entry);
+	}
 
 	R[15] = entry + 8;
 	m_pipelineFlushed = false;
