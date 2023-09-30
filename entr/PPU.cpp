@@ -140,6 +140,8 @@ void PPU::HBlank()
 	VCOUNT++;
 	checkVCOUNTInterrupt();
 
+	checkAffineRegsDirty();				//if affine reference points updated during frame, they're re-latched. not sure exactly when, but hblank seems reasonable
+
 	if (VCOUNT == 192)
 	{
 		//set vblank flag here, request vblank interrupt
@@ -183,6 +185,25 @@ void PPU::VBlank()
 		VCOUNT = 0;
 		checkVCOUNTInterrupt();
 		m_state = PPUState::HDraw;
+
+		//end of vblank: latch affine ref points for start of first scanline
+		m_engineARegisters.BG2X = m_engineARegisters.reg_BG2X;
+		m_engineARegisters.BG2Y = m_engineARegisters.reg_BG2Y;
+		m_engineARegisters.BG3X = m_engineARegisters.reg_BG3X;
+		m_engineARegisters.BG3Y = m_engineARegisters.reg_BG3Y;
+		m_engineARegisters.BG2X_dirty = false;
+		m_engineARegisters.BG2Y_dirty = false;
+		m_engineARegisters.BG3X_dirty = false;
+		m_engineARegisters.BG3Y_dirty = false;
+
+		m_engineBRegisters.BG2X = m_engineBRegisters.reg_BG2X;
+		m_engineBRegisters.BG2Y = m_engineBRegisters.reg_BG2Y;
+		m_engineBRegisters.BG3X = m_engineBRegisters.reg_BG3X;
+		m_engineBRegisters.BG3Y = m_engineBRegisters.reg_BG3Y;
+		m_engineBRegisters.BG2X_dirty = false;
+		m_engineBRegisters.BG2Y_dirty = false;
+		m_engineBRegisters.BG3X_dirty = false;
+		m_engineBRegisters.BG3Y_dirty = false;
 	}
 	else
 	{
@@ -623,6 +644,11 @@ template<Engine engine, int bg> void PPU::renderBackground()
 			renderTileIdx = (tileFetchIdx >> 3) & 0xFF;
 		}
 	}
+}
+
+template<Engine engine, int bg> void PPU::renderAffineBackground()
+{
+
 }
 
 template<Engine engine, int bg> void PPU::renderDirectColorBitmap()

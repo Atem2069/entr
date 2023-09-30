@@ -167,6 +167,7 @@ private:
 	template <Engine engine> void renderMode5();
 
 	template<Engine engine, int bg> void renderBackground();
+	template<Engine engine, int bg> void renderAffineBackground();
 	template<Engine engine, int bg> void renderDirectColorBitmap();
 	template<Engine engine, int bg> void render256ColorBitmap();
 	template<Engine engine> void renderSprites();
@@ -224,6 +225,38 @@ private:
 		if (ptr)
 			return ptr[address];
 		return 0;
+	}
+
+	inline void checkAffineRegsDirty()
+	{
+		//messy
+		if (m_engineARegisters.BG2X_dirty)
+			m_engineARegisters.BG2X = m_engineARegisters.reg_BG2X;
+		if (m_engineARegisters.BG2Y_dirty)
+			m_engineARegisters.BG2Y = m_engineARegisters.reg_BG2Y;
+		if (m_engineARegisters.BG3X_dirty)
+			m_engineARegisters.BG3X = m_engineARegisters.reg_BG3X;
+		if (m_engineARegisters.BG3Y_dirty)
+			m_engineARegisters.BG3Y = m_engineARegisters.reg_BG3Y;
+
+		if (m_engineBRegisters.BG2X_dirty)
+			m_engineBRegisters.BG2X = m_engineBRegisters.reg_BG2X;
+		if (m_engineBRegisters.BG2Y_dirty)
+			m_engineBRegisters.BG2Y = m_engineBRegisters.reg_BG2Y;
+		if (m_engineBRegisters.BG3X_dirty)
+			m_engineBRegisters.BG3X = m_engineBRegisters.reg_BG3X;
+		if (m_engineBRegisters.BG3Y_dirty)
+			m_engineBRegisters.BG3Y = m_engineBRegisters.reg_BG3Y;
+
+		m_engineARegisters.BG2X_dirty = false;
+		m_engineARegisters.BG2Y_dirty = false;
+		m_engineARegisters.BG3X_dirty = false;
+		m_engineARegisters.BG3Y_dirty = false;
+
+		m_engineBRegisters.BG2X_dirty = false;
+		m_engineBRegisters.BG2Y_dirty = false;
+		m_engineBRegisters.BG3X_dirty = false;
+		m_engineBRegisters.BG3Y_dirty = false;
 	}
 
 	void setVBlankFlag(bool value);
