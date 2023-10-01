@@ -476,10 +476,11 @@ template<Engine engine, int bg> void PPU::renderBackground()
 {
 	PPURegisters* m_regs = {};
 	BackgroundLayer* m_backgroundLayers = m_engineABgLayers;
-	uint32_t screenBase = 0;
+	uint32_t screenBase = 0, charBase = 0;;
 	if (engine == Engine::A)
 	{
 		screenBase = (((m_engineARegisters.DISPCNT >> 27) & 0b111) * 65536);
+		charBase = (((m_engineARegisters.DISPCNT >> 24) & 0b111) * 65536);
 		m_regs = &m_engineARegisters;
 		if (((m_regs->DISPCNT >> 3) & 0b1) && bg==0)		//do not render BG0 if 3d bit set
 			return;
@@ -583,7 +584,7 @@ template<Engine engine, int bg> void PPU::renderBackground()
 		static constexpr uint32_t tileByteSizeLUT[2] = { 32,64 };
 		static constexpr uint32_t tileRowPitchLUT[2] = { 4,8 };
 
-		uint32_t tileMapBaseAddress = (tileDataBaseBlock * 16384) + (tileNumber * tileByteSizeLUT[hiColor]); //find correct tile based on just the tile number
+		uint32_t tileMapBaseAddress = charBase + (tileDataBaseBlock * 16384) + (tileNumber * tileByteSizeLUT[hiColor]); //find correct tile based on just the tile number
 		tileMapBaseAddress += (yMod8 * tileRowPitchLUT[hiColor]);									//then extract correct row of tile info, row pitch says how large each row is in bytes
 
 		//todo: clean this bit up
@@ -655,12 +656,13 @@ template<Engine engine, int bg> void PPU::renderAffineBackground()
 {
 	PPURegisters* m_regs = nullptr;
 	BackgroundLayer* m_backgroundLayers = nullptr;
-	uint32_t screenBase = 0;
+	uint32_t screenBase = 0, charBase=0;
 	if constexpr (engine == Engine::A)
 	{
 		m_regs = &m_engineARegisters;
 		m_backgroundLayers = m_engineABgLayers;
-		screenBase = (((m_regs->DISPCNT) >> 27) & 0b11) * 65536;
+		screenBase = (((m_regs->DISPCNT) >> 27) & 0b111) * 65536;
+		charBase = (((m_regs->DISPCNT) >> 24) & 0b111) * 65536;
 	}
 	else
 	{
@@ -668,44 +670,50 @@ template<Engine engine, int bg> void PPU::renderAffineBackground()
 		m_backgroundLayers = m_engineBBgLayers;
 	}
 
-	uint16_t ctrlReg = {}, dx = {}, dy = {}, dmx = {}, dmy = {};
+	uint16_t ctrlReg = {};
+	int16_t dx = {}, dy = {}, dmx = {}, dmy = {};
 	int32_t xRef = {}, yRef = {};
 
 	switch (bg)
 	{
 	case 2:
 		ctrlReg = m_regs->BG2CNT;
-		xRef = m_regs->BG2X;
-		yRef = m_regs->BG2Y;
+		xRef = m_regs->BG2X&0x0FFFFFFF;
+		yRef = m_regs->BG2Y&0x0FFFFFFF;
+
+		if ((xRef >> 27) & 0b1)
+			xRef |= 0xF0000000;
+		if ((yRef >> 27) & 0b1)
+			yRef |= 0xF0000000;
+
 		dx = m_regs->BG2PA;
 		dmx = m_regs->BG2PB;
 		dy = m_regs->BG2PC;
 		dmy = m_regs->BG2PD;
 
 		//hacky: doesn't account for mosaic
-		m_regs->BG2X += dmx;
-		m_regs->BG2Y += dmy;
+		m_regs->BG2X = (xRef+dmx) & 0x0FFFFFFF;
+		m_regs->BG2Y = (yRef+dmy) & 0x0FFFFFFF;
 		break;
 	case 3:
 		ctrlReg = m_regs->BG3CNT;
-		xRef = m_regs->BG3X;
-		yRef = m_regs->BG3Y;
+		xRef = m_regs->BG3X&0x0FFFFFFF;
+		yRef = m_regs->BG3Y&0x0FFFFFFF;
+
+		if ((xRef >> 27) & 0b1)
+			xRef |= 0xF0000000;
+		if ((yRef >> 27) & 0b1)
+			yRef |= 0xF0000000;
+
 		dx = m_regs->BG3PA;
 		dmx = m_regs->BG3PB;
 		dy = m_regs->BG3PC;
 		dmy = m_regs->BG3PD;
 
-		m_regs->BG3X += dmx;
-		m_regs->BG3Y += dmy;
+		m_regs->BG3X = (xRef+dmx) & 0x0FFFFFFF;
+		m_regs->BG3Y = (yRef+dmy) & 0x0FFFFFFF;
 		break;
 	}
-
-	xRef &= 0x0FFFFFFF;
-	if ((xRef >> 27) & 0b1)
-		xRef |= 0xF0000000;
-	yRef &= 0x0FFFFFFF;
-	if ((yRef >> 27) & 0b1)
-		yRef |= 0xF0000000;
 
 	uint8_t priority = ctrlReg & 0b11;
 	m_backgroundLayers[bg].priority = priority;
@@ -717,13 +725,24 @@ template<Engine engine, int bg> void PPU::renderAffineBackground()
 	static constexpr uint32_t wrapLUT[4] = { 128,256,512,1024 };
 	uint32_t xWrap = wrapLUT[screenSizeIdx];
 	uint32_t yWrap = wrapLUT[screenSizeIdx];
+	bool overflowWrap = ((ctrlReg >> 13) & 0b1);
 
 	for (int x = 0; x < 256; x++, calcAffineCoords(xRef, yRef, dx, dy))
 	{
 		uint32_t fetcherY = (uint32_t)((int32_t)yRef >> 8);
-		fetcherY &= (yWrap - 1);							//should handle case where overflow wrap bit not set ..
+		if ((fetcherY >= yWrap) && !overflowWrap)
+		{
+			m_backgroundLayers[bg].lineBuffer[x] = 0x8000;
+			continue;
+		}
+		fetcherY &= (yWrap - 1);							
 
 		uint32_t fetcherX = (uint32_t)((int32_t)xRef >> 8);
+		if ((fetcherX >= xWrap) && !overflowWrap)
+		{
+			m_backgroundLayers[bg].lineBuffer[x] = 0x8000;
+			continue;
+		}
 		fetcherX &= (xWrap - 1);	
 
 		uint32_t bgMapAddr = (fetcherY >> 3) * (xWrap >> 3);
@@ -735,11 +754,14 @@ template<Engine engine, int bg> void PPU::renderAffineBackground()
 		tileDataAddr += ((fetcherY & 7) * 8);
 		tileDataAddr += (fetcherX & 7);	
 
-		uint32_t palAddr = ppuReadBg<engine>(tileDataAddr) << 1;
-
+		uint32_t palAddr = ppuReadBg<engine>(charBase+tileDataAddr) << 1;
+		if (engine == Engine::B)
+			palAddr += 0x400;
 		uint16_t col = m_mem->PAL[palAddr] | (m_mem->PAL[palAddr + 1] << 8);
-
-		m_backgroundLayers[bg].lineBuffer[x] = col;
+		if (palAddr)
+			m_backgroundLayers[bg].lineBuffer[x] = col & 0x7FFF;
+		else
+			m_backgroundLayers[bg].lineBuffer[x] = 0x8000;
 	}
 }
 
