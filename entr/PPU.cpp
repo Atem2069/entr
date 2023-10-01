@@ -655,10 +655,12 @@ template<Engine engine, int bg> void PPU::renderAffineBackground()
 {
 	PPURegisters* m_regs = nullptr;
 	BackgroundLayer* m_backgroundLayers = nullptr;
+	uint32_t screenBase = 0;
 	if constexpr (engine == Engine::A)
 	{
 		m_regs = &m_engineARegisters;
 		m_backgroundLayers = m_engineABgLayers;
+		screenBase = (((m_regs->DISPCNT) >> 27) & 0b11) * 65536;
 	}
 	else
 	{
@@ -708,9 +710,36 @@ template<Engine engine, int bg> void PPU::renderAffineBackground()
 	uint8_t priority = ctrlReg & 0b11;
 	m_backgroundLayers[bg].priority = priority;
 
+	uint32_t bgMapBaseBlock = (ctrlReg >> 8) & 0x1F;
+	uint32_t tileDataBaseBlock = (ctrlReg >> 2) & 0xF;
+	uint8_t screenSizeIdx = (ctrlReg >> 14) & 0b11;
+
+	static constexpr uint32_t wrapLUT[4] = { 128,256,512,1024 };
+	uint32_t xWrap = wrapLUT[screenSizeIdx];
+	uint32_t yWrap = wrapLUT[screenSizeIdx];
+
 	for (int x = 0; x < 256; x++, calcAffineCoords(xRef, yRef, dx, dy))
 	{
-		//....
+		uint32_t fetcherY = (uint32_t)((int32_t)yRef >> 8);
+		fetcherY &= (yWrap - 1);							//should handle case where overflow wrap bit not set ..
+
+		uint32_t fetcherX = (uint32_t)((int32_t)xRef >> 8);
+		fetcherX &= (xWrap - 1);	
+
+		uint32_t bgMapAddr = (fetcherY >> 3) * (xWrap >> 3);
+		bgMapAddr += (fetcherX >> 3);
+
+		uint32_t tileIdx = ppuReadBg<engine>(screenBase + (bgMapBaseBlock * 2048) + bgMapAddr);
+
+		uint32_t tileDataAddr = (tileDataBaseBlock * 16384) + (tileIdx * 64);	//64 bytes: each pixel in 8x8 tile encodes palette entry
+		tileDataAddr += ((fetcherY & 7) * 8);
+		tileDataAddr += (fetcherX & 7);	
+
+		uint32_t palAddr = ppuReadBg<engine>(tileDataAddr) << 1;
+
+		uint16_t col = m_mem->PAL[palAddr] | (m_mem->PAL[palAddr + 1] << 8);
+
+		m_backgroundLayers[bg].lineBuffer[x] = col;
 	}
 }
 
