@@ -273,7 +273,8 @@ template<Engine engine> void PPU::renderMode1()
 	if (m_backgroundLayers[2].enabled)
 		renderBackground<engine, 2>();
 	m_backgroundLayers[3].priority = 255;
-	//todo: render bg 3 (affine)
+	if (m_backgroundLayers[3].enabled)
+		renderAffineBackground<engine, 3>();
 }
 
 template<Engine engine> void PPU::renderMode2()
@@ -291,8 +292,11 @@ template<Engine engine> void PPU::renderMode2()
 	if (m_backgroundLayers[1].enabled)
 		renderBackground<engine, 1>();
 	m_backgroundLayers[2].priority = 255;
+	if (m_backgroundLayers[2].enabled)
+		renderAffineBackground<engine, 2>();
 	m_backgroundLayers[3].priority = 255;
-	//todo: render bgs 2,3 (affine)
+	if (m_backgroundLayers[3].enabled)
+		renderAffineBackground<engine, 3>();
 }
 
 template<Engine engine> void PPU::renderMode3()
@@ -350,8 +354,9 @@ template<Engine engine> void PPU::renderMode4()
 	if (m_backgroundLayers[1].enabled)
 		renderBackground<engine, 1>();
 	m_backgroundLayers[2].priority = 255;
+	if (m_backgroundLayers[2].enabled)
+		renderAffineBackground<engine, 2>();
 	m_backgroundLayers[3].priority = 255;
-	//todo: render bg 2 (affine)
 	if (((m_registers->BG3CNT >> 7) & 0b1) && m_backgroundLayers[3].enabled)
 	{
 		switch ((m_registers->BG3CNT >> 2) & 0b1)
@@ -648,7 +653,65 @@ template<Engine engine, int bg> void PPU::renderBackground()
 
 template<Engine engine, int bg> void PPU::renderAffineBackground()
 {
+	PPURegisters* m_regs = nullptr;
+	BackgroundLayer* m_backgroundLayers = nullptr;
+	if constexpr (engine == Engine::A)
+	{
+		m_regs = &m_engineARegisters;
+		m_backgroundLayers = m_engineABgLayers;
+	}
+	else
+	{
+		m_regs = &m_engineBRegisters;
+		m_backgroundLayers = m_engineBBgLayers;
+	}
 
+	uint16_t ctrlReg = {}, dx = {}, dy = {}, dmx = {}, dmy = {};
+	int32_t xRef = {}, yRef = {};
+
+	switch (bg)
+	{
+	case 2:
+		ctrlReg = m_regs->BG2CNT;
+		xRef = m_regs->BG2X;
+		yRef = m_regs->BG2Y;
+		dx = m_regs->BG2PA;
+		dmx = m_regs->BG2PB;
+		dy = m_regs->BG2PC;
+		dmy = m_regs->BG2PD;
+
+		//hacky: doesn't account for mosaic
+		m_regs->BG2X += dmx;
+		m_regs->BG2Y += dmy;
+		break;
+	case 3:
+		ctrlReg = m_regs->BG3CNT;
+		xRef = m_regs->BG3X;
+		yRef = m_regs->BG3Y;
+		dx = m_regs->BG3PA;
+		dmx = m_regs->BG3PB;
+		dy = m_regs->BG3PC;
+		dmy = m_regs->BG3PD;
+
+		m_regs->BG3X += dmx;
+		m_regs->BG3Y += dmy;
+		break;
+	}
+
+	xRef &= 0x0FFFFFFF;
+	if ((xRef >> 27) & 0b1)
+		xRef |= 0xF0000000;
+	yRef &= 0x0FFFFFFF;
+	if ((yRef >> 27) & 0b1)
+		yRef |= 0xF0000000;
+
+	uint8_t priority = ctrlReg & 0b11;
+	m_backgroundLayers[bg].priority = priority;
+
+	for (int x = 0; x < 256; x++, calcAffineCoords(xRef, yRef, dx, dy))
+	{
+		//....
+	}
 }
 
 template<Engine engine, int bg> void PPU::renderDirectColorBitmap()

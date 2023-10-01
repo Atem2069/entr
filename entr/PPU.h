@@ -259,6 +259,17 @@ private:
 		m_engineBRegisters.BG3Y_dirty = false;
 	}
 
+	inline void calcAffineCoords(int32_t& xRef, int32_t& yRef, int16_t dx, int16_t dy)
+	{
+		xRef += dx;
+		yRef += dy;
+	}
+
+	inline void updateAffineRegisters(int bg)
+	{
+
+	}
+
 	void setVBlankFlag(bool value);
 	void setHBlankFlag(bool value);
 	void NDS7_setVCounterFlag(bool value);
