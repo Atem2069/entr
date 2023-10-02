@@ -167,7 +167,7 @@ private:
 	template <Engine engine> void renderMode5();
 
 	template<Engine engine, int bg> void renderBackground();
-	template<Engine engine, int bg> void renderAffineBackground();
+	template<Engine engine, int bg, bool extended> void renderAffineBackground();
 	template<Engine engine, int bg> void renderDirectColorBitmap();
 	template<Engine engine, int bg> void render256ColorBitmap();
 	template<Engine engine> void renderSprites();

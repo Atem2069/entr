@@ -274,7 +274,7 @@ template<Engine engine> void PPU::renderMode1()
 		renderBackground<engine, 2>();
 	m_backgroundLayers[3].priority = 255;
 	if (m_backgroundLayers[3].enabled)
-		renderAffineBackground<engine, 3>();
+		renderAffineBackground<engine, 3, false>();
 }
 
 template<Engine engine> void PPU::renderMode2()
@@ -293,10 +293,10 @@ template<Engine engine> void PPU::renderMode2()
 		renderBackground<engine, 1>();
 	m_backgroundLayers[2].priority = 255;
 	if (m_backgroundLayers[2].enabled)
-		renderAffineBackground<engine, 2>();
+		renderAffineBackground<engine, 2, false>();
 	m_backgroundLayers[3].priority = 255;
 	if (m_backgroundLayers[3].enabled)
-		renderAffineBackground<engine, 3>();
+		renderAffineBackground<engine, 3, false>();
 }
 
 template<Engine engine> void PPU::renderMode3()
@@ -321,17 +321,22 @@ template<Engine engine> void PPU::renderMode3()
 	if (m_backgroundLayers[2].enabled)
 		renderBackground<engine, 2>();
 	m_backgroundLayers[3].priority = 255;
-	if (((m_registers->BG3CNT >> 7) & 0b1) && m_backgroundLayers[3].enabled)
+	if (m_backgroundLayers[3].enabled)
 	{
-		switch ((m_registers->BG3CNT >> 2) & 0b1)
+		if (((m_registers->BG3CNT >> 7) & 0b1))
 		{
-		case 0:
-			render256ColorBitmap<engine, 3>();
-			break;
-		case 1:
-			renderDirectColorBitmap<engine, 3>();
-			break;
+			switch ((m_registers->BG3CNT >> 2) & 0b1)
+			{
+			case 0:
+				render256ColorBitmap<engine, 3>();
+				break;
+			case 1:
+				renderDirectColorBitmap<engine, 3>();
+				break;
+			}
 		}
+		else
+			renderAffineBackground<engine, 3, true>();
 	}
 }
 
@@ -355,19 +360,24 @@ template<Engine engine> void PPU::renderMode4()
 		renderBackground<engine, 1>();
 	m_backgroundLayers[2].priority = 255;
 	if (m_backgroundLayers[2].enabled)
-		renderAffineBackground<engine, 2>();
+		renderAffineBackground<engine, 2,false>();
 	m_backgroundLayers[3].priority = 255;
-	if (((m_registers->BG3CNT >> 7) & 0b1) && m_backgroundLayers[3].enabled)
+	if (m_backgroundLayers[3].enabled)
 	{
-		switch ((m_registers->BG3CNT >> 2) & 0b1)
+		if (((m_registers->BG3CNT >> 7) & 0b1))
 		{
-		case 0:
-			render256ColorBitmap<engine, 3>();
-			break;
-		case 1:
-			renderDirectColorBitmap<engine, 3>();
-			break;
+			switch ((m_registers->BG3CNT >> 2) & 0b1)
+			{
+			case 0:
+				render256ColorBitmap<engine, 3>();
+				break;
+			case 1:
+				renderDirectColorBitmap<engine, 3>();
+				break;
+			}
 		}
+		else
+			renderAffineBackground<engine, 3, true>();
 	}
 }
 
@@ -390,30 +400,40 @@ template<Engine engine> void PPU::renderMode5()
 	if (m_backgroundLayers[1].enabled)
 		renderBackground<engine, 1>();
 	m_backgroundLayers[2].priority = 255;
-	if (((m_registers->BG2CNT >> 7) & 0b1) && m_backgroundLayers[2].enabled)
+	if (m_backgroundLayers[2].enabled)
 	{
-		switch ((m_registers->BG2CNT >> 2) & 0b1)
+		if (((m_registers->BG2CNT >> 7) & 0b1))
 		{
-		case 0:
-			render256ColorBitmap<engine, 2>();
-			break;
-		case 1:
-			renderDirectColorBitmap<engine, 2>();
-			break;
+			switch ((m_registers->BG2CNT >> 2) & 0b1)
+			{
+			case 0:
+				render256ColorBitmap<engine, 2>();
+				break;
+			case 1:
+				renderDirectColorBitmap<engine, 2>();
+				break;
+			}
 		}
+		else
+			renderAffineBackground<engine, 2, true>();
 	}
 	m_backgroundLayers[3].priority = 255;
-	if (((m_registers->BG3CNT >> 7) & 0b1) && m_backgroundLayers[3].enabled)
+	if (m_backgroundLayers[3].enabled)
 	{
-		switch ((m_registers->BG3CNT >> 2) & 0b1)
+		if (((m_registers->BG3CNT >> 7) & 0b1))
 		{
-		case 0:
-			render256ColorBitmap<engine, 3>();
-			break;
-		case 1:
-			renderDirectColorBitmap<engine, 3>();
-			break;
+			switch ((m_registers->BG3CNT >> 2) & 0b1)
+			{
+			case 0:
+				render256ColorBitmap<engine, 3>();
+				break;
+			case 1:
+				renderDirectColorBitmap<engine, 3>();
+				break;
+			}
 		}
+		else
+			renderAffineBackground<engine, 3, true>();
 	}
 }
 
@@ -652,7 +672,7 @@ template<Engine engine, int bg> void PPU::renderBackground()
 	}
 }
 
-template<Engine engine, int bg> void PPU::renderAffineBackground()
+template<Engine engine, int bg, bool extended> void PPU::renderAffineBackground()
 {
 	PPURegisters* m_regs = nullptr;
 	BackgroundLayer* m_backgroundLayers = nullptr;
@@ -729,39 +749,63 @@ template<Engine engine, int bg> void PPU::renderAffineBackground()
 
 	for (int x = 0; x < 256; x++, calcAffineCoords(xRef, yRef, dx, dy))
 	{
+		m_backgroundLayers[bg].lineBuffer[x] = 0x8000;
 		uint32_t fetcherY = (uint32_t)((int32_t)yRef >> 8);
 		if ((fetcherY >= yWrap) && !overflowWrap)
-		{
-			m_backgroundLayers[bg].lineBuffer[x] = 0x8000;
 			continue;
-		}
 		fetcherY &= (yWrap - 1);							
 
 		uint32_t fetcherX = (uint32_t)((int32_t)xRef >> 8);
 		if ((fetcherX >= xWrap) && !overflowWrap)
-		{
-			m_backgroundLayers[bg].lineBuffer[x] = 0x8000;
 			continue;
-		}
 		fetcherX &= (xWrap - 1);	
 
 		uint32_t bgMapAddr = (fetcherY >> 3) * (xWrap >> 3);
 		bgMapAddr += (fetcherX >> 3);
 
-		uint32_t tileIdx = ppuReadBg<engine>(screenBase + (bgMapBaseBlock * 2048) + bgMapAddr);
+		uint32_t tileIdx = 0;
+		bool flipHorizontal = false, flipVertical = false;
 
-		uint32_t tileDataAddr = (tileDataBaseBlock * 16384) + (tileIdx * 64);	//64 bytes: each pixel in 8x8 tile encodes palette entry
-		tileDataAddr += ((fetcherY & 7) * 8);
-		tileDataAddr += (fetcherX & 7);	
+		if constexpr (extended)
+		{
+			bgMapAddr <<= 1;
+			uint8_t tileLow = ppuReadBg<engine>(screenBase + (bgMapBaseBlock * 2048) + bgMapAddr);
+			uint8_t tileHigh = ppuReadBg<engine>(screenBase + (bgMapBaseBlock * 2048) + bgMapAddr + 1);
+			uint16_t tile = (tileHigh << 8) | tileLow;
+			tileIdx = tile & 0x3FF;
+			flipHorizontal = (tile >> 10) & 0b1;
+			flipVertical = (tile >> 11) & 0b1;
+			uint32_t palette = (tile >> 12) & 0xF;
 
-		uint32_t palAddr = ppuReadBg<engine>(charBase+tileDataAddr) << 1;
-		if (engine == Engine::B)
-			palAddr += 0x400;
-		uint16_t col = m_mem->PAL[palAddr] | (m_mem->PAL[palAddr + 1] << 8);
-		if (palAddr)
-			m_backgroundLayers[bg].lineBuffer[x] = col & 0x7FFF;
+			uint32_t tileDataAddr = (tileDataBaseBlock * 16384) + (tileIdx * 64);
+			tileDataAddr += ((fetcherY & 7) * 8);
+			tileDataAddr += (fetcherX & 7);
+
+			uint32_t paletteEntry = ppuReadBg<engine>(charBase + tileDataAddr);
+			if (paletteEntry)
+			{
+				uint32_t palAddr = palette * 512;
+				palAddr += (paletteEntry << 1);
+				uint8_t colLow = ppuReadBgExtPal<engine>(bg, palAddr);
+				uint8_t colHigh = ppuReadBgExtPal<engine>(bg, palAddr + 1);
+				m_backgroundLayers[bg].lineBuffer[x] = ((colHigh << 8) | colLow) & 0x7FFF;
+			}
+		}
 		else
-			m_backgroundLayers[bg].lineBuffer[x] = 0x8000;
+		{
+			tileIdx = ppuReadBg<engine>(screenBase + (bgMapBaseBlock * 2048) + bgMapAddr);
+
+			uint32_t tileDataAddr = (tileDataBaseBlock * 16384) + (tileIdx * 64);	//64 bytes: each pixel in 8x8 tile encodes palette entry
+			tileDataAddr += ((fetcherY & 7) * 8);
+			tileDataAddr += (fetcherX & 7);
+
+			uint32_t palAddr = ppuReadBg<engine>(charBase + tileDataAddr) << 1;
+			if (engine == Engine::B)
+				palAddr += 0x400;
+			uint16_t col = m_mem->PAL[palAddr] | (m_mem->PAL[palAddr + 1] << 8);
+			if (palAddr)
+				m_backgroundLayers[bg].lineBuffer[x] = col & 0x7FFF;
+		}
 	}
 }
 
