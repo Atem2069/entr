@@ -2,14 +2,6 @@
 
 #include<iostream>
 
-struct VRAMBank
-{
-	bool ARM7;
-	uint8_t* VRAMBase;	//where the bank resides in our big vram buffer
-	uint32_t size;
-	uint32_t memBase;	//base address in memory it's mapped to
-};
-
 struct NDSMem
 {
 	uint8_t NDS7_BIOS[16384];
