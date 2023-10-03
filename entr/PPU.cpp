@@ -735,6 +735,8 @@ template<Engine engine, int bg, bool extended> void PPU::renderAffineBackground(
 		break;
 	}
 
+	bool extendedPalette = ((m_regs->DISPCNT >> 30) & 0b1);
+
 	uint8_t priority = ctrlReg & 0b11;
 	m_backgroundLayers[bg].priority = priority;
 
@@ -784,11 +786,24 @@ template<Engine engine, int bg, bool extended> void PPU::renderAffineBackground(
 			uint32_t paletteEntry = ppuReadBg<engine>(charBase + tileDataAddr);
 			if (paletteEntry)
 			{
-				uint32_t palAddr = palette * 512;
-				palAddr += (paletteEntry << 1);
-				uint8_t colLow = ppuReadBgExtPal<engine>(bg, palAddr);
-				uint8_t colHigh = ppuReadBgExtPal<engine>(bg, palAddr + 1);
-				m_backgroundLayers[bg].lineBuffer[x] = ((colHigh << 8) | colLow) & 0x7FFF;
+				if (extendedPalette)
+				{
+					uint32_t palAddr = palette * 512;
+					palAddr += (paletteEntry << 1);
+					uint8_t colLow = ppuReadBgExtPal<engine>(bg, palAddr);
+					uint8_t colHigh = ppuReadBgExtPal<engine>(bg, palAddr + 1);
+					m_backgroundLayers[bg].lineBuffer[x] = ((colHigh << 8) | colLow) & 0x7FFF;
+				}
+				else
+				{
+					uint32_t palAddr = 0;
+					if constexpr (engine == Engine::B)
+						palAddr = 0x400;
+					palAddr += (paletteEntry << 1);
+					uint8_t colLow = m_mem->PAL[palAddr];
+					uint8_t colHigh = m_mem->PAL[palAddr + 1];
+					m_backgroundLayers[bg].lineBuffer[x] = ((colHigh << 8) | colLow) & 0x7FFF;
+				}
 			}
 		}
 		else
