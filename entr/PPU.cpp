@@ -766,7 +766,6 @@ template<Engine engine, int bg, bool extended> void PPU::renderAffineBackground(
 		bgMapAddr += (fetcherX >> 3);
 
 		uint32_t tileIdx = 0;
-		bool flipHorizontal = false, flipVertical = false;
 
 		if constexpr (extended)
 		{
@@ -775,13 +774,17 @@ template<Engine engine, int bg, bool extended> void PPU::renderAffineBackground(
 			uint8_t tileHigh = ppuReadBg<engine>(screenBase + (bgMapBaseBlock * 2048) + bgMapAddr + 1);
 			uint16_t tile = (tileHigh << 8) | tileLow;
 			tileIdx = tile & 0x3FF;
-			flipHorizontal = (tile >> 10) & 0b1;
-			flipVertical = (tile >> 11) & 0b1;
+			bool flipHorizontal = ((tile >> 10) & 0b1)<< 3;
+			bool flipVertical = ((tile >> 11) & 0b1) << 3;
 			uint32_t palette = (tile >> 12) & 0xF;
 
 			uint32_t tileDataAddr = (tileDataBaseBlock * 16384) + (tileIdx * 64);
-			tileDataAddr += ((fetcherY & 7) * 8);
-			tileDataAddr += (fetcherX & 7);
+
+			uint32_t xOffs = flipHorizontal ? (7-(fetcherX & 7)) : (fetcherX & 7);
+			uint32_t yOffs = flipVertical ? (7 - (fetcherY & 7)) : (fetcherY & 7);
+
+			tileDataAddr += yOffs << 3;		//Y*8 - each row of tile is 8 bytes.
+			tileDataAddr += xOffs;
 
 			uint32_t paletteEntry = ppuReadBg<engine>(charBase + tileDataAddr);
 			if (paletteEntry)
