@@ -103,6 +103,7 @@ struct Window
 {
 	uint16_t x1, x2;
 	uint16_t y1, y2;
+	bool enabled;
 	bool layerDrawable[4];
 	bool objDrawable;
 	bool blendable;
@@ -162,7 +163,7 @@ private:
 
 	Window m_engineAWindows[4];
 	Window m_engineBWindows[4];
-	Window m_defaultWindow = { 0,0,0,0,{true,true,true,true},true,true };
+	Window m_defaultWindow = { 0,0,0,0,true,{true,true,true,true},true,true };
 
 	uint32_t m_renderBuffer[2][256 * 384];
 	bool pageIdx = false;
@@ -188,6 +189,7 @@ private:
 	template<Engine engine> void renderSprites();
 	template<Engine engine> void renderAffineSprite(OAMEntry* curSpriteEntry);
 	template<Engine engine> void composeLayers();
+	template<Engine engine> Window getPointAttributes(int x, int y);
 
 	template<Engine engine> uint16_t extractColorFromTile(uint32_t tileBase, uint32_t xOffset, bool hiColor, uint32_t palette);
 

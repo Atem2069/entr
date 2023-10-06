@@ -456,6 +456,8 @@ template<Engine engine> void PPU::composeLayers()
 
 	for (int i = 0; i < 256; i++)
 	{
+		Window pointAttribs = getPointAttributes<engine>(i, VCOUNT);
+
 		//offset into framebuffer to render into.
 		//each engine is assigned a screen (top/bottom) to render to - the framebuffer consists of both screens (bottom screen rendered directly below top)
 		uint32_t renderBase = (engine == Engine::A) ? EngineA_RenderBase : EngineB_RenderBase;
@@ -472,7 +474,7 @@ template<Engine engine> void PPU::composeLayers()
 		uint8_t bestPriority = 255;
 		for (int j = 3; j >= 0; j--)
 		{
-			if (m_backgroundLayers[j].enabled)
+			if (m_backgroundLayers[j].enabled && pointAttribs.layerDrawable[j])
 			{
 				uint16_t colAtLayer = m_backgroundLayers[j].lineBuffer[i];
 				if ((!(colAtLayer >> 15)) && m_backgroundLayers[j].priority <= bestPriority)
@@ -485,11 +487,32 @@ template<Engine engine> void PPU::composeLayers()
 
 		//check if sprites can really be drawn, lol
 		uint16_t spritePixel = spriteLineBuffer[i];
-		if ((!(spritePixel >> 15)) && spriteAttributeBuffer[i].priority <= bestPriority)
+		if ((!(spritePixel >> 15)) && spriteAttributeBuffer[i].priority <= bestPriority && pointAttribs.objDrawable)
 			finalCol = spritePixel;
 
 		m_renderBuffer[pageIdx][renderBase + (256 * VCOUNT) + i] = col16to32(finalCol);
 	}
+}
+
+template<Engine engine> Window PPU::getPointAttributes(int x, int y)
+{
+	Window* m_windows = nullptr;
+	if constexpr (engine == Engine::A)
+		m_windows = m_engineAWindows;
+	else
+		m_windows = m_engineBWindows;
+
+	if (!(m_windows[0].enabled || m_windows[1].enabled || m_windows[2].enabled))
+		return m_defaultWindow;
+
+	for (int i = 0; i < 2; i++)
+	{
+		if (m_windows[i].enabled && (x >= m_windows[i].x1 && (x < m_windows[i].x2 || m_windows[i].x1 > m_windows[i].x2)) && (y >= m_windows[i].y1 && (y < m_windows[i].y2 || m_windows[i].y1 > m_windows[i].y2)))
+			return m_windows[i];
+	}
+
+	//todo: obj window
+	return m_windows[3];	//outside window
 }
 
 template<Engine engine, int bg> void PPU::renderBackground()
@@ -1453,6 +1476,9 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 			if ((m_registers->DISPCNT >> i) & 0b1)
 				m_bgLayers[i-8].enabled = true;
 		}
+		m_windows[0].enabled = ((m_registers->DISPCNT >> 13) & 0b1);
+		m_windows[1].enabled = ((m_registers->DISPCNT >> 14) & 0b1);
+		m_windows[2].enabled = ((m_registers->DISPCNT >> 15) & 0b1);
 		break;
 	case 0x04000002:
 		m_registers->DISPCNT &= 0xFF00FFFF; m_registers->DISPCNT |= (value << 16);
