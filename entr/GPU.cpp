@@ -57,6 +57,8 @@ void GPU::writeCmdPort(uint32_t address, uint32_t value)
 {
 	//todo: figure out port from address, some way to enqueue..
 	//hopefully parameters are sent to the port too? that would probably make my life easier.
+	uint32_t cmd = ((address - 0x4000440) >> 2)+0x10;
+	//std::cout << "cmd port: " << std::hex << address << " " << cmd << '\n';
 }
 
 //calling this every cycle is probably slow - could deschedule/schedule depending on whether

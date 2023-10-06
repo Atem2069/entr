@@ -1322,6 +1322,14 @@ uint8_t PPU::readIO(uint32_t address)
 		return m_engineARegisters.BG3CNT & 0xFF;
 	case 0x0400000F:
 		return ((m_engineARegisters.BG3CNT >> 8) & 0xFF);
+	case 0x04000048:
+		return m_engineARegisters.WININ & 0x3F;
+	case 0x04000049:
+		return (m_engineARegisters.WININ >> 8) & 0x3F;
+	case 0x0400004A:
+		return m_engineARegisters.WINOUT & 0x3F;
+	case 0x0400004B:
+		return (m_engineARegisters.WINOUT >> 8) & 0x3F;
 	case 0x04001000:
 		return m_engineBRegisters.DISPCNT & 0xFF;
 	case 0x04001001:
@@ -1346,6 +1354,14 @@ uint8_t PPU::readIO(uint32_t address)
 		return m_engineBRegisters.BG3CNT & 0xFF;
 	case 0x0400100F:
 		return ((m_engineBRegisters.BG3CNT >> 8) & 0xFF);
+	case 0x04001048:
+		return m_engineBRegisters.WININ & 0x3F;
+	case 0x04001049:
+		return (m_engineBRegisters.WININ >> 8) & 0x3F;
+	case 0x0400104A:
+		return m_engineBRegisters.WINOUT & 0x3F;
+	case 0x0400104B:
+		return (m_engineBRegisters.WINOUT >> 8) & 0x3F;
 	}
 	//Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO read! addr={:#x}", address));
 	return 0;
@@ -1355,16 +1371,19 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 {
 	PPURegisters* m_registers = nullptr;
 	BackgroundLayer* m_bgLayers = nullptr;
+	Window* m_windows = nullptr;
 	switch ((address >> 12) & 0xF)
 	{
 	case 0:
 		m_bgLayers = m_engineABgLayers;
 		m_registers = &m_engineARegisters;
+		m_windows = m_engineAWindows;
 		break;
 	case 1:
 		address &= ~0xF000;				//unset bits 12-15 (so addresses alias engine a regs)
 		m_bgLayers = m_engineBBgLayers;		//
 		m_registers = &m_engineBRegisters;	//writes modify engine b regs/layers instead
+		m_windows = m_engineBWindows;
 		break;
 	}
 	switch (address)
@@ -1631,6 +1650,58 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	case 0x0400003F:
 		m_registers->reg_BG3Y &= 0x00FFFFFF; m_registers->reg_BG3Y |= (value << 24);
 		m_registers->BG3Y_dirty = true;
+		break;
+	case 0x04000040:
+		m_windows[0].x2 = value;
+		break;
+	case 0x04000041:
+		m_windows[0].x1 = value;
+		break;
+	case 0x04000042:
+		m_windows[1].x2 == value;
+		break;
+	case 0x04000043:
+		m_windows[1].x1 = value;
+		break;
+	case 0x04000044:
+		m_windows[0].y2 = value;
+		break;
+	case 0x04000045:
+		m_windows[0].y1 = value;
+		break;
+	case 0x04000046:
+		m_windows[1].y2 = value;
+		break;
+	case 0x04000047:
+		m_windows[1].y1 = value;
+		break;
+	case 0x04000048:
+		m_registers->WININ &= 0xFF00; m_registers->WININ |= value;
+		for (int i = 0; i < 4; i++)
+			m_windows[0].layerDrawable[i] = (m_registers->WININ >> i) & 0b1;
+		m_windows[0].objDrawable = (m_registers->WININ >> 4) & 0b1;
+		m_windows[0].blendable = (m_registers->WININ >> 5) & 0b1;
+		break;
+	case 0x04000049:
+		m_registers->WININ &= 0xFF; m_registers->WININ |= (value << 8);
+		for (int i = 0; i < 4; i++)
+			m_windows[1].layerDrawable[i] = (m_registers->WININ >> (8 + i)) & 0b1;
+		m_windows[1].objDrawable = (m_registers->WININ >> 12) & 0b1;
+		m_windows[1].blendable = (m_registers->WININ >> 13) & 0b1;
+		break;
+	case 0x0400004A:
+		m_registers->WINOUT &= 0xFF00; m_registers->WINOUT |= value;
+		for (int i = 0; i < 4; i++)
+			m_windows[3].layerDrawable[i] = (m_registers->WINOUT >> i) & 0b1;
+		m_windows[3].objDrawable = (m_registers->WINOUT >> 4) & 0b1;
+		m_windows[3].blendable = (m_registers->WINOUT >> 5) & 0b1;
+		break;
+	case 0x0400004B:
+		m_registers->WINOUT &= 0x00FF; m_registers->WINOUT |= (value << 8);
+		for (int i = 0; i < 4; i++)
+			m_windows[2].layerDrawable[i] = (m_registers->WINOUT >> (8 + i)) & 0b1;
+		m_windows[2].objDrawable = (m_registers->WINOUT >> 12) & 0b1;
+		m_windows[2].blendable = (m_registers->WINOUT >> 13) & 0b1;
 		break;
 		//default:
 	//	Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));

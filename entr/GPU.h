@@ -35,6 +35,8 @@ private:
 
 	void processCommand();
 
+	std::queue<uint8_t> m_pendingCommands;
+	std::queue<uint32_t> m_pendingParameters;
 	std::queue<GXFIFOCommand> GXFIFO;
 
 	uint32_t GXSTAT = {};

@@ -27,6 +27,8 @@ struct PPURegisters
 	uint16_t BG2VOFS;
 	uint16_t BG3HOFS;
 	uint16_t BG3VOFS;
+	uint16_t WININ;
+	uint16_t WINOUT;
 	//reg_BGnX/Y is the value the CPU writes. BGnX/Y is the latched value the PPU reads.
 	uint32_t reg_BG2X = {}, BG2X = {};
 	uint32_t reg_BG2Y = {}, BG2Y = {};
@@ -97,6 +99,15 @@ union OAMEntry
 	};
 };
 
+struct Window
+{
+	uint16_t x1, x2;
+	uint16_t y1, y2;
+	bool layerDrawable[4];
+	bool objDrawable;
+	bool blendable;
+};
+
 class PPU
 {
 public:
@@ -148,6 +159,10 @@ private:
 	SpriteAttribute m_engineBSpriteAttribBuffer[256] = {};
 	uint16_t m_engineASpriteLineBuffer[256] = {};
 	uint16_t m_engineBSpriteLineBuffer[256] = {};
+
+	Window m_engineAWindows[4];
+	Window m_engineBWindows[4];
+	Window m_defaultWindow = { 0,0,0,0,{true,true,true,true},true,true };
 
 	uint32_t m_renderBuffer[2][256 * 384];
 	bool pageIdx = false;
