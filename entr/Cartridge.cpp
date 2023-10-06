@@ -317,6 +317,8 @@ void Cartridge::decodeKEY2Cmd()
 	case 0xB7:								//read data
 	{
 		uint32_t baseAddr = ((cartCommand >> 24) & 0xFFFFFFFF);
+		if (baseAddr <= 0x8000)				//data read cmds can't read secure area :(
+			baseAddr = 0x8000 + (baseAddr & 0x1FF);
 		memcpy(readBuffer, &m_cartData[baseAddr], transferLength);
 		break;
 	}
