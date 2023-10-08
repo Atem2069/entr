@@ -155,10 +155,8 @@ void Cartridge::write(uint32_t address, uint8_t value)
 		AUXSPICNT &= 0xFF; AUXSPICNT |= (value << 8);
 		if (!(AUXSPICNT >> 15))
 			m_backup->deselect();
-		Logger::msg(LoggerSeverity::Info, std::format("AUXSPICNT config. enable = {} chipselect hold = {} spi mode={}", (AUXSPICNT >> 15), chipSelectHold, ((AUXSPICNT >> 13) & 0b1)));
 		break;
 	case 0x040001A2:
-		Logger::msg(LoggerSeverity::Info, std::format("AUXSPIDATA write: {:#x}", value));
 		if (!(AUXSPICNT >> 15))
 			break;
 		SPIData = m_backup->sendCommand(value);
@@ -187,8 +185,6 @@ void Cartridge::write(uint32_t address, uint8_t value)
 		int shiftOffs = 56 - ((address & 0b111) << 3);
 		cartCommand &= ~(((uint64_t)0xFF) << shiftOffs);
 		cartCommand |= ((uint64_t)(value) << shiftOffs);
-		if ((address & 0b111) == 7)
-			Logger::msg(LoggerSeverity::Info, std::format("Cartridge command: {:#x}",cartCommand));
 		break;
 	}
 	}
@@ -203,10 +199,7 @@ uint32_t Cartridge::readGamecard()
 		result = readBuffer[bytesTransferred] | (readBuffer[bytesTransferred+1] << 8) | (readBuffer[bytesTransferred + 2] << 16) | (readBuffer[bytesTransferred + 3] << 24);
 		bytesTransferred += 4;
 		if (bytesTransferred == transferLength)
-		{
-			Logger::msg(LoggerSeverity::Info, "Transfer completed!");
 			endTransfer();
-		}
 	}
 	return result;
 }
@@ -221,8 +214,6 @@ void Cartridge::startTransfer()
 		transferLength = 4;
 	else
 		transferLength = 0x100 << transferBlockSize;
-
-	Logger::msg(LoggerSeverity::Info, std::format("Gamecard transfer started. length={}", transferLength));
 
 	switch (m_encryptionState)
 	{

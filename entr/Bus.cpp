@@ -112,8 +112,6 @@ uint8_t Bus::NDS7_read8(uint32_t address)
 		return NDS7_readIO8(address);
 	case 8: case 9:
 		return ((address >> 1) & 0xFFFF) >> ((address & 0b1)<<3);
-	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
 
 	return 0;
@@ -133,8 +131,6 @@ void Bus::NDS7_write8(uint32_t address, uint8_t value)
 	case 4:
 		NDS7_writeIO8(address,value);
 		break;
-	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
 }
 
@@ -157,8 +153,6 @@ uint16_t Bus::NDS7_read16(uint32_t address)
 		return NDS7_readIO16(address);
 	case 8: case 9:
 		return (address >> 1) & 0xFFFF;
-	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
 
 	return 0;
@@ -181,8 +175,6 @@ void Bus::NDS7_write16(uint32_t address, uint16_t value)
 	case 4:
 		NDS7_writeIO16(address, value);
 		break;
-	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
 }
 
@@ -205,8 +197,6 @@ uint32_t Bus::NDS7_read32(uint32_t address)
 		return NDS7_readIO32(address);
 	case 8: case 9:
 		return ((address >> 1) & 0xFFFF) | ((((address + 2) >> 1) & 0xFFFF) << 16);
-	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory read! addr={:#x}", address));
 	}
 
 	return 0;
@@ -229,8 +219,6 @@ void Bus::NDS7_write32(uint32_t address, uint32_t value)
 	case 4:
 		NDS7_writeIO32(address, value);
 		break;
-	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Unimplemented/unmapped memory write! addr={:#x}", address));
 	}
 }
 
@@ -251,7 +239,6 @@ uint8_t Bus::NDS9_read8(uint32_t address)
 	case 8: case 9: case 0xA:
 		return 0xFF;
 	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
 	}
 
@@ -281,7 +268,6 @@ void Bus::NDS9_write8(uint32_t address, uint8_t value)
 	case 8: case 9: case 0xA:
 		break;
 	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
 		break;
 	}
 
@@ -307,7 +293,6 @@ uint16_t Bus::NDS9_read16(uint32_t address)
 	case 8: case 9: case 0xA:
 		return 0xFFFF;
 	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
 	}
 
@@ -340,7 +325,6 @@ void Bus::NDS9_write16(uint32_t address, uint16_t value)
 	case 8: case 9: case 0xA:
 		break;
 	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
 		break;
 	}
 
@@ -366,7 +350,6 @@ uint32_t Bus::NDS9_read32(uint32_t address)
 	case 8: case 9: case 0xA:
 		return 0xFFFFFFFF;
 	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory read! addr={:#x}", address));
 		return 0;
 	}
 
@@ -399,7 +382,6 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 	case 8: case 9: case 0xA:
 		break;
 	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Invalid memory write! addr={:#x}", address));
 		break;
 	}
 }
@@ -451,7 +433,6 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return ((hack_soundBias >> 8) & 0b11);
 	//	return 1;
 	}
-	Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
 }
 
@@ -509,8 +490,6 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000505:
 		hack_soundBias &= 0x00FF; hack_soundBias |= ((value & 0b11) << 8);
 		break;
-	default:
-		Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
 	}
 }
 
@@ -604,7 +583,6 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 		return NDS9_POSTFLG;
 		return 0;
 	}
-	Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented IO read! addr={:#x}", address));
 	return 0;
 }
 
@@ -746,8 +724,6 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		NDS9_POSTFLG = 1;
 		NDS9_POSTFLG |= (value & 0b10);
 		break;
-	default:
-		Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented IO write! addr={:#x} val={:#x}", address, value));
 	}
 }
 
