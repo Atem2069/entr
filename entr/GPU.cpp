@@ -48,9 +48,31 @@ void GPU::write(uint32_t address, uint8_t value)
 
 void GPU::writeGXFIFO(uint32_t value)
 {
-	//this is dumb, just a placeholder
-	GXFIFOCommand cmd = {};
-	GXFIFO.push(cmd);
+	if (m_pendingCommands.empty())
+	{
+		for (int i = 0; i < 4; i++)
+			m_pendingCommands.push((value >> (i * 8)) & 0xFF);
+	}
+	else
+	{
+		m_pendingParameters.push(value);
+		uint8_t curCmd = m_pendingCommands.front();
+		int numParams = std::max(m_cmdParameterLUT[curCmd], (uint8_t)1);
+		if (m_pendingParameters.size() == numParams)
+		{
+			m_pendingCommands.pop();
+			while (!m_pendingParameters.empty())
+			{
+				uint32_t param = m_pendingParameters.front();
+				m_pendingParameters.pop();
+				GXFIFOCommand fifoCmd = {};
+				fifoCmd.command = curCmd;
+				fifoCmd.parameter = param;
+				GXFIFO.push(fifoCmd);
+			}
+			//Logger::msg(LoggerSeverity::Info, std::format("gpu: processed command {:#x}, param count={}", (uint32_t)curCmd, numParams));
+		}
+	}
 }
 
 void GPU::writeCmdPort(uint32_t address, uint32_t value)
@@ -59,6 +81,8 @@ void GPU::writeCmdPort(uint32_t address, uint32_t value)
 	//hopefully parameters are sent to the port too? that would probably make my life easier.
 	uint32_t cmd = ((address - 0x4000440) >> 2)+0x10;
 	//std::cout << "cmd port: " << std::hex << address << " " << cmd << '\n';
+	//if (!m_pendingCommands.empty())
+	//	Logger::msg(LoggerSeverity::Error, "gpu: what the fuck? unprocessed commands from gxfifo write, this shouldn't happen.");
 }
 
 //calling this every cycle is probably slow - could deschedule/schedule depending on whether
@@ -69,13 +93,8 @@ void GPU::onProcessCommandEvent()
 	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
 }
 
-void GPU::processCommand()
+void GPU::checkGXFIFOIRQs()
 {
-	GXSTAT &= ~(1 << 24);
-	GXSTAT &= ~(1 << 25);
-	GXSTAT &= ~(1 << 26);
-	GXSTAT &= ~(1 << 27);
-
 	uint8_t IRQMode = (GXSTAT >> 30) & 0b11;
 	if (GXFIFO.size() < 128)
 	{
@@ -89,11 +108,37 @@ void GPU::processCommand()
 		if (IRQMode == 2)
 			m_interruptManager->NDS9_requestInterrupt(InterruptType::GXFIFO);
 	}
+}
+
+void GPU::processCommand()
+{
+	//not a fan of this function as a whole, must admit. 
+	GXSTAT &= ~(1 << 24);
+	GXSTAT &= ~(1 << 25);
+	GXSTAT &= ~(1 << 26);
+	GXSTAT &= ~(1 << 27);
+
+	checkGXFIFOIRQs();		//initial check, as fifo may be empty.
 
 	if (GXFIFO.empty())
 		return;
 
+	GXFIFOCommand cmd = GXFIFO.front();
 	GXFIFO.pop();
+	
+	//this code is entirely useless. it just keeps cmd processor running and popping off cmds.
+	int numParams = m_cmdParameterLUT[cmd.command];
+	if (numParams)
+		numParams -= 1;
+	if (GXFIFO.size() < numParams)
+		Logger::msg(LoggerSeverity::Error, std::format("gpu: gxfifo state fucked, not enough params to process command!!!!! {} {}",GXFIFO.size(),numParams));
+	else
+	{
+		for (int i = 0; i < numParams; i++)
+			GXFIFO.pop();
+	}
+
+	checkGXFIFOIRQs();		//another check after cmds processed (a lot of values might have been popped);
 	GXSTAT |= (1 << 27);
 }
 

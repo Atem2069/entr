@@ -33,6 +33,7 @@ private:
 
 	void onProcessCommandEvent();
 
+	void checkGXFIFOIRQs();
 	void processCommand();
 
 	std::queue<uint8_t> m_pendingCommands;
