@@ -27,7 +27,9 @@ public:
 
 	static void GXFIFOEventHandler(void* context);
 
+	static uint16_t output[256 * 192];
 private:
+	uint16_t renderBuffer[256 * 192];
 	InterruptManager* m_interruptManager;
 	Scheduler* m_scheduler;
 
@@ -61,4 +63,24 @@ private:
 	void cmd_vertex10Bit(uint32_t* params);
 	void cmd_endVertexList();
 	void cmd_swapBuffers();
+
+	void debug_renderDots();
+
+	//shitty debug command
+	double debug_cvtVtx16(uint16_t vtx)
+	{
+		bool negative = (vtx >> 15);
+		if (negative)
+			vtx = (~vtx) + 1;
+		double result = 0, counter = 4;
+		for (int i = 14; i >= 0; i--)
+		{
+			if ((vtx >> i) & 0b1)
+				result += counter;
+			counter /= 2;
+		}
+		if (negative)
+			result = -result;
+		return result;
+	}
 };

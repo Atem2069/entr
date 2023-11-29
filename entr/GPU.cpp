@@ -93,8 +93,34 @@ void GPU::writeCmdPort(uint32_t address, uint32_t value)
 	//hopefully parameters are sent to the port too? that would probably make my life easier.
 	uint32_t cmd = ((address - 0x4000440) >> 2)+0x10;
 	//std::cout << "cmd port: " << std::hex << address << " " << cmd << '\n';
-	if (!m_pendingCommands.empty())
-		Logger::msg(LoggerSeverity::Error, "gpu: what the fuck? unprocessed commands from gxfifo write, this shouldn't happen.");
+	//if (!m_pendingCommands.empty())
+	//	Logger::msg(LoggerSeverity::Error, "gpu: what the fuck? unprocessed commands from gxfifo write, this shouldn't happen.");
+
+	int noParams = m_cmdParameterLUT[cmd];
+	if (noParams < 2)
+	{
+		GXFIFOCommand fifoCmd = {};
+		fifoCmd.command = cmd;
+		fifoCmd.parameter = value;
+		GXFIFO.push(fifoCmd);
+	}
+	else
+	{
+		m_pendingParameters.push(value);
+		if (m_pendingParameters.size() == noParams)
+		{
+			while (!m_pendingParameters.empty())
+			{
+				uint32_t param = m_pendingParameters.front();
+				m_pendingParameters.pop();
+				GXFIFOCommand fifoCmd = {};
+				fifoCmd.command = cmd;
+				fifoCmd.parameter = param;
+				GXFIFO.push(fifoCmd);
+			}
+		}
+	}
+
 }
 
 //calling this every cycle is probably slow - could deschedule/schedule depending on whether
@@ -173,3 +199,5 @@ void GPU::GXFIFOEventHandler(void* context)
 	GPU* thisPtr = (GPU*)context;
 	thisPtr->onProcessCommandEvent();
 }
+
+uint16_t GPU::output[256 * 192] = {};

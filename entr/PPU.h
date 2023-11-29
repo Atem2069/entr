@@ -4,6 +4,7 @@
 #include"NDSMem.h"
 #include"InterruptManager.h"
 #include"Scheduler.h"
+#include"GPU.h"
 
 enum class PPUState
 {

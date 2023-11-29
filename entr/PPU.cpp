@@ -525,8 +525,13 @@ template<Engine engine, int bg> void PPU::renderBackground()
 		screenBase = (((m_engineARegisters.DISPCNT >> 27) & 0b111) * 65536);
 		charBase = (((m_engineARegisters.DISPCNT >> 24) & 0b111) * 65536);
 		m_regs = &m_engineARegisters;
-		if (((m_regs->DISPCNT >> 3) & 0b1) && bg==0)		//do not render BG0 if 3d bit set
+		if (((m_regs->DISPCNT >> 3) & 0b1) && bg == 0)		//do not render BG0 if 3d bit set
+		{
+			m_backgroundLayers[0].priority = (m_engineARegisters.BG0CNT & 0b11);
+			uint32_t offs = (VCOUNT * 256);
+			memcpy(m_backgroundLayers[0].lineBuffer, (GPU::output + offs), 256 * sizeof(uint16_t));
 			return;
+		}
 	}
 	else
 	{
