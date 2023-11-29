@@ -51,7 +51,19 @@ void GPU::writeGXFIFO(uint32_t value)
 	if (m_pendingCommands.empty())
 	{
 		for (int i = 0; i < 4; i++)
-			m_pendingCommands.push((value >> (i * 8)) & 0xFF);
+		{
+			uint8_t cmd = (value >> (i << 3)) & 0xFF;
+			//I have no clue if this is true, and i cannot be fucked to start inspecting packed writes and manually checking by hand.
+			//i hope it's right, bc otherwise the whole gxfifo gets fucked and we start getting weird invalid commands
+			if (m_cmdParameterLUT[cmd] == 0)
+			{
+				GXFIFOCommand fifoCmd = {};
+				fifoCmd.command = cmd;
+				GXFIFO.push(fifoCmd);
+			}
+			else
+				m_pendingCommands.push((value >> (i * 8)) & 0xFF);
+		}
 	}
 	else
 	{
@@ -81,8 +93,8 @@ void GPU::writeCmdPort(uint32_t address, uint32_t value)
 	//hopefully parameters are sent to the port too? that would probably make my life easier.
 	uint32_t cmd = ((address - 0x4000440) >> 2)+0x10;
 	//std::cout << "cmd port: " << std::hex << address << " " << cmd << '\n';
-	//if (!m_pendingCommands.empty())
-	//	Logger::msg(LoggerSeverity::Error, "gpu: what the fuck? unprocessed commands from gxfifo write, this shouldn't happen.");
+	if (!m_pendingCommands.empty())
+		Logger::msg(LoggerSeverity::Error, "gpu: what the fuck? unprocessed commands from gxfifo write, this shouldn't happen.");
 }
 
 //calling this every cycle is probably slow - could deschedule/schedule depending on whether
@@ -123,6 +135,8 @@ void GPU::processCommand()
 	if (GXFIFO.empty())
 		return;
 
+	uint32_t params[32];	//I think the max param count is 32 params?
+
 	GXFIFOCommand cmd = GXFIFO.front();
 	GXFIFO.pop();
 	
@@ -134,8 +148,20 @@ void GPU::processCommand()
 		Logger::msg(LoggerSeverity::Error, std::format("gpu: gxfifo state fucked, not enough params to process command!!!!! {} {}",GXFIFO.size(),numParams));
 	else
 	{
+		params[0] = cmd.parameter;
 		for (int i = 0; i < numParams; i++)
+		{
+			params[i + 1] = GXFIFO.front().parameter;
 			GXFIFO.pop();
+		}
+		switch (cmd.command)
+		{
+		case 0x23: cmd_vertex16Bit(params); break;
+		case 0x24: cmd_vertex10Bit(params); break;
+		case 0x40: cmd_beginVertexList(params); break;
+		case 0x41: cmd_endVertexList(); break;
+		case 0x50: cmd_swapBuffers(); break;
+		}
 	}
 
 	checkGXFIFOIRQs();		//another check after cmds processed (a lot of values might have been popped);

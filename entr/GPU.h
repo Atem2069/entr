@@ -54,4 +54,11 @@ private:
 		3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0					//0x70
 	};
 
+
+	//gpu commands
+	void cmd_beginVertexList(uint32_t* params);
+	void cmd_vertex16Bit(uint32_t* params);
+	void cmd_vertex10Bit(uint32_t* params);
+	void cmd_endVertexList();
+	void cmd_swapBuffers();
 };
