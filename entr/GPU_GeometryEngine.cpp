@@ -2,7 +2,8 @@
 
 void GPU::cmd_setMatrixMode(uint32_t* params)
 {
-
+	uint32_t mode = params[0] & 0b11;
+	Logger::msg(LoggerSeverity::Info, std::format("gpu: MTX_MODE={}",mode));
 }
 
 void GPU::cmd_pushMatrix()
@@ -27,7 +28,7 @@ void GPU::cmd_restoreMatrix(uint32_t* params)
 
 void GPU::cmd_loadIdentity()
 {
-
+	Logger::msg(LoggerSeverity::Info, "gpu: MTX_IDENTITY");
 }
 
 void GPU::cmd_load4x4Matrix(uint32_t* params)

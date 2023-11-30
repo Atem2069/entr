@@ -53,9 +53,9 @@ void GPU::writeGXFIFO(uint32_t value)
 		for (int i = 0; i < 4; i++)
 		{
 			uint8_t cmd = (value >> (i << 3)) & 0xFF;
-			//this code is pretty shitty and doesn't work properly. it will enqueue cmds with 0 params in the wrong order.
-			//i've ran into END_VTX being pushed before regular VTX commands so far, but ofc that's not a big deal. END_VTX is useless and does nothing
-			if (m_cmdParameterLUT[cmd] == 0)
+			//this solution is not ideal.
+			//push cmd with no params straight to FIFO ONLY if no commands with params precede it to preserve order. see below.
+			if ((m_cmdParameterLUT[cmd] == 0) && (m_pendingCommands.empty()))
 			{
 				GXFIFOCommand fifoCmd = {};
 				fifoCmd.command = cmd;
@@ -84,6 +84,24 @@ void GPU::writeGXFIFO(uint32_t value)
 			}
 			//Logger::msg(LoggerSeverity::Info, std::format("gpu: processed command {:#x}, param count={}", (uint32_t)curCmd, numParams));
 		}
+
+		//god I hate this. peek next command(s) - if no params push to fifo straight away
+		//if not, wait until more params written to process them
+		bool stopChecking = false;
+		while (!m_pendingCommands.empty() && !stopChecking)
+		{
+			uint8_t curCmd = m_pendingCommands.front();
+			if (m_cmdParameterLUT[curCmd] == 0)
+			{
+				m_pendingCommands.pop();
+				GXFIFOCommand fifoCmd = {};
+				fifoCmd.command = curCmd;
+				GXFIFO.push(fifoCmd);
+			}
+			else
+				stopChecking = true;
+		}
+
 	}
 }
 
