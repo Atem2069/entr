@@ -58,6 +58,19 @@ private:
 
 
 	//gpu commands
+	void cmd_setMatrixMode(uint32_t* params);
+	void cmd_pushMatrix();
+	void cmd_popMatrix(uint32_t* params);
+	void cmd_storeMatrix(uint32_t* params);
+	void cmd_restoreMatrix(uint32_t* params);
+	void cmd_loadIdentity();
+	void cmd_load4x4Matrix(uint32_t* params);
+	void cmd_load4x3Matrix(uint32_t* params);
+	void cmd_multiply4x4Matrix(uint32_t* params);
+	void cmd_multiply4x3Matrix(uint32_t* params);
+	void cmd_multiply3x3Matrix(uint32_t* params);
+	void cmd_multiplyByScale(uint32_t* params);
+	void cmd_multiplyByTrans(uint32_t* params);
 	void cmd_beginVertexList(uint32_t* params);
 	void cmd_vertex16Bit(uint32_t* params);
 	void cmd_vertex10Bit(uint32_t* params);

@@ -53,8 +53,8 @@ void GPU::writeGXFIFO(uint32_t value)
 		for (int i = 0; i < 4; i++)
 		{
 			uint8_t cmd = (value >> (i << 3)) & 0xFF;
-			//I have no clue if this is true, and i cannot be fucked to start inspecting packed writes and manually checking by hand.
-			//i hope it's right, bc otherwise the whole gxfifo gets fucked and we start getting weird invalid commands
+			//this code is pretty shitty and doesn't work properly. it will enqueue cmds with 0 params in the wrong order.
+			//i've ran into END_VTX being pushed before regular VTX commands so far, but ofc that's not a big deal. END_VTX is useless and does nothing
 			if (m_cmdParameterLUT[cmd] == 0)
 			{
 				GXFIFOCommand fifoCmd = {};
@@ -89,13 +89,7 @@ void GPU::writeGXFIFO(uint32_t value)
 
 void GPU::writeCmdPort(uint32_t address, uint32_t value)
 {
-	//todo: figure out port from address, some way to enqueue..
-	//hopefully parameters are sent to the port too? that would probably make my life easier.
 	uint32_t cmd = ((address - 0x4000440) >> 2)+0x10;
-	//std::cout << "cmd port: " << std::hex << address << " " << cmd << '\n';
-	//if (!m_pendingCommands.empty())
-	//	Logger::msg(LoggerSeverity::Error, "gpu: what the fuck? unprocessed commands from gxfifo write, this shouldn't happen.");
-
 	int noParams = m_cmdParameterLUT[cmd];
 	if (noParams < 2)
 	{
@@ -166,10 +160,10 @@ void GPU::processCommand()
 	GXFIFOCommand cmd = GXFIFO.front();
 	GXFIFO.pop();
 	
-	//this code is entirely useless. it just keeps cmd processor running and popping off cmds.
 	int numParams = m_cmdParameterLUT[cmd.command];
 	if (numParams)
 		numParams -= 1;
+	//this should never ever happen. I should remove this check probs
 	if (GXFIFO.size() < numParams)
 		Logger::msg(LoggerSeverity::Error, std::format("gpu: gxfifo state fucked, not enough params to process command!!!!! {} {}",GXFIFO.size(),numParams));
 	else
@@ -182,6 +176,19 @@ void GPU::processCommand()
 		}
 		switch (cmd.command)
 		{
+		case 0x10: cmd_setMatrixMode(params); break;
+		case 0x11: cmd_pushMatrix(); break;
+		case 0x12: cmd_popMatrix(params); break;
+		case 0x13: cmd_storeMatrix(params); break;
+		case 0x14: cmd_restoreMatrix(params); break;
+		case 0x15: cmd_loadIdentity(); break;
+		case 0x16: cmd_load4x4Matrix(params); break;
+		case 0x17: cmd_load4x3Matrix(params); break;
+		case 0x18: cmd_multiply4x4Matrix(params); break;
+		case 0x19: cmd_multiply4x3Matrix(params); break;
+		case 0x1A: cmd_multiply3x3Matrix(params); break;
+		case 0x1B: cmd_multiplyByScale(params); break;
+		case 0x1C: cmd_multiplyByTrans(params); break;
 		case 0x23: cmd_vertex16Bit(params); break;
 		case 0x24: cmd_vertex10Bit(params); break;
 		case 0x40: cmd_beginVertexList(params); break;

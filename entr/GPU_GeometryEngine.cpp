@@ -1,5 +1,70 @@
 #include "GPU.h"
 
+void GPU::cmd_setMatrixMode(uint32_t* params)
+{
+
+}
+
+void GPU::cmd_pushMatrix()
+{
+
+}
+
+void GPU::cmd_popMatrix(uint32_t* params)
+{
+
+}
+
+void GPU::cmd_storeMatrix(uint32_t* params)
+{
+
+}
+
+void GPU::cmd_restoreMatrix(uint32_t* params)
+{
+
+}
+
+void GPU::cmd_loadIdentity()
+{
+
+}
+
+void GPU::cmd_load4x4Matrix(uint32_t* params)
+{
+
+}
+
+void GPU::cmd_load4x3Matrix(uint32_t* params)
+{
+
+}
+
+void GPU::cmd_multiply4x4Matrix(uint32_t* params)
+{
+
+}
+
+void GPU::cmd_multiply4x3Matrix(uint32_t* params)
+{
+
+}
+
+void GPU::cmd_multiply3x3Matrix(uint32_t* params)
+{
+
+}
+
+void GPU::cmd_multiplyByScale(uint32_t* params)
+{
+
+}
+
+void GPU::cmd_multiplyByTrans(uint32_t* params)
+{
+
+}
+
 void GPU::cmd_beginVertexList(uint32_t* params)
 {
 	uint32_t primitiveType = params[0] & 0b11;
@@ -10,7 +75,7 @@ void GPU::cmd_vertex16Bit(uint32_t* params)
 {
 	int16_t x = params[0] & 0xFFFF;
 	int16_t y = (params[0] >> 16) & 0xFFFF;
-	uint16_t z = params[1] & 0xFFFF;
+	int16_t z = params[1] & 0xFFFF;
 	//double xf = debug_cvtVtx16(x);
 	//double yf = -debug_cvtVtx16(y);
 
@@ -32,9 +97,9 @@ void GPU::cmd_vertex16Bit(uint32_t* params)
 
 void GPU::cmd_vertex10Bit(uint32_t* params)
 {
-	uint16_t x = params[0] & 0x3FF;
-	uint16_t y = (params[0] >> 10) & 0x3FF;
-	uint16_t z = (params[0] >> 20) & 0x3FF;
+	int16_t x = params[0] & 0x3FF;
+	int16_t y = (params[0] >> 10) & 0x3FF;
+	int16_t z = (params[0] >> 20) & 0x3FF;
 	if ((x >> 9) & 0b1)
 		x |= 0xFC00;
 	if ((y >> 9) & 0b1)
