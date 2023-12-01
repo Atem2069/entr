@@ -25,7 +25,7 @@ void GPU::cmd_popMatrix(uint32_t* params)
 {
 	int32_t offs = params[0] & 0x3F;
 	if ((offs >> 5) & 0b1)
-		offs |= 0xFFFFFFCF;		//sign extend
+		offs |= 0xFFFFFFC0;		//sign extend
 
 	switch (m_matrixMode)
 	{
