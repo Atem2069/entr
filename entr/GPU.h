@@ -11,6 +11,12 @@ struct GXFIFOCommand
 	uint32_t parameter;		//encodes parameters for command
 };
 
+struct Matrix
+{
+	//64 bit int representation might be better. might switch up in the future.
+	int32_t m[16];
+};
+
 class GPU
 {
 public:
@@ -55,6 +61,21 @@ private:
 		1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,				//0x60
 		3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0					//0x70
 	};
+
+	uint8_t m_matrixMode = 0;
+
+	Matrix m_projectionMatrix = {};
+	Matrix m_coordinateMatrix = {};
+	Matrix m_directionalMatrix = {};
+
+	Matrix m_projectionStack = {};
+	//apparently these stacks are 32 long? but entry 31 causes overflow flag. need to handle
+	Matrix m_coordinateStack[32] = {};
+	Matrix m_directionalStack[32] = {};
+
+	Matrix m_identityMatrix = {};
+
+	uint32_t m_coordinateStackPointer = 0;
 
 
 	//gpu commands
