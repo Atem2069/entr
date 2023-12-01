@@ -117,4 +117,35 @@ private:
 			result = -result;
 		return result;
 	}
+
+	//some matrix helper stuff 
+	inline Matrix gen4x4Matrix(uint32_t* params)
+	{
+		//generating 4x4 matrix is simple :)
+		Matrix m = {};
+		for (int i = 0; i < 16; i++)
+			m.m[i] = params[i];
+		return m;
+	}
+
+	Matrix gen4x3Matrix(uint32_t* params)
+	{
+		//4x3 i'll do manually.. fuck it
+		Matrix m = {};
+		m.m[0] = params[0]; m.m[1] = params[1]; m.m[2] = params[2]; m.m[3] = 0;
+		m.m[4] = params[3]; m.m[5] = params[4]; m.m[6] = params[5]; m.m[7] = 0;
+		m.m[8] = params[6]; m.m[9] = params[7]; m.m[10] = params[8]; m.m[11] = 0;
+		m.m[12] = params[9]; m.m[13] = params[10]; m.m[14] = params[11]; m.m[15] = (1 << 12);
+		return m;
+	}
+
+	Matrix gen3x3Matrix(uint32_t* params)
+	{
+		Matrix m = {};
+		m.m[0] = params[0]; m.m[1] = params[1]; m.m[2] = params[2]; m.m[3] = 0;
+		m.m[4] = params[3]; m.m[5] = params[4]; m.m[6] = params[5]; m.m[7] = 0;
+		m.m[8] = params[6]; m.m[9] = params[7]; m.m[10] = params[8]; m.m[11] = 0;
+		m.m[12] = 0; m.m[13] = 0; m.m[14] = 0; m.m[15] = (1 << 12);
+		return m;
+	}
 };

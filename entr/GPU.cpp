@@ -18,10 +18,10 @@ void GPU::init(InterruptManager* interruptManager, Scheduler* scheduler)
 	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, 1);	//schedule event to handle GXFIFO commands
 
 	//init identity matrix
-	m_identityMatrix.m[0] = 1;
-	m_identityMatrix.m[5] = 1;
-	m_identityMatrix.m[10] = 1;
-	m_identityMatrix.m[15] = 1;
+	m_identityMatrix.m[0] = (1<<12);
+	m_identityMatrix.m[5] = (1<<12);
+	m_identityMatrix.m[10] = (1<<12);
+	m_identityMatrix.m[15] = (1<<12);
 }
 
 uint8_t GPU::read(uint32_t address)

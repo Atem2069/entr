@@ -96,12 +96,36 @@ void GPU::cmd_loadIdentity()
 
 void GPU::cmd_load4x4Matrix(uint32_t* params)
 {
-
+	switch (m_matrixMode)
+	{
+	case 0:
+		m_projectionMatrix = gen4x4Matrix(params);
+		break;
+	case 1:
+		m_coordinateMatrix = gen4x4Matrix(params);
+		break;
+	case 2:
+		m_coordinateMatrix = gen4x4Matrix(params);
+		m_directionalMatrix = m_coordinateMatrix;
+		break;
+	}
 }
 
 void GPU::cmd_load4x3Matrix(uint32_t* params)
 {
-
+	switch (m_matrixMode)
+	{
+	case 0:
+		m_projectionMatrix = gen4x3Matrix(params);
+		break;
+	case 1:
+		m_coordinateMatrix = gen4x3Matrix(params);
+		break;
+	case 2:
+		m_coordinateMatrix = gen4x3Matrix(params);
+		m_directionalMatrix = m_coordinateMatrix;
+		break;
+	}
 }
 
 void GPU::cmd_multiply4x4Matrix(uint32_t* params)
