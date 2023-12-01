@@ -128,7 +128,7 @@ private:
 		return m;
 	}
 
-	Matrix gen4x3Matrix(uint32_t* params)
+	inline Matrix gen4x3Matrix(uint32_t* params)
 	{
 		//4x3 i'll do manually.. fuck it
 		Matrix m = {};
@@ -139,7 +139,7 @@ private:
 		return m;
 	}
 
-	Matrix gen3x3Matrix(uint32_t* params)
+	inline Matrix gen3x3Matrix(uint32_t* params)
 	{
 		Matrix m = {};
 		m.m[0] = params[0]; m.m[1] = params[1]; m.m[2] = params[2]; m.m[3] = 0;
@@ -147,5 +147,27 @@ private:
 		m.m[8] = params[6]; m.m[9] = params[7]; m.m[10] = params[8]; m.m[11] = 0;
 		m.m[12] = 0; m.m[13] = 0; m.m[14] = 0; m.m[15] = (1 << 12);
 		return m;
+	}
+
+	inline int yxToIdx(int y, int x)
+	{
+		return (y * 4) + x;
+	}
+
+	inline Matrix multiplyMatrices(Matrix a, Matrix b)
+	{
+		//this is so horrible, should look into fast matrix multiplication.
+		Matrix res = {};
+		for (int y = 0; y < 4; y++)
+		{
+			for (int x = 0; x < 4; x++)
+			{
+				int64_t ay1 = a.m[yxToIdx(y, 0)]; int64_t ay2 = a.m[yxToIdx(y, 1)]; int64_t ay3 = a.m[yxToIdx(y, 2)]; int64_t ay4 = a.m[yxToIdx(y, 3)];
+				int64_t b1x = b.m[yxToIdx(0, x)]; int64_t b2x = b.m[yxToIdx(1, x)]; int64_t b3x = b.m[yxToIdx(2, x)]; int64_t b4x = b.m[yxToIdx(3, x)];
+				int64_t a = (ay1 * b1x) >> 12; int64_t b = (ay2 * b2x) >> 12; int64_t c = (ay3 * b3x) >> 12; int64_t d = (ay4 * b4x) >> 12;
+				res.m[yxToIdx(y, x)] = (int32_t)(a + b + c + d);
+			}
+		}
+		return res;
 	}
 };

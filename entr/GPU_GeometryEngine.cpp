@@ -130,27 +130,98 @@ void GPU::cmd_load4x3Matrix(uint32_t* params)
 
 void GPU::cmd_multiply4x4Matrix(uint32_t* params)
 {
-
+	Matrix m = gen4x4Matrix(params);
+	switch (m_matrixMode)
+	{
+	case 0:
+		m_projectionMatrix = multiplyMatrices(m, m_projectionMatrix);
+		break;
+	case 1:
+		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
+		break;
+	case 2:
+		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
+		m_directionalMatrix = multiplyMatrices(m, m_directionalMatrix);
+		break;
+	}
 }
 
 void GPU::cmd_multiply4x3Matrix(uint32_t* params)
 {
-
+	Matrix m = gen4x3Matrix(params);
+	switch (m_matrixMode)
+	{
+	case 0:
+		m_projectionMatrix = multiplyMatrices(m, m_projectionMatrix);
+		break;
+	case 1:
+		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
+		break;
+	case 2:
+		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
+		m_directionalMatrix = multiplyMatrices(m, m_directionalMatrix);
+		break;
+	}
 }
 
 void GPU::cmd_multiply3x3Matrix(uint32_t* params)
 {
-
+	Matrix m = gen3x3Matrix(params);
+	switch (m_matrixMode)
+	{
+	case 0:
+		m_projectionMatrix = multiplyMatrices(m, m_projectionMatrix);
+		break;
+	case 1:
+		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
+		break;
+	case 2:
+		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
+		m_directionalMatrix = multiplyMatrices(m, m_directionalMatrix);
+		break;
+	}
 }
 
 void GPU::cmd_multiplyByScale(uint32_t* params)
 {
+	Matrix m = {};
+	m.m[0] = params[0];
+	m.m[5] = params[1];
+	m.m[10] = params[2];
+	m.m[15] = (1 << 12);
 
+	//directional/vector matrix (why does gbatek use two names) doesn't get updated by MTX_SCALE
+	switch (m_matrixMode)
+	{
+	case 0:
+		m_projectionMatrix = multiplyMatrices(m, m_projectionMatrix);
+		break;
+	case 1: case 2:
+		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
+		break;
+	}
 }
 
 void GPU::cmd_multiplyByTrans(uint32_t* params)
 {
+	Matrix m = m_identityMatrix;
+	m.m[12] = params[0];
+	m.m[13] = params[1];
+	m.m[14] = params[2];
 
+	switch (m_matrixMode)
+	{
+	case 0:
+		m_projectionMatrix = multiplyMatrices(m, m_projectionMatrix);
+		break;
+	case 1:
+		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
+		break;
+	case 2:
+		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
+		m_directionalMatrix = multiplyMatrices(m, m_directionalMatrix);
+		break;
+	}
 }
 
 void GPU::cmd_beginVertexList(uint32_t* params)
