@@ -125,7 +125,10 @@ private:
 
 	void submitPolygon();
 
-	void debug_renderDots();
+	void debug_render();
+	void debug_drawLine(int x0, int y0, int x1, int y1);
+	void plotLow(int x0, int y0, int x1, int y1);
+	void plotHigh(int x0, int y0, int x1, int y1);
 
 	//shitty debug command
 	double debug_cvtVtx16(uint16_t vtx)

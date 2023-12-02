@@ -296,7 +296,7 @@ void GPU::cmd_endVertexList()
 void GPU::cmd_swapBuffers()
 {
 	//Logger::msg(LoggerSeverity::Info, std::format("gpu: SwapBuffers"));
-	debug_renderDots();
+	debug_render();
 
 	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
 	memset(renderBuffer, 0xFF, 256 * 192 * sizeof(uint16_t));
@@ -308,23 +308,155 @@ void GPU::cmd_swapBuffers()
 
 void GPU::submitPolygon()
 {
-	//todo
+	switch (m_primitiveType)
+	{
+	case 0:
+		if (m_runningVtxCount && ((m_runningVtxCount % 3) == 0))
+		{
+			Poly p = {};
+			p.numVertices = 3;
+			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 3];
+			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 2];
+			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
+			m_polygonRAM[m_polygonCount++] = p;
+		}
+		break;
+	case 1:
+		std::cout << "can't submit quad." << '\n';
+		//todo: quad (should be simple)
+		break;
+	case 2:
+		if (m_runningVtxCount >= 3)
+		{
+			//num vtxs odd: n-3,n-2,n-1
+			//num vtxs even: n-2,n-3,n-1
+			Poly p = {};
+			p.numVertices = 3;
+			if (m_runningVtxCount & 0b1)
+			{
+				p.m_vertices[0] = m_vertexRAM[m_vertexCount - 3];
+				p.m_vertices[1] = m_vertexRAM[m_vertexCount - 2];
+				p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
+			}
+			else
+			{
+				p.m_vertices[0] = m_vertexRAM[m_vertexCount - 2];
+				p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
+				p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
+			}
+			m_polygonRAM[m_polygonCount++] = p;
+		}
+		break;
+	case 3:
+		std::cout << "can't submit quadstrip." << '\n';
+		//todo: quad strip
+		break;
+	}
 }
 
-void GPU::debug_renderDots()
+//this stuff shouldn't be in the geometry engine. going to move when i'm happy with polygon generation and all :)
+void GPU::debug_render()
 {
-	for (int i = 0; i < m_vertexCount; i++)
+	for (int i = 0; i < m_polygonCount; i++)
 	{
-		Vector cur = m_vertexRAM[i];
-		if (cur.v[3])					//hack to prevent div by 0
+		Poly p = m_polygonRAM[i];
+		for (int j = 0; j < p.numVertices; j++)
 		{
-			int64_t screenX = fixedPointMul((cur.v[0] + cur.v[3]), 256 << 12);
-			int64_t screenY = fixedPointMul((cur.v[1] + cur.v[3]), 192 << 12);
-			screenX = fixedPointDiv(screenX, (cur.v[3] << 1)) >> 12;
-			screenY = 192 - (fixedPointDiv(screenY, (cur.v[3] << 1)) >> 12);
-
-			if ((screenX > 0 && screenX < 256) && (screenY > 0 && screenY < 192))
-				renderBuffer[(screenY * 256) + screenX] = 0x7FFF;
+			Vector cur = p.m_vertices[j];
+			if (cur.v[3])					//hack to prevent div by 0
+			{
+				int64_t screenX = fixedPointMul((cur.v[0] + cur.v[3]), 256 << 12);
+				int64_t screenY = fixedPointMul((cur.v[1] + cur.v[3]), 192 << 12);
+				screenX = fixedPointDiv(screenX, (cur.v[3] << 1)) >> 12;
+				screenY = 192 - (fixedPointDiv(screenY, (cur.v[3] << 1)) >> 12);
+				Vector v = {};
+				v.v[0] = screenX;
+				v.v[1] = screenY;
+				p.m_vertices[j] = v;
+				//if ((screenX > 0 && screenX < 256) && (screenY > 0 && screenY < 192))
+				//	renderBuffer[(screenY * 256) + screenX] = 0x7FFF;
+			}
 		}
+
+		//0,1, 0,2, 1,2
+		Vector v0 = p.m_vertices[0];
+		Vector v1 = p.m_vertices[1];
+		Vector v2 = p.m_vertices[2];
+		debug_drawLine(v0.v[0], v0.v[1], v1.v[0], v1.v[1]);
+		debug_drawLine(v0.v[0], v0.v[1], v2.v[0], v2.v[1]);
+		debug_drawLine(v1.v[0], v1.v[1], v2.v[0], v2.v[1]);
+	}
+}
+
+void GPU::debug_drawLine(int x0, int y0, int x1, int y1)
+{
+	if (abs(y1 - y0) < abs(x1 - x0))
+	{
+		if (x0 > x1)
+			plotLow(x1, y1, x0, y0);
+		else
+			plotLow(x0, y0, x1, y1);
+	}
+	else
+	{
+		if (y0 > y1)
+			plotHigh(x1, y1, x0, y0);
+		else
+			plotHigh(x0, y0, x1, y1);
+	}
+}
+
+void GPU::plotLow(int x0, int y0, int x1, int y1)
+{
+	int dx = x1 - x0;
+	int dy = y1 - y0;
+	int yi = 1;
+	if (dy < 0)
+	{
+		yi = -1;
+		dy = -dy;
+	}
+
+	int D = (2 * dy) - dx;
+	int y = y0;
+
+	for (int x = x0; x < x1; x++)
+	{
+		if ((x > 0 && x < 256) && (y > 0 && y < 192))
+			renderBuffer[(256 * y) + x] = 0x7FFF;
+		if (D > 0)
+		{
+			y += yi;
+			D = D + (2 * (dy - dx));
+		}
+		else
+			D = D + (2 * dy);
+	}
+}
+
+void GPU::plotHigh(int x0, int y0, int x1, int y1)
+{
+	int dx = x1 - x0;
+	int dy = y1 - y0;
+	int xi = 1;
+	if (dx < 0)
+	{
+		xi = -1;
+		dx = -dx;
+	}
+	int D = (2 * dx) - dy;
+	int x = x0;
+
+	for (int y = y0; y < y1; y++)
+	{
+		if ((x > 0 && x < 256) && (y > 0 && y < 192))
+			renderBuffer[(256 * y) + x] = 0x7FFF;
+		if (D > 0)
+		{
+			x += xi;
+			D = D + (2 * (dx - dy));
+		}
+		else
+			D = D + (2 * dx);
 	}
 }
