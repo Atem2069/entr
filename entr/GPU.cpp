@@ -44,7 +44,12 @@ void GPU::write(uint32_t address, uint8_t value)
 	switch (address)
 	{
 	case 0x04000601:
-		GXSTAT &= 0xFFFFDFFF; GXSTAT |= (value & 0x20) << 8;		//todo: handle bit 15 being 'writeable'
+		GXSTAT &= 0xFFFFDFFF; GXSTAT |= (value & 0x20) << 8;		
+		if ((value >> 7) & 0b1)
+		{
+			GXSTAT &= ~(1 << 15);
+			//"additionally resets the P rojection Stack Pointer (Bit13), and probably (?) also the Texture stack Pointer" <- todo: implement.
+		}
 		break;
 	case 0x04000603:
 		GXSTAT &= 0x3FFFFFFF; GXSTAT |= (value & 0xC0) << 24;

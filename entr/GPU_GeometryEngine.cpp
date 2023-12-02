@@ -17,6 +17,8 @@ void GPU::cmd_pushMatrix()
 		m_coordinateStack[m_coordinateStackPointer&0x1F] = m_coordinateMatrix;
 		m_directionalStack[m_coordinateStackPointer&0x1F] = m_directionalMatrix;
 		m_coordinateStackPointer++;
+		GXSTAT &= 0xFFFFE0FF;
+		GXSTAT |= (m_coordinateStackPointer & 0x1F) << 8;
 		break;
 	}
 }
@@ -34,13 +36,16 @@ void GPU::cmd_popMatrix(uint32_t* params)
 		break;
 	case 1: case 2:
 		m_coordinateStackPointer -= offs;
-		if (m_coordinateStackPointer < 0 || m_coordinateStackPointer > 63)
-			Logger::msg(LoggerSeverity::Error, std::format("gpu: exploded.. Coordinate Matrix Stack Pointer is OOB: {}",m_coordinateStackPointer));
-		else
+		if (m_coordinateStackPointer < 0 || m_coordinateStackPointer > 63)	//games might be silly enough to trigger this.
 		{
-			m_coordinateMatrix = m_coordinateStack[m_coordinateStackPointer&0x1F];
-			m_directionalMatrix = m_directionalStack[m_coordinateStackPointer&0x1F];
+			m_coordinateStackPointer = 0;
+			GXSTAT |= (1 << 15);		
+			Logger::msg(LoggerSeverity::Error, std::format("gpu: exploded.. Coordinate Matrix Stack Pointer is OOB: {}, {}", m_coordinateStackPointer, offs));
 		}
+		m_coordinateMatrix = m_coordinateStack[m_coordinateStackPointer&0x1F];
+		m_directionalMatrix = m_directionalStack[m_coordinateStackPointer&0x1F];
+		GXSTAT &= 0xFFFFE0FF;
+		GXSTAT |= (m_coordinateStackPointer & 0x1F) << 8;
 		break;
 	}
 
