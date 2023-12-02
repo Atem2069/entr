@@ -17,6 +17,11 @@ struct Matrix
 	int32_t m[16];
 };
 
+struct Vector
+{
+	int32_t v[4];
+};
+
 class GPU
 {
 public:
@@ -64,19 +69,25 @@ private:
 
 	uint8_t m_matrixMode = 0;
 
+	//MVP - used for transforming vtxs to clip space
+	Matrix m_clipMatrix = {};
+
+	//currently selected matrix
 	Matrix m_projectionMatrix = {};
 	Matrix m_coordinateMatrix = {};
 	Matrix m_directionalMatrix = {};
 
+	//matrix stacks
 	Matrix m_projectionStack = {};
 	//apparently these stacks are 32 long? but entry 31 causes overflow flag. need to handle
 	Matrix m_coordinateStack[32] = {};
 	Matrix m_directionalStack[32] = {};
 
+	//stack pointer for coordinate/directional matrix stacks. they share same SP.
+	int32_t m_coordinateStackPointer = 0;
+
+	//identity matrix - used for MTX_IDENTITY
 	Matrix m_identityMatrix = {};
-
-	uint32_t m_coordinateStackPointer = 0;
-
 
 	//gpu commands
 	void cmd_setMatrixMode(uint32_t* params);
@@ -169,5 +180,32 @@ private:
 			}
 		}
 		return res;
+	}
+
+	inline Vector multiplyVectorMatrix(Vector v, Matrix m)
+	{
+		//could manually unroll this.
+		Vector res = {};
+		for (int x = 0; x < 4; x++)
+		{
+			int64_t ay1 = v.v[0]; int64_t ay2 = v.v[1]; int64_t ay3 = v.v[2]; int64_t ay4 = v.v[3];
+			int64_t b1x = m.m[yxToIdx(0, x)]; int64_t b2x = m.m[yxToIdx(1, x)]; int64_t b3x = m.m[yxToIdx(2, x)]; int64_t b4x = m.m[yxToIdx(3, x)];
+			int64_t a = (ay1 * b1x) >> 12; int64_t b = (ay2 * b2x) >> 12; int64_t c = (ay3 * b3x) >> 12; int64_t d = (ay4 * b4x) >> 12;
+			res.v[x] = (int32_t)(a + b + c + d);
+		}
+		return res;
+	}
+
+	//fixed point helpers
+	int32_t fixedPointMul(int32_t a, int32_t b)
+	{
+		int64_t res = ((int64_t)a) * ((int64_t)b);
+		return (res >> 12);
+	}
+
+	int32_t fixedPointDiv(int32_t a, int32_t b)
+	{
+		int64_t quotient = ((int64_t)a << 12) / (int64_t)b;
+		return quotient;
 	}
 };
