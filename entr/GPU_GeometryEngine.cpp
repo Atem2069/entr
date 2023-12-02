@@ -255,6 +255,8 @@ void GPU::cmd_beginVertexList(uint32_t* params)
 	//triangle strips emit triangles as:
 	//0,1,2 2,1,3 2,3,4 ...
 	uint32_t primitiveType = params[0] & 0b11;		//should do something with this soon when emitting polys
+	m_primitiveType = primitiveType;
+	m_runningVtxCount = 0;							//reset running vertex count - primitive type may have changed so we construct new polys with the new vtx list being sent
 }
 
 void GPU::cmd_vertex16Bit(uint32_t* params)
@@ -267,22 +269,9 @@ void GPU::cmd_vertex16Bit(uint32_t* params)
 	Vector point = {};
 	point.v[0] = x; point.v[1] = y; point.v[2] = z; point.v[3] = (1 << 12);
 	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
-	if (clipPoint.v[3])															//hack to prevent divide-by-zero.
-	{
-		int64_t a = fixedPointMul((clipPoint.v[0] + clipPoint.v[3]), 256 << 12);
-		a = fixedPointDiv(a, (2 * clipPoint.v[3]));
-		int64_t b = fixedPointMul((clipPoint.v[1] + clipPoint.v[3]), 192 << 12);
-		b = fixedPointDiv(b, (2 * clipPoint.v[3]));
-		a >>= 12;
-		b >>= 12;
-		int64_t screenX = a, screenY = b;
-		screenY = 192 - screenY;
-
-		if ((screenX > 0 && screenX < 256) && (screenY > 0 && screenY < 192))
-		{
-			renderBuffer[(screenY * 256) + screenX] = 0x7FFF;
-		}
-	}
+	m_vertexRAM[m_vertexCount++] = clipPoint;
+	m_runningVtxCount++;
+	submitPolygon();
 }
 
 void GPU::cmd_vertex10Bit(uint32_t* params)
@@ -294,22 +283,9 @@ void GPU::cmd_vertex10Bit(uint32_t* params)
 	Vector point = {};
 	point.v[0] = x; point.v[1] = y; point.v[2] = z; point.v[3] = (1 << 12);
 	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
-	if (clipPoint.v[3])															//hack to prevent divide-by-zero.
-	{
-		int64_t a = fixedPointMul((clipPoint.v[0] + clipPoint.v[3]), 256 << 12);
-		a = fixedPointDiv(a, (2 * clipPoint.v[3]));
-		int64_t b = fixedPointMul((clipPoint.v[1] + clipPoint.v[3]), 192 << 12);
-		b = fixedPointDiv(b, (2 * clipPoint.v[3]));
-		a >>= 12;
-		b >>= 12;
-		int64_t screenX = a, screenY = b;
-		screenY = 192 - screenY;
-
-		if ((screenX > 0 && screenX < 256) && (screenY > 0 && screenY < 192))
-		{
-			renderBuffer[(screenY * 256) + screenX] = 0x7FFF;
-		}
-	}
+	m_vertexRAM[m_vertexCount++] = clipPoint;
+	m_runningVtxCount++;
+	submitPolygon();
 }
 
 void GPU::cmd_endVertexList()
@@ -321,11 +297,34 @@ void GPU::cmd_swapBuffers()
 {
 	//Logger::msg(LoggerSeverity::Info, std::format("gpu: SwapBuffers"));
 	debug_renderDots();
+
+	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
+	memset(renderBuffer, 0xFF, 256 * 192 * sizeof(uint16_t));
+	
+	m_vertexCount = 0;
+	m_polygonCount = 0;
+	m_runningVtxCount = 0;
+}
+
+void GPU::submitPolygon()
+{
+	//todo
 }
 
 void GPU::debug_renderDots()
 {
-	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
-	memset(renderBuffer, 0xFF, 256 * 192 * sizeof(uint16_t));
-	//todo: dots!!!
+	for (int i = 0; i < m_vertexCount; i++)
+	{
+		Vector cur = m_vertexRAM[i];
+		if (cur.v[3])					//hack to prevent div by 0
+		{
+			int64_t screenX = fixedPointMul((cur.v[0] + cur.v[3]), 256 << 12);
+			int64_t screenY = fixedPointMul((cur.v[1] + cur.v[3]), 192 << 12);
+			screenX = fixedPointDiv(screenX, (cur.v[3] << 1)) >> 12;
+			screenY = 192 - (fixedPointDiv(screenY, (cur.v[3] << 1)) >> 12);
+
+			if ((screenX > 0 && screenX < 256) && (screenY > 0 && screenY < 192))
+				renderBuffer[(screenY * 256) + screenX] = 0x7FFF;
+		}
+	}
 }

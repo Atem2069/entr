@@ -22,6 +22,12 @@ struct Vector
 	int32_t v[4];
 };
 
+struct Poly
+{
+	uint8_t numVertices;
+	Vector m_vertices[4];	//max 4 vertices per polygon.
+};
+
 class GPU
 {
 public:
@@ -52,6 +58,14 @@ private:
 	std::queue<uint8_t> m_pendingCommands;
 	std::queue<uint32_t> m_pendingParameters;
 	std::queue<GXFIFOCommand> GXFIFO;
+
+	//todo: handle 2 sets of poly/vtx ram, swapped w/ SwapBuffers call
+	Vector m_vertexRAM[6144];
+	Poly m_polygonRAM[2048];
+	uint32_t m_vertexCount = 0, m_polygonCount = 0;
+	uint32_t m_runningVtxCount = 0;	//reset at BEGIN_VTXS command
+
+	uint8_t m_primitiveType = 0;
 
 	uint32_t GXSTAT = {};
 
@@ -108,6 +122,8 @@ private:
 	void cmd_vertex10Bit(uint32_t* params);
 	void cmd_endVertexList();
 	void cmd_swapBuffers();
+
+	void submitPolygon();
 
 	void debug_renderDots();
 
