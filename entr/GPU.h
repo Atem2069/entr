@@ -103,6 +103,8 @@ private:
 	//identity matrix - used for MTX_IDENTITY
 	Matrix m_identityMatrix = {};
 
+	Vector m_lastVertex = {};
+
 	//gpu commands
 	void cmd_setMatrixMode(uint32_t* params);
 	void cmd_pushMatrix();
@@ -120,6 +122,10 @@ private:
 	void cmd_beginVertexList(uint32_t* params);
 	void cmd_vertex16Bit(uint32_t* params);
 	void cmd_vertex10Bit(uint32_t* params);
+	void cmd_vertexXY(uint32_t* params);
+	void cmd_vertexXZ(uint32_t* params);
+	void cmd_vertexYZ(uint32_t* params);
+	void cmd_vertexDiff(uint32_t* params);
 	void cmd_endVertexList();
 	void cmd_swapBuffers();
 

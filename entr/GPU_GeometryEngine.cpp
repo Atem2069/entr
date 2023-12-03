@@ -259,8 +259,11 @@ void GPU::cmd_beginVertexList(uint32_t* params)
 	m_runningVtxCount = 0;							//reset running vertex count - primitive type may have changed so we construct new polys with the new vtx list being sent
 }
 
+//i don't like the code duplication here, should ideally clean this up.
 void GPU::cmd_vertex16Bit(uint32_t* params)
 {
+	if (m_vertexCount >= 6144)
+		return;
 	int16_t x = params[0] & 0xFFFF;
 	int16_t y = (params[0] >> 16) & 0xFFFF;
 	int16_t z = params[1] & 0xFFFF;
@@ -272,10 +275,14 @@ void GPU::cmd_vertex16Bit(uint32_t* params)
 	m_vertexRAM[m_vertexCount++] = clipPoint;
 	m_runningVtxCount++;
 	submitPolygon();
+
+	m_lastVertex = point;
 }
 
 void GPU::cmd_vertex10Bit(uint32_t* params)
 {
+	if (m_vertexCount >= 6144)
+		return;
 	int16_t x = (params[0] & 0x3FF) << 6;
 	int16_t y = ((params[0] >> 10) & 0x3FF) << 6;
 	int16_t z = ((params[0] >> 20) & 0x3FF) << 6;
@@ -286,11 +293,90 @@ void GPU::cmd_vertex10Bit(uint32_t* params)
 	m_vertexRAM[m_vertexCount++] = clipPoint;
 	m_runningVtxCount++;
 	submitPolygon();
+
+	m_lastVertex = point;
+}
+
+void GPU::cmd_vertexXY(uint32_t* params)
+{
+	if (m_vertexCount >= 6144)
+		return;
+	int16_t x = params[0] & 0xFFFF;
+	int16_t y = (params[0] >> 16) & 0xFFFF;
+
+	Vector point = {};
+	point.v[0] = x; point.v[1] = y; point.v[2] = m_lastVertex.v[2]; point.v[3] = (1 << 12);
+	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
+	m_vertexRAM[m_vertexCount++] = clipPoint;
+	m_runningVtxCount++;
+	submitPolygon();
+
+	m_lastVertex = point;
+}
+
+void GPU::cmd_vertexXZ(uint32_t* params)
+{
+	if (m_vertexCount >= 6144)
+		return;
+	int16_t x = params[0] & 0xFFFF;
+	int16_t z = (params[0] >> 16) & 0xFFFF;
+
+	Vector point = {};
+	point.v[0] = x; point.v[1] = m_lastVertex.v[1]; point.v[2] = z; point.v[3] = (1 << 12);
+	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
+	m_vertexRAM[m_vertexCount++] = clipPoint;
+	m_runningVtxCount++;
+	submitPolygon();
+
+	m_lastVertex = point;
+}
+
+void GPU::cmd_vertexYZ(uint32_t* params)
+{
+	if (m_vertexCount >= 6144)
+		return;
+	int16_t y = params[0] & 0xFFFF;
+	int16_t z = (params[0] >> 16) & 0xFFFF;
+
+	Vector point = {};
+	point.v[0] = m_lastVertex.v[0]; point.v[1] = y; point.v[2] = z; point.v[3] = (1 << 12);
+	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
+	m_vertexRAM[m_vertexCount++] = clipPoint;
+	m_runningVtxCount++;
+	submitPolygon();
+
+	m_lastVertex = point;
+}
+
+void GPU::cmd_vertexDiff(uint32_t* params)
+{
+	if (m_vertexCount >= 6144)
+		return;
+	int16_t x = params[0] & 0x3FF;
+	int16_t y = (params[0] >> 10) & 0x3FF;
+	int16_t z = (params[0] >> 20) & 0x3FF;
+	if ((x >> 9) & 0b1)
+		x |= 0xFC00;
+	if ((y >> 9) & 0b1)
+		y |= 0xFC00;
+	if ((z >> 9) & 0b1)
+		z |= 0xFC00;
+	
+	x >>= 3; y >>= 3; z >>= 3;
+
+	Vector point = m_lastVertex;
+	point.v[0] += x; point.v[1] += y; point.v[2] += z; point.v[3] = (1 << 12);
+	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
+	m_vertexRAM[m_vertexCount++] = clipPoint;
+	m_runningVtxCount++;
+	submitPolygon();
+
+	m_lastVertex = point;
 }
 
 void GPU::cmd_endVertexList()
 {
-	//Logger::msg(LoggerSeverity::Info, std::format("gpu: End vertices"));
+	//this seems to be useless on real hardware.
 }
 
 void GPU::cmd_swapBuffers()
@@ -308,6 +394,8 @@ void GPU::cmd_swapBuffers()
 
 void GPU::submitPolygon()
 {
+	if (m_polygonCount == 2048)
+		return;
 	switch (m_primitiveType)
 	{
 	case 0:
@@ -322,34 +410,43 @@ void GPU::submitPolygon()
 		}
 		break;
 	case 1:
-		std::cout << "can't submit quad." << '\n';
-		//todo: quad (should be simple)
+		if (m_runningVtxCount && ((m_runningVtxCount % 4) == 0))
+		{
+			Poly p = {};
+			p.numVertices = 4;
+			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 4];
+			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
+			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 2];
+			p.m_vertices[3] = m_vertexRAM[m_vertexCount - 1];
+			m_polygonRAM[m_polygonCount++] = p;
+		}
 		break;
 	case 2:
 		if (m_runningVtxCount >= 3)
 		{
+			//supposedly: ds generates alternating cw/ccw
 			//num vtxs odd: n-3,n-2,n-1
 			//num vtxs even: n-2,n-3,n-1
 			Poly p = {};
 			p.numVertices = 3;
-			if (m_runningVtxCount & 0b1)
-			{
-				p.m_vertices[0] = m_vertexRAM[m_vertexCount - 3];
-				p.m_vertices[1] = m_vertexRAM[m_vertexCount - 2];
-				p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
-			}
-			else
-			{
-				p.m_vertices[0] = m_vertexRAM[m_vertexCount - 2];
-				p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
-				p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
-			}
+			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 3];
+			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 2];
+			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
 			m_polygonRAM[m_polygonCount++] = p;
 		}
 		break;
 	case 3:
-		std::cout << "can't submit quadstrip." << '\n';
-		//todo: quad strip
+		if (m_runningVtxCount >= 4 && (!(m_runningVtxCount & 0b1)))
+		{
+			//i think this is right, not sure... but it seems polys are 0123 2345 4567 ...
+			Poly p = {};
+			p.numVertices = 4;
+			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 4];
+			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
+			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
+			p.m_vertices[3] = m_vertexRAM[m_vertexCount - 2];
+			m_polygonRAM[m_polygonCount++] = p;
+		}
 		break;
 	}
 }
@@ -360,10 +457,11 @@ void GPU::debug_render()
 	for (int i = 0; i < m_polygonCount; i++)
 	{
 		Poly p = m_polygonRAM[i];
+		bool draw = true;
 		for (int j = 0; j < p.numVertices; j++)
 		{
 			Vector cur = p.m_vertices[j];
-			if (cur.v[3])					//hack to prevent div by 0
+			if (cur.v[3] > 0)					//hack to prevent div by 0, also cull polygon if w less than 0.
 			{
 				int64_t screenX = fixedPointMul((cur.v[0] + cur.v[3]), 256 << 12);
 				int64_t screenY = fixedPointMul((cur.v[1] + cur.v[3]), 192 << 12);
@@ -373,18 +471,33 @@ void GPU::debug_render()
 				v.v[0] = screenX;
 				v.v[1] = screenY;
 				p.m_vertices[j] = v;
-				//if ((screenX > 0 && screenX < 256) && (screenY > 0 && screenY < 192))
-				//	renderBuffer[(screenY * 256) + screenX] = 0x7FFF;
 			}
+			else
+				draw = false;
 		}
-
-		//0,1, 0,2, 1,2
+		if (!draw)
+			continue;
 		Vector v0 = p.m_vertices[0];
 		Vector v1 = p.m_vertices[1];
 		Vector v2 = p.m_vertices[2];
-		debug_drawLine(v0.v[0], v0.v[1], v1.v[0], v1.v[1]);
-		debug_drawLine(v0.v[0], v0.v[1], v2.v[0], v2.v[1]);
-		debug_drawLine(v1.v[0], v1.v[1], v2.v[0], v2.v[1]);
+		Vector v3 = p.m_vertices[3];
+		if (p.numVertices == 3)
+		{
+			//0,1, 0,2, 1,2
+
+			debug_drawLine(v0.v[0], v0.v[1], v1.v[0], v1.v[1]);
+			debug_drawLine(v0.v[0], v0.v[1], v2.v[0], v2.v[1]);
+			debug_drawLine(v1.v[0], v1.v[1], v2.v[0], v2.v[1]);
+		}
+		else
+		{
+			//0,1, 1,2, 2,3, 3,0
+			
+			debug_drawLine(v0.v[0], v0.v[1], v1.v[0], v1.v[1]);
+			debug_drawLine(v1.v[0], v1.v[1], v2.v[0], v2.v[1]);
+			debug_drawLine(v2.v[0], v2.v[1], v3.v[0], v3.v[1]);
+			debug_drawLine(v3.v[0], v3.v[1], v0.v[0], v0.v[1]);
+		}
 	}
 }
 
@@ -423,7 +536,7 @@ void GPU::plotLow(int x0, int y0, int x1, int y1)
 	for (int x = x0; x < x1; x++)
 	{
 		if ((x > 0 && x < 256) && (y > 0 && y < 192))
-			renderBuffer[(256 * y) + x] = 0x7FFF;
+			renderBuffer[(256 * y) + x] = 0x001F;
 		if (D > 0)
 		{
 			y += yi;
@@ -450,7 +563,7 @@ void GPU::plotHigh(int x0, int y0, int x1, int y1)
 	for (int y = y0; y < y1; y++)
 	{
 		if ((x > 0 && x < 256) && (y > 0 && y < 192))
-			renderBuffer[(256 * y) + x] = 0x7FFF;
+			renderBuffer[(256 * y) + x] = 0x001F;
 		if (D > 0)
 		{
 			x += xi;

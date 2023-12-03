@@ -220,6 +220,10 @@ void GPU::processCommand()
 		case 0x1C: cmd_multiplyByTrans(params); break;
 		case 0x23: cmd_vertex16Bit(params); break;
 		case 0x24: cmd_vertex10Bit(params); break;
+		case 0x25: cmd_vertexXY(params); break;
+		case 0x26: cmd_vertexXZ(params); break;
+		case 0x27: cmd_vertexYZ(params); break;
+		case 0x28: cmd_vertexDiff(params); break;
 		case 0x40: cmd_beginVertexList(params); break;
 		case 0x41: cmd_endVertexList(); break;
 		case 0x50: cmd_swapBuffers(); break;
