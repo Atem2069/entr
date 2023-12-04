@@ -272,12 +272,7 @@ void GPU::cmd_vertex16Bit(uint32_t* params)
 
 	Vector point = {};
 	point.v[0] = x; point.v[1] = y; point.v[2] = z; point.v[3] = (1 << 12);
-	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
-	m_vertexRAM[m_vertexCount++] = clipPoint;
-	m_runningVtxCount++;
-	submitPolygon();
-
-	m_lastVertex = point;
+	submitVertex(point);
 }
 
 void GPU::cmd_vertex10Bit(uint32_t* params)
@@ -290,12 +285,7 @@ void GPU::cmd_vertex10Bit(uint32_t* params)
 
 	Vector point = {};
 	point.v[0] = x; point.v[1] = y; point.v[2] = z; point.v[3] = (1 << 12);
-	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
-	m_vertexRAM[m_vertexCount++] = clipPoint;
-	m_runningVtxCount++;
-	submitPolygon();
-
-	m_lastVertex = point;
+	submitVertex(point);
 }
 
 void GPU::cmd_vertexXY(uint32_t* params)
@@ -307,12 +297,7 @@ void GPU::cmd_vertexXY(uint32_t* params)
 
 	Vector point = {};
 	point.v[0] = x; point.v[1] = y; point.v[2] = m_lastVertex.v[2]; point.v[3] = (1 << 12);
-	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
-	m_vertexRAM[m_vertexCount++] = clipPoint;
-	m_runningVtxCount++;
-	submitPolygon();
-
-	m_lastVertex = point;
+	submitVertex(point);
 }
 
 void GPU::cmd_vertexXZ(uint32_t* params)
@@ -324,12 +309,7 @@ void GPU::cmd_vertexXZ(uint32_t* params)
 
 	Vector point = {};
 	point.v[0] = x; point.v[1] = m_lastVertex.v[1]; point.v[2] = z; point.v[3] = (1 << 12);
-	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
-	m_vertexRAM[m_vertexCount++] = clipPoint;
-	m_runningVtxCount++;
-	submitPolygon();
-
-	m_lastVertex = point;
+	submitVertex(point);
 }
 
 void GPU::cmd_vertexYZ(uint32_t* params)
@@ -341,12 +321,7 @@ void GPU::cmd_vertexYZ(uint32_t* params)
 
 	Vector point = {};
 	point.v[0] = m_lastVertex.v[0]; point.v[1] = y; point.v[2] = z; point.v[3] = (1 << 12);
-	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
-	m_vertexRAM[m_vertexCount++] = clipPoint;
-	m_runningVtxCount++;
-	submitPolygon();
-
-	m_lastVertex = point;
+	submitVertex(point);
 }
 
 void GPU::cmd_vertexDiff(uint32_t* params)
@@ -367,12 +342,7 @@ void GPU::cmd_vertexDiff(uint32_t* params)
 
 	Vector point = m_lastVertex;
 	point.v[0] += x; point.v[1] += y; point.v[2] += z; point.v[3] = (1 << 12);
-	Vector clipPoint = multiplyVectorMatrix(point, m_clipMatrix);
-	m_vertexRAM[m_vertexCount++] = clipPoint;
-	m_runningVtxCount++;
-	submitPolygon();
-
-	m_lastVertex = point;
+	submitVertex(point);
 }
 
 void GPU::cmd_endVertexList()
@@ -394,6 +364,16 @@ void GPU::cmd_swapBuffers()
 	m_vertexCount = 0;
 	m_polygonCount = 0;
 	m_runningVtxCount = 0;
+}
+
+void GPU::submitVertex(Vector vtx)
+{
+	Vector clipPoint = multiplyVectorMatrix(vtx, m_clipMatrix);
+	m_vertexRAM[m_vertexCount++] = clipPoint;
+	m_runningVtxCount++;
+	submitPolygon();
+
+	m_lastVertex = vtx;
 }
 
 void GPU::submitPolygon()

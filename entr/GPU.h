@@ -129,6 +129,7 @@ private:
 	void cmd_endVertexList();
 	void cmd_swapBuffers();
 
+	void submitVertex(Vector vtx);
 	void submitPolygon();
 
 	void debug_render();
