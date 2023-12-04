@@ -98,7 +98,7 @@ private:
 	Matrix m_directionalStack[32] = {};
 
 	//stack pointer for coordinate/directional matrix stacks. they share same SP.
-	int32_t m_coordinateStackPointer = 0;
+	uint32_t m_coordinateStackPointer = 0;
 
 	//identity matrix - used for MTX_IDENTITY
 	Matrix m_identityMatrix = {};

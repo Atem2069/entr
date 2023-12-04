@@ -161,6 +161,7 @@
     <ClCompile Include="Flash.cpp" />
     <ClCompile Include="GPU.cpp" />
     <ClCompile Include="GPU_GeometryEngine.cpp" />
+    <ClCompile Include="GPU_SoftwareRenderer.cpp" />
     <ClCompile Include="GuiRenderer.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="InterruptManager.cpp" />

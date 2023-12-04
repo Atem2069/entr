@@ -33,9 +33,17 @@ uint8_t GPU::read(uint32_t address)
 	case 0x04000601:
 		return (GXSTAT >> 8) & 0xFF;
 	case 0x04000602:
-		return (GXSTAT >> 16) & 0xFF;
+		return (GXFIFO.size()) & 0xFF;
 	case 0x04000603:
-		return (GXSTAT >> 24) & 0xFF;
+		return ((GXSTAT >> 24) & 0xFE) | ((GXFIFO.size())>>8);	//ew
+	case 0x04000604:
+		return m_polygonCount & 0xFF;
+	case 0x04000605:
+		return (m_polygonCount >> 8) & 0xF;
+	case 0x04000606:
+		return m_vertexCount & 0xFF;
+	case 0x04000407:
+		return (m_vertexCount >> 8) & 0x1F;
 	}
 }
 
@@ -118,7 +126,7 @@ void GPU::writeGXFIFO(uint32_t value)
 
 void GPU::writeCmdPort(uint32_t address, uint32_t value)
 {
-	uint32_t cmd = ((address - 0x4000440) >> 2)+0x10;
+	uint32_t cmd = (address & 0x1FF) >> 2;
 	int noParams = m_cmdParameterLUT[cmd];
 	if (noParams < 2)
 	{
