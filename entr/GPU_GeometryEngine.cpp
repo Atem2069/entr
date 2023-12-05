@@ -338,8 +338,6 @@ void GPU::cmd_vertexDiff(uint32_t* params)
 	if ((z >> 9) & 0b1)
 		z |= 0xFC00;
 	
-	x >>= 3; y >>= 3; z >>= 3;
-
 	Vector point = m_lastVertex;
 	point.v[0] += x; point.v[1] += y; point.v[2] += z; point.v[3] = (1 << 12);
 	submitVertex(point);
