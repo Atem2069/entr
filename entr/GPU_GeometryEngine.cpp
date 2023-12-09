@@ -392,29 +392,33 @@ void GPU::submitPolygon()
 {
 	if (m_polygonCount == 2048)
 		return;
+
+	Poly p = {};
+	bool submitted = false;
+
 	switch (m_primitiveType)
 	{
 	case 0:
 		if (m_runningVtxCount && ((m_runningVtxCount % 3) == 0))
 		{
-			Poly p = {};
 			p.numVertices = 3;
 			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 3];
 			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 2];
 			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
 			m_polygonRAM[m_polygonCount++] = p;
+			submitted = true;
 		}
 		break;
 	case 1:
 		if (m_runningVtxCount && ((m_runningVtxCount % 4) == 0))
 		{
-			Poly p = {};
 			p.numVertices = 4;
 			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 4];
 			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
 			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 2];
 			p.m_vertices[3] = m_vertexRAM[m_vertexCount - 1];
 			m_polygonRAM[m_polygonCount++] = p;
+			submitted = true;
 		}
 		break;
 	case 2:
@@ -423,7 +427,6 @@ void GPU::submitPolygon()
 			//supposedly: ds generates alternating cw/ccw, but we ignore that :)
 			//num vtxs odd: n-3,n-2,n-1
 			//num vtxs even: n-2,n-3,n-1
-			Poly p = {};
 			p.numVertices = 3;
 			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 3];
 			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 2];
@@ -434,20 +437,40 @@ void GPU::submitPolygon()
 				p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
 			}
 			m_polygonRAM[m_polygonCount++] = p;
+			submitted = true;
 		}
 		break;
 	case 3:
 		if (m_runningVtxCount >= 4 && (!(m_runningVtxCount & 0b1)))
 		{
 			//i think this is right, not sure... but it seems polys are 0123 2345 4567 ...
-			Poly p = {};
 			p.numVertices = 4;
 			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 4];
 			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
 			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
 			p.m_vertices[3] = m_vertexRAM[m_vertexCount - 2];
 			m_polygonRAM[m_polygonCount++] = p;
+			submitted = true;
 		}
 		break;
 	}
+	if (submitted)
+	{
+		//determine winding order of poly
+		Vector v0 = p.m_vertices[0];
+		Vector v1 = p.m_vertices[1];
+		Vector v2 = p.m_vertices[2];
+		v0.v[2] = v0.v[3]; v1.v[2] = v1.v[3]; v2.v[2] = v2.v[3];
+		//oh no
+		Vector a = {};
+		a.v[0] = v0.v[0] - v1.v[0]; a.v[1] = v0.v[1] - v1.v[1]; a.v[2] = v0.v[2] - v1.v[2];
+		Vector b = {};
+		b.v[0] = v2.v[0] - v1.v[0]; b.v[1] = v2.v[1] - v1.v[1]; b.v[2] = v2.v[2] - v1.v[2];
+
+		Vector cross = crossProduct(a, b);
+		int64_t dot = dotProduct(cross, v0);
+		if (dot > 0)			//not sure..
+			m_polygonRAM[m_polygonCount - 1].cw = true;
+	}
+
 }

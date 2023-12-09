@@ -89,7 +89,6 @@ void GPU::rasterizePolygon(Poly p)
 		}
 	}
 
-
 	//hacky
 	if (smallY < 0 || smallY >= 192 || largeY < 0 || largeY >= 192)
 		return;
@@ -97,9 +96,17 @@ void GPU::rasterizePolygon(Poly p)
 	Vector l1 = {}, l2 = {};
 	Vector r1 = {}, r2 = {};
 
+	int leftStep = 1;
+	int rightStep = p.numVertices - 1;
+	if (p.cw)
+	{
+		leftStep = p.numVertices - 1;
+		rightStep = 1;
+	}
+
 	//todo: fix this up. assumes CCW winding order, could calculate winding order to determine order to walk edges on left/right
-	int l2Idx = (topVtxIdx + 1) % (p.numVertices);
-	int r2Idx = (topVtxIdx - 1 + p.numVertices) % p.numVertices;
+	int l2Idx = (topVtxIdx + leftStep) % p.numVertices;
+	int r2Idx = (topVtxIdx + rightStep) % p.numVertices;
 
 	l1 = p.m_vertices[topVtxIdx];
 	l2 = p.m_vertices[l2Idx];
@@ -113,14 +120,14 @@ void GPU::rasterizePolygon(Poly p)
 	if (y >= l2.v[1])	//reached end of left slope
 	{
 		l1 = l2;
-		l2Idx = (l2Idx + 1) % p.numVertices;
+		l2Idx = (l2Idx + leftStep) % p.numVertices;
 		l2 = p.m_vertices[l2Idx];
 		xMin = l1.v[0];
 	}
 	if (y >= r2.v[1])
 	{
 		r1 = r2;
-		r2Idx = (r2Idx - 1 + p.numVertices) % p.numVertices;
+		r2Idx = (r2Idx + rightStep) % p.numVertices;
 		r2 = p.m_vertices[r2Idx];
 		xMax = r1.v[0];
 	}
@@ -146,7 +153,7 @@ void GPU::rasterizePolygon(Poly p)
 		if (y >= l2.v[1])	//reached end of left slope
 		{
 			l1 = l2;
-			l2Idx = (l2Idx + 1) % p.numVertices;
+			l2Idx = (l2Idx + leftStep) % p.numVertices;
 			l2 = p.m_vertices[l2Idx];
 			xMin = l1.v[0];
 			continue;
@@ -154,7 +161,7 @@ void GPU::rasterizePolygon(Poly p)
 		if (y >= r2.v[1])
 		{
 			r1 = r2;
-			r2Idx = (r2Idx - 1 + p.numVertices) % p.numVertices;
+			r2Idx = (r2Idx + rightStep) % p.numVertices;
 			r2 = p.m_vertices[r2Idx];
 			xMax = r1.v[0];
 			continue;

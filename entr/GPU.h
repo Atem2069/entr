@@ -20,7 +20,7 @@ struct Matrix
 //todo: change this to 'Vertex', 'Vector' is a bad name
 struct Vector
 {
-	int32_t v[4];
+	int64_t v[4];
 	uint16_t color;
 };
 
@@ -28,6 +28,7 @@ struct Poly
 {
 	uint8_t numVertices;
 	Vector m_vertices[4];	//max 4 vertices per polygon.
+	bool cw;
 };
 
 class GPU
@@ -161,6 +162,22 @@ private:
 		if (negative)
 			result = -result;
 		return result;
+	}
+
+	//should move this all to a new header.
+	
+	inline Vector crossProduct(Vector a, Vector b)
+	{
+		Vector c = {};
+		c.v[0] = (a.v[1] * b.v[2]) - (a.v[2] * b.v[1]);
+		c.v[1] = (a.v[2] * b.v[0]) - (a.v[0] * b.v[2]);
+		c.v[2] = (a.v[0] * b.v[1]) - (a.v[1] * b.v[0]);
+		return c;
+	}
+	
+	inline int64_t dotProduct(Vector a, Vector b)
+	{
+		return (a.v[0] * b.v[0]) + (a.v[1] * b.v[1]) + (a.v[2] * b.v[2]);
 	}
 
 	//some matrix helper stuff 
