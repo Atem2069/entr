@@ -40,7 +40,8 @@ void GPU::cmd_popMatrix(uint32_t* params)
 		m_coordinateStackPointer = (m_coordinateStackPointer - offs) & 63;
 		if (m_coordinateStackPointer < 0 || m_coordinateStackPointer > 30)	//games might be silly enough to trigger this.
 		{
-			GXSTAT |= (1 << 15);		
+			GXSTAT |= (1 << 15);	
+			m_coordinateStackPointer = 0;
 			Logger::msg(LoggerSeverity::Error, std::format("gpu: exploded.. Coordinate Matrix Stack Pointer is OOB: {}, {}", m_coordinateStackPointer, offs));
 		}
 		m_coordinateMatrix = m_coordinateStack[m_coordinateStackPointer&0x1F];
@@ -348,6 +349,18 @@ void GPU::cmd_endVertexList()
 	//this seems to be useless on real hardware.
 }
 
+
+void GPU::cmd_vtxColor(uint32_t* params)
+{
+	m_lastColor = params[0] & 0x7FFF;
+}
+
+void GPU::cmd_materialColor0(uint32_t* params)
+{
+	if ((params[0] >> 15) & 0b1)
+		m_lastColor = params[0] & 0x7FFF;
+}
+
 void GPU::cmd_swapBuffers()
 {
 	//probably SHOULD NOT be doing all this immediately.
@@ -367,6 +380,7 @@ void GPU::cmd_swapBuffers()
 void GPU::submitVertex(Vector vtx)
 {
 	Vector clipPoint = multiplyVectorMatrix(vtx, m_clipMatrix);
+	clipPoint.color = m_lastColor;
 	m_vertexRAM[m_vertexCount++] = clipPoint;
 	m_runningVtxCount++;
 	submitPolygon();

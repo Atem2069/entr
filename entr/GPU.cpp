@@ -29,6 +29,7 @@ uint8_t GPU::read(uint32_t address)
 	switch (address)
 	{
 	case 0x04000600:
+		GXSTAT |= 0b10;
 		return GXSTAT & 0xFF;
 	case 0x04000601:
 		return (GXSTAT >> 8) & 0xFF;
@@ -45,6 +46,15 @@ uint8_t GPU::read(uint32_t address)
 	case 0x04000407:
 		return (m_vertexCount >> 8) & 0x1F;
 	}
+	//lmao
+	if (address >= 0x04000640 && address <= 0x0400067f)
+	{
+		address -= 0x04000640;
+		int mtxIdx = address >> 2;
+		uint32_t m = m_clipMatrix.m[mtxIdx];
+		return (m >> (address & 0b11)) & 0xFF;
+	}
+
 }
 
 void GPU::write(uint32_t address, uint8_t value)
@@ -226,12 +236,14 @@ void GPU::processCommand()
 		case 0x1A: cmd_multiply3x3Matrix(params); break;
 		case 0x1B: cmd_multiplyByScale(params); break;
 		case 0x1C: cmd_multiplyByTrans(params); break;
+		case 0x20: cmd_vtxColor(params); break;
 		case 0x23: cmd_vertex16Bit(params); break;
 		case 0x24: cmd_vertex10Bit(params); break;
 		case 0x25: cmd_vertexXY(params); break;
 		case 0x26: cmd_vertexXZ(params); break;
 		case 0x27: cmd_vertexYZ(params); break;
 		case 0x28: cmd_vertexDiff(params); break;
+		case 0x30: cmd_materialColor0(params); break;
 		case 0x40: cmd_beginVertexList(params); break;
 		case 0x41: cmd_endVertexList(); break;
 		case 0x50: cmd_swapBuffers(); break;

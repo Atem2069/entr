@@ -17,9 +17,11 @@ struct Matrix
 	int32_t m[16];
 };
 
+//todo: change this to 'Vertex', 'Vector' is a bad name
 struct Vector
 {
 	int32_t v[4];
+	uint16_t color;
 };
 
 struct Poly
@@ -104,6 +106,7 @@ private:
 	Matrix m_identityMatrix = {};
 
 	Vector m_lastVertex = {};
+	uint16_t m_lastColor = {};
 
 	//gpu commands
 	void cmd_setMatrixMode(uint32_t* params);
@@ -119,6 +122,7 @@ private:
 	void cmd_multiply3x3Matrix(uint32_t* params);
 	void cmd_multiplyByScale(uint32_t* params);
 	void cmd_multiplyByTrans(uint32_t* params);
+	void cmd_vtxColor(uint32_t* params);
 	void cmd_beginVertexList(uint32_t* params);
 	void cmd_vertex16Bit(uint32_t* params);
 	void cmd_vertex10Bit(uint32_t* params);
@@ -127,6 +131,7 @@ private:
 	void cmd_vertexYZ(uint32_t* params);
 	void cmd_vertexDiff(uint32_t* params);
 	void cmd_endVertexList();
+	void cmd_materialColor0(uint32_t* params);
 	void cmd_swapBuffers();
 
 	void submitVertex(Vector vtx);
@@ -236,5 +241,31 @@ private:
 	{
 		int64_t quotient = ((int64_t)a << 12) / (int64_t)b;
 		return quotient;
+	}
+
+	//interpolation
+	int linearInterpolate(int x, int y1, int y2, int x1, int x2)
+	{
+		if (x1 == x2)
+		{
+			return y1;
+		}
+		//r1.v[0] + ((y - r1.v[1]) * (r2.v[0] - r1.v[0])) / (r2.v[1] - r1.v[1]);
+		return y1 + ((x - x1) * (y2 - y1)) / (x2-x1);
+	}
+
+	uint16_t interpolateColor(int x, int y1, int y2, int x1, int x2)
+	{
+		uint16_t r1 = y1 & 0x1F;
+		uint16_t g1 = (y1 >> 5) & 0x1F;
+		uint16_t b1 = (y1 >> 10) & 0x1F;
+		uint16_t r2 = y2 & 0x1F;
+		uint16_t g2 = (y2 >> 5) & 0x1F;
+		uint16_t b2 = (y2 >> 10) & 0x1F;
+		
+		uint16_t r = linearInterpolate(x, r1, r2, x1, x2) & 0x1F;
+		uint16_t g = linearInterpolate(x, g1, g2, x1, x2) & 0x1F;
+		uint16_t b = linearInterpolate(x, b1, b2, x1, x2) & 0x1F;
+		return r | (g << 5) | (b << 10);
 	}
 };

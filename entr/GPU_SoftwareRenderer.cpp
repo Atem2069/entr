@@ -18,6 +18,7 @@ void GPU::debug_render()
 				Vector v = {};
 				v.v[0] = screenX;
 				v.v[1] = screenY;
+				v.color = cur.color;
 				p.m_vertices[j] = v;
 			}
 			else
@@ -48,14 +49,6 @@ void GPU::debug_render()
 			debug_drawLine(v3.v[0], v3.v[1], v0.v[0], v0.v[1]);
 		}*/
 	}
-}
-
-int dumbMod(int a, int b)
-{
-	int rem = a % b;
-	if (rem < 0)
-		rem += b;
-	return rem;
 }
 
 void GPU::rasterizePolygon(Poly p)
@@ -104,26 +97,52 @@ void GPU::rasterizePolygon(Poly p)
 	Vector l1 = {}, l2 = {};
 	Vector r1 = {}, r2 = {};
 
-	l1 = p.m_vertices[topVtxIdx];
-	l2 = p.m_vertices[(topVtxIdx + 1) % (p.numVertices)];
-	r1 = p.m_vertices[topVtxIdx];
-	r2 = p.m_vertices[dumbMod(topVtxIdx-1,p.numVertices)];
-
+	//todo: fix this up. assumes CCW winding order, could calculate winding order to determine order to walk edges on left/right
 	int l2Idx = (topVtxIdx + 1) % (p.numVertices);
-	int r2Idx = dumbMod(topVtxIdx - 1, p.numVertices);
+	int r2Idx = (topVtxIdx - 1 + p.numVertices) % p.numVertices;
+
+	l1 = p.m_vertices[topVtxIdx];
+	l2 = p.m_vertices[l2Idx];
+	r1 = p.m_vertices[topVtxIdx];
+	r2 = p.m_vertices[r2Idx];
 
 	int xMin = l1.v[0]; int xMax = r1.v[0];
-	
 	int y = smallY;
-	while (y <= largeY)
+
+	//THIS CODE IS HORRIBLE
+	if (y >= l2.v[1])	//reached end of left slope
+	{
+		l1 = l2;
+		l2Idx = (l2Idx + 1) % p.numVertices;
+		l2 = p.m_vertices[l2Idx];
+		xMin = l1.v[0];
+	}
+	if (y >= r2.v[1])
+	{
+		r1 = r2;
+		r2Idx = (r2Idx - 1 + p.numVertices) % p.numVertices;
+		r2 = p.m_vertices[r2Idx];
+		xMax = r1.v[0];
+	}
+	
+	while (y < largeY)
 	{
 		//rasterize
 		for (int x = xMin; x <= xMax; x++)
 		{
+			//interpolate color in y, then x
+			uint16_t lcol = interpolateColor(y, l1.color, l2.color, l1.v[1], l2.v[1]);
+			uint16_t rcol = interpolateColor(y, r1.color, r2.color, r1.v[1], r2.v[1]);
+			//interpolate in x
+			uint16_t col = interpolateColor(x, lcol, rcol, xMin, xMax);
 			if (y > 0 && y < 192 && x>0 && x < 256)
-				renderBuffer[(y * 256) + x] = 0x001F;
+				renderBuffer[(y * 256) + x] = col&0x7FFF;	//lol. do proper interpolation
 		}
+
+		//advance next scanline
 		y++;
+
+		//this is in dire need of a cleanup
 		if (y >= l2.v[1])	//reached end of left slope
 		{
 			l1 = l2;
@@ -135,13 +154,16 @@ void GPU::rasterizePolygon(Poly p)
 		if (y >= r2.v[1])
 		{
 			r1 = r2;
-			r2Idx = dumbMod(r2Idx - 1, p.numVertices);
+			r2Idx = (r2Idx - 1 + p.numVertices) % p.numVertices;
 			r2 = p.m_vertices[r2Idx];
 			xMax = r1.v[0];
 			continue;
 		}
-		xMin = l1.v[0] + ((y - l1.v[1]) * (l2.v[0] - l1.v[0])) / (l2.v[1] - l1.v[1]);
-		xMax = r1.v[0] + ((y - r1.v[1]) * (r2.v[0] - r1.v[0])) / (r2.v[1] - r1.v[1]);
+
+		//xMin = l1.v[0] + ((y - l1.v[1]) * (l2.v[0] - l1.v[0])) / (l2.v[1] - l1.v[1]);
+		//xMax = r1.v[0] + ((y - r1.v[1]) * (r2.v[0] - r1.v[0])) / (r2.v[1] - r1.v[1]);
+		xMin = linearInterpolate(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1]);
+		xMax = linearInterpolate(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1]);
 	}
 }
 
