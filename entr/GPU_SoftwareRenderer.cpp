@@ -25,7 +25,8 @@ void GPU::debug_render()
 		}
 		if (!draw)
 			continue;
-		Vector v0 = p.m_vertices[0];
+		rasterizePolygon(p);
+		/*Vector v0 = p.m_vertices[0];
 		Vector v1 = p.m_vertices[1];
 		Vector v2 = p.m_vertices[2];
 		Vector v3 = p.m_vertices[3];
@@ -45,7 +46,102 @@ void GPU::debug_render()
 			debug_drawLine(v1.v[0], v1.v[1], v2.v[0], v2.v[1]);
 			debug_drawLine(v2.v[0], v2.v[1], v3.v[0], v3.v[1]);
 			debug_drawLine(v3.v[0], v3.v[1], v0.v[0], v0.v[1]);
+		}*/
+	}
+}
+
+int dumbMod(int a, int b)
+{
+	int rem = a % b;
+	if (rem < 0)
+		rem += b;
+	return rem;
+}
+
+void GPU::rasterizePolygon(Poly p)
+{
+
+	//find top and bottom points
+	//while scanline count < bottom
+	//left slope = top->top+1        (initially)
+	//right slope = top->top-1       (initially)
+	//xspan = xr-xl, draw scanline
+	//if we reached end of any slope, find new slope
+	//otherwise: interpolate x for each slope
+	
+	int smallY = 0x7FFFFFFF;
+	int smallX = 0x7FFFFFFF;
+	int topVtxIdx = 0;
+	int largeY = 0xFFFFFFFF;
+	int largeX = 0xFFFFFFFF;
+	int bottomVtxIdx = 0;
+
+	for (int i = 0; i < p.numVertices; i++)
+	{
+		if (p.m_vertices[i].v[1] <= smallY)
+		{
+			if (p.m_vertices[i].v[1] == smallY && p.m_vertices[i].v[0] > smallX)
+				continue;
+			smallX = p.m_vertices[i].v[0];
+			smallY = p.m_vertices[i].v[1];
+			topVtxIdx = i;
 		}
+		if (p.m_vertices[i].v[1] >= largeY)
+		{
+			if (p.m_vertices[i].v[1] == largeY && (int)p.m_vertices[i].v[0] < largeX)
+				continue;
+			largeY = p.m_vertices[i].v[1];
+			largeX = p.m_vertices[i].v[0];
+			bottomVtxIdx = i;
+		}
+	}
+
+
+	//hacky
+	if (smallY < 0 || smallY >= 192 || largeY < 0 || largeY >= 192)
+		return;
+
+	Vector l1 = {}, l2 = {};
+	Vector r1 = {}, r2 = {};
+
+	l1 = p.m_vertices[topVtxIdx];
+	l2 = p.m_vertices[(topVtxIdx + 1) % (p.numVertices)];
+	r1 = p.m_vertices[topVtxIdx];
+	r2 = p.m_vertices[dumbMod(topVtxIdx-1,p.numVertices)];
+
+	int l2Idx = (topVtxIdx + 1) % (p.numVertices);
+	int r2Idx = dumbMod(topVtxIdx - 1, p.numVertices);
+
+	int xMin = l1.v[0]; int xMax = r1.v[0];
+	
+	int y = smallY;
+	while (y <= largeY)
+	{
+		//rasterize
+		for (int x = xMin; x <= xMax; x++)
+		{
+			if (y > 0 && y < 192 && x>0 && x < 256)
+				renderBuffer[(y * 256) + x] = 0x001F;
+		}
+		y++;
+		if (y >= l2.v[1])	//reached end of left slope
+		{
+			l1 = l2;
+			l2Idx = (l2Idx + 1) % p.numVertices;
+			l2 = p.m_vertices[l2Idx];
+			xMin = l1.v[0];
+			continue;
+		}
+		if (y >= r2.v[1])
+		{
+			r1 = r2;
+			r2Idx = dumbMod(r2Idx - 1, p.numVertices);
+			r2 = p.m_vertices[r2Idx];
+			xMax = r1.v[0];
+			continue;
+		}
+		xMin = l1.v[0] + ((y - l1.v[1]) * (l2.v[0] - l1.v[0])) / (l2.v[1] - l1.v[1]);
+		xMax = r1.v[0] + ((y - r1.v[1]) * (r2.v[0] - r1.v[0])) / (r2.v[1] - r1.v[1]);
 	}
 }
 

@@ -406,7 +406,7 @@ void GPU::submitPolygon()
 	case 2:
 		if (m_runningVtxCount >= 3)
 		{
-			//supposedly: ds generates alternating cw/ccw
+			//supposedly: ds generates alternating cw/ccw, but we ignore that :)
 			//num vtxs odd: n-3,n-2,n-1
 			//num vtxs even: n-2,n-3,n-1
 			Poly p = {};
@@ -414,6 +414,11 @@ void GPU::submitPolygon()
 			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 3];
 			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 2];
 			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
+			if (!(m_runningVtxCount & 0b1))
+			{
+				p.m_vertices[0] = m_vertexRAM[m_vertexCount - 2];
+				p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
+			}
 			m_polygonRAM[m_polygonCount++] = p;
 		}
 		break;

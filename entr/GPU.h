@@ -133,6 +133,9 @@ private:
 	void submitPolygon();
 
 	void debug_render();
+	
+	void rasterizePolygon(Poly p);
+
 	void debug_drawLine(int x0, int y0, int x1, int y1);
 	void plotLow(int x0, int y0, int x1, int y1);
 	void plotHigh(int x0, int y0, int x1, int y1);
