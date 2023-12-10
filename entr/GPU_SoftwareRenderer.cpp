@@ -96,8 +96,8 @@ void GPU::rasterizePolygon(Poly p)
 	}
 
 	//hacky
-	if (smallY < 0 || smallY >= 192 || largeY < 0 || largeY >= 192)
-		return;
+	//if (smallY < 0 || smallY >= 192 || largeY < 0 || largeY >= 192)
+	//	return;
 
 	Vector l1 = {}, l2 = {};
 	Vector r1 = {}, r2 = {};
@@ -138,9 +138,14 @@ void GPU::rasterizePolygon(Poly p)
 		xMax = r1.v[0];
 	}
 	
+	//some hacks to clamp xmin,xmax,...
+	//i need clipping very very soon..
+	largeY = std::min(largeY, 192);
 	while (y < largeY)
 	{
 		//rasterize
+		xMin = std::max(xMin, 0);
+		xMax = std::min(xMax, 255);
 		for (int x = xMin; x <= xMax; x++)
 		{
 			//interpolate color in y, then x

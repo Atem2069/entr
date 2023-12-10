@@ -456,6 +456,24 @@ void GPU::submitPolygon()
 	}
 	if (submitted)
 	{
+		//hacky. need to do real clipping.
+		bool discard = true;
+		for (int i = 0; i < p.numVertices; i++)
+		{
+			Vector v = p.m_vertices[i];
+			bool discardX = (v.v[0] < -v.v[3]) || (v.v[0] > v.v[3]);
+			bool discardY = (v.v[1] < -v.v[3]) || (v.v[1] > v.v[3]);
+			bool discardZ = (v.v[2] < -v.v[3]) || (v.v[2] > v.v[3]);
+			discard &= (discardX & discardY & discardZ);
+		}
+		if (discard)
+		{
+			m_vertexCount -= p.numVertices;
+			m_polygonCount--;
+			m_runningVtxCount = 0;
+			return;
+		}
+
 		//determine winding order of poly
 		Vector v0 = p.m_vertices[0];
 		Vector v1 = p.m_vertices[1];
