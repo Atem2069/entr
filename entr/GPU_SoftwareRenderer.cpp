@@ -2,6 +2,7 @@
 
 void GPU::debug_render()
 {
+	memset(depthBuffer, 0xFF, 256 * 192 * sizeof(uint32_t));
 	for (int i = 0; i < m_polygonCount; i++)
 	{
 		Poly p = m_polygonRAM[i];
@@ -15,9 +16,14 @@ void GPU::debug_render()
 				int64_t screenY = fixedPointMul((cur.v[1] + cur.v[3]), 192 << 12);
 				screenX = fixedPointDiv(screenX, (cur.v[3] << 1)) >> 12;
 				screenY = 192 - (fixedPointDiv(screenY, (cur.v[3] << 1)) >> 12);
+
+				// (((Z * 0x4000 / W) + 0x3FFF) * 0x200) & 0xFFFFFF
+				int64_t z = (((cur.v[2] * 0x4000 / cur.v[3]) + 0x3FFF) * 0x200) & 0xFFFFF;
+
 				Vector v = {};
 				v.v[0] = screenX;
 				v.v[1] = screenY;
+				v.v[2] = z;
 				v.color = cur.color;
 				p.m_vertices[j] = v;
 			}
@@ -142,8 +148,19 @@ void GPU::rasterizePolygon(Poly p)
 			uint16_t rcol = interpolateColor(y, r1.color, r2.color, r1.v[1], r2.v[1]);
 			//interpolate in x
 			uint16_t col = interpolateColor(x, lcol, rcol, xMin, xMax);
+
+			//is interpolating z fine? or should we interpolate 1/z?
+			int32_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
+			int32_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
+			int32_t z = linearInterpolate(x, zl, zr, xMin, xMax) & 0xFFFFF;
 			if (y > 0 && y < 192 && x>0 && x < 256)
-				renderBuffer[(y * 256) + x] = col&0x7FFF;	//lol. do proper interpolation
+			{
+				if ((uint32_t)z < depthBuffer[(y * 256) + x])
+				{
+					depthBuffer[(y * 256) + x] = z;
+					renderBuffer[(y * 256) + x] = col & 0x7FFF;	//lol. do proper interpolation
+				}
+			}
 		}
 
 		//advance next scanline

@@ -50,6 +50,7 @@ public:
 	static uint16_t output[256 * 192];
 private:
 	uint16_t renderBuffer[256 * 192];
+	uint32_t depthBuffer[256 * 192];
 	InterruptManager* m_interruptManager;
 	Scheduler* m_scheduler;
 
