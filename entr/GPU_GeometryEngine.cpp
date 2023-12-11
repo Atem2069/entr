@@ -464,7 +464,7 @@ void GPU::submitPolygon()
 			bool discardX = (v.v[0] < -v.v[3]) || (v.v[0] > v.v[3]);
 			bool discardY = (v.v[1] < -v.v[3]) || (v.v[1] > v.v[3]);
 			bool discardZ = (v.v[2] < -v.v[3]) || (v.v[2] > v.v[3]);
-			discard &= (discardX & discardY & discardZ);
+			discard &= ((discardX & discardY) | discardZ);
 		}
 		if (discard)
 		{
@@ -475,20 +475,21 @@ void GPU::submitPolygon()
 		}
 
 		//determine winding order of poly
-		Vector v0 = p.m_vertices[0];
-		Vector v1 = p.m_vertices[1];
-		Vector v2 = p.m_vertices[2];
-		v0.v[2] = v0.v[3]; v1.v[2] = v1.v[3]; v2.v[2] = v2.v[3];
-		//oh no
-		Vector a = {};
-		a.v[0] = v0.v[0] - v1.v[0]; a.v[1] = v0.v[1] - v1.v[1]; a.v[2] = v0.v[2] - v1.v[2];
-		Vector b = {};
-		b.v[0] = v2.v[0] - v1.v[0]; b.v[1] = v2.v[1] - v1.v[1]; b.v[2] = v2.v[2] - v1.v[2];
-
-		Vector cross = crossProduct(a, b);
-		int64_t dot = dotProduct(cross, v0);
-		if (dot > 0)			//not sure..
-			m_polygonRAM[m_polygonCount - 1].cw = true;
+		m_polygonRAM[m_polygonCount - 1].cw = getWindingOrder(p.m_vertices[0], p.m_vertices[1], p.m_vertices[2]);
 	}
 
+}
+
+bool GPU::getWindingOrder(Vector v0, Vector v1, Vector v2)
+{
+	v0.v[2] = v0.v[3]; v1.v[2] = v1.v[3]; v2.v[2] = v2.v[3];
+	//oh no
+	Vector a = {};
+	a.v[0] = v0.v[0] - v1.v[0]; a.v[1] = v0.v[1] - v1.v[1]; a.v[2] = v0.v[2] - v1.v[2];
+	Vector b = {};
+	b.v[0] = v2.v[0] - v1.v[0]; b.v[1] = v2.v[1] - v1.v[1]; b.v[2] = v2.v[2] - v1.v[2];
+
+	Vector cross = crossProduct(a, b);
+	int64_t dot = dotProduct(cross, v0);
+	return (dot > 0);	//this doesn't seem right. dot < 0 should be cw but uhh..
 }
