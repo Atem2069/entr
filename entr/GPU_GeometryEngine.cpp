@@ -454,23 +454,16 @@ void GPU::submitPolygon()
 		}
 		break;
 	}
+
+	//this is bad. polygon submit code could do with a rethink
 	if (submitted)
 	{
-		//hacky. need to do real clipping.
-		bool discard = true;
-		for (int i = 0; i < p.numVertices; i++)
+		Poly clippedPoly = clipPolygon(p);
+		if (clippedPoly.numVertices == 0)
 		{
-			Vector v = p.m_vertices[i];
-			bool discardX = (v.v[0] < -v.v[3]) || (v.v[0] > v.v[3]);
-			bool discardY = (v.v[1] < -v.v[3]) || (v.v[1] > v.v[3]);
-			bool discardZ = (v.v[2] < -v.v[3]) || (v.v[2] > v.v[3]);
-			discard &= ((discardX & discardY) | discardZ);
-		}
-		if (discard)
-		{
-			m_vertexCount -= p.numVertices;
 			m_polygonCount--;
-			m_runningVtxCount = 0;
+			m_vertexCount -= p.numVertices;
+			m_runningVtxCount = 0;			//this is likely not correct for restarting strip
 			return;
 		}
 
@@ -478,6 +471,30 @@ void GPU::submitPolygon()
 		m_polygonRAM[m_polygonCount - 1].cw = getWindingOrder(p.m_vertices[0], p.m_vertices[1], p.m_vertices[2]);
 	}
 
+}
+
+Poly GPU::clipPolygon(Poly p)
+{
+	Poly out = {};
+	bool reject = true;
+	for (int i = 0; i < p.numVertices; i++)
+	{
+		Vector v = p.m_vertices[i];
+		bool discardX = (v.v[0] < -v.v[3]) || (v.v[0] > v.v[3]);
+		bool discardY = (v.v[1] < -v.v[3]) || (v.v[1] > v.v[3]);
+		bool discardZ = (v.v[2] < -v.v[3]) || (v.v[2] > v.v[3]);
+		reject &= (discardX | discardY | discardZ);
+	}
+	if (reject)
+		return out;
+
+	//todo: actual clipping (sutherland hodgman)
+	//clip against z,y,x.
+	//if all points out of clip plane, trivial reject
+	//otherwise, if curr point outside - find intersection in line (last,current) and clip line and submit
+	//if curr point inside, append intersection if last point outside, then append curr point
+	out = p;
+	return out;
 }
 
 bool GPU::getWindingOrder(Vector v0, Vector v1, Vector v2)
