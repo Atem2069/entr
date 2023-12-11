@@ -461,10 +461,27 @@ void GPU::submitPolygon()
 		Poly clippedPoly = clipPolygon(p);
 		if (clippedPoly.numVertices == 0)
 		{
+			//not ideal.
+			//for non-strips, discarding completely seems correct.
+			//for strips, if it's the first poly then discard first 1-2 vtxs depending on tri or strip, then restart
+			//if it's not the first, then just restart strip?
+			if (m_primitiveType >= 2)
+			{
+				m_polygonCount--;
+				return;
+			}
 			m_polygonCount--;
 			m_vertexCount -= p.numVertices;
 			m_runningVtxCount = 0;			//this is likely not correct for restarting strip
 			return;
+		}
+		//should use a 'clipped' flag instead, this isn't really great
+		else if (clippedPoly.numVertices != p.numVertices)
+		{
+			//need to do this properly lol.
+			//iirc just discard old vertices, write new ones and make sure strips are restarted
+			//we do winding order weird tho... so make sure it's preserved. e.g. alternating strip winding order, and crossed quads
+			m_polygonRAM[m_polygonCount - 1] = clippedPoly;
 		}
 
 		//determine winding order of poly
@@ -476,25 +493,83 @@ void GPU::submitPolygon()
 Poly GPU::clipPolygon(Poly p)
 {
 	Poly out = {};
-	bool reject = true;
+	//discard polygon if bad w.
 	for (int i = 0; i < p.numVertices; i++)
 	{
-		Vector v = p.m_vertices[i];
-		bool discardX = (v.v[0] < -v.v[3]) || (v.v[0] > v.v[3]);
-		bool discardY = (v.v[1] < -v.v[3]) || (v.v[1] > v.v[3]);
-		bool discardZ = (v.v[2] < -v.v[3]) || (v.v[2] > v.v[3]);
-		reject &= (discardX | discardY | discardZ);
+		if (p.m_vertices[i].v[3] <= 0)
+			return out;
 	}
-	if (reject)
-		return out;
 
-	//todo: actual clipping (sutherland hodgman)
-	//clip against z,y,x.
-	//if all points out of clip plane, trivial reject
-	//otherwise, if curr point outside - find intersection in line (last,current) and clip line and submit
-	//if curr point inside, append intersection if last point outside, then append curr point
-	out = p;
+	//clip against all 6 planes
+	out = clipAgainstEdge(5, p);
+	for (int i = 4; i >= 0; i--)
+		out = clipAgainstEdge(i, out);
+
 	return out;
+}
+
+Poly GPU::clipAgainstEdge(int edge, Poly p)
+{
+	Poly out = {};
+	//could cleanup with lut?
+	int sign = (edge & 0b1);
+	int axis = (edge >> 1);	//xxyyzz
+
+	for (int i = 0; i < p.numVertices; i++)
+	{
+		Vector cur = p.m_vertices[i];
+		Vector last = p.m_vertices[(i - 1 + p.numVertices) % p.numVertices];
+
+		int64_t curPt = cur.v[axis];
+		int64_t lastPt = last.v[axis];
+		if (sign)
+		{
+			curPt = -curPt;
+			lastPt = -lastPt;
+		}
+
+		//current vtx is in clip plane
+		if (curPt >= -cur.v[3])
+		{
+			//last vtx outside clip plane
+			//find intersection between line cur->last and clip plane, then insert
+			if (lastPt < -last.v[3])
+			{
+				Vector clippedPt = getIntersectingPoint(cur, last, curPt, lastPt);
+				out.m_vertices[out.numVertices++] = clippedPt;
+			}
+			out.m_vertices[out.numVertices++] = cur;
+		}
+		//cur vtx not in clip plane, last pt is
+		//same as previous case, intersection between line (cur->last) and clip plane
+		else if (lastPt >= -last.v[3])
+		{
+			Vector clippedPt = getIntersectingPoint(cur, last, curPt, lastPt);
+			out.m_vertices[out.numVertices++] = clippedPt;
+		}
+	}
+
+	return out;
+}
+
+Vector GPU::getIntersectingPoint(Vector v0, Vector v1, int64_t pa, int64_t pb)
+{
+	Vector v = {};
+	int64_t d1 = pa + v0.v[3];
+	int64_t d2 = pb + v1.v[3];
+	if (d2 == d1)
+		return v0;
+	int64_t delta = (d2 - d1);
+
+	v.v[0] = ((d2 * v0.v[0]) - (d1 * v1.v[0])) / delta;
+	v.v[1] = ((d2 * v0.v[1]) - (d1 * v1.v[1])) / delta;
+	v.v[2] = ((d2 * v0.v[2]) - (d1 * v1.v[2])) / delta;
+	v.v[3] = ((d2 * v0.v[3]) - (d1 * v1.v[3])) / delta;
+
+	//todo: interpolate colours
+	//should be same thing, split up into r,g,b then interpolate
+	v.color = v0.color;
+	return v;
 }
 
 bool GPU::getWindingOrder(Vector v0, Vector v1, Vector v2)

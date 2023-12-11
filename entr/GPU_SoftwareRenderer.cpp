@@ -141,6 +141,7 @@ void GPU::rasterizePolygon(Poly p)
 	//some hacks to clamp xmin,xmax,...
 	//i need clipping very very soon..
 	largeY = std::min(largeY, 192);
+	y = std::max(0, y);
 	while (y < largeY)
 	{
 		//rasterize
@@ -158,7 +159,7 @@ void GPU::rasterizePolygon(Poly p)
 			int32_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
 			int32_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 			int32_t z = linearInterpolate(x, zl, zr, xMin, xMax) & 0xFFFFF;
-			if (y > 0 && y < 192 && x>0 && x < 256)
+			if (y >= 0 && y < 192 && x>=0 && x < 256)
 			{
 				if ((uint32_t)z < depthBuffer[(y * 256) + x])
 				{

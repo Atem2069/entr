@@ -27,7 +27,7 @@ struct Vector
 struct Poly
 {
 	uint8_t numVertices;
-	Vector m_vertices[4];	//max 4 vertices per polygon.
+	Vector m_vertices[10];	//polygon can be clipped with up to 10 vtxs
 	bool cw;
 };
 
@@ -166,6 +166,8 @@ private:
 	}
 
 	Poly clipPolygon(Poly p);
+	Poly clipAgainstEdge(int edge, Poly p);
+	Vector getIntersectingPoint(Vector v0, Vector v1, int64_t pa, int64_t pb);
 	bool getWindingOrder(Vector v0, Vector v1, Vector v2);
 
 	//should move this all to a new header.
