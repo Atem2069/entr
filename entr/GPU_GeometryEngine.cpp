@@ -461,18 +461,44 @@ void GPU::submitPolygon()
 		Poly clippedPoly = clipPolygon(p);
 		if (clippedPoly.numVertices == 0)
 		{
-			//not ideal.
-			//for non-strips, discarding completely seems correct.
-			//for strips, if it's the first poly then discard first 1-2 vtxs depending on tri or strip, then restart
-			//if it's not the first, then just restart strip?
-			if (m_primitiveType >= 2)
+			switch (m_primitiveType)
 			{
+			case 0: case 1:
 				m_polygonCount--;
-				return;
+				m_vertexCount -= p.numVertices;
+				break;
+			case 2:
+				if (m_runningVtxCount == 3)
+				{
+					//first tri in strip: discard first vertex, restart strip
+					m_polygonCount--;
+					m_vertexRAM[m_vertexCount - 3] = m_vertexRAM[m_vertexCount - 2];
+					m_vertexRAM[m_vertexCount - 2] = m_vertexRAM[m_vertexCount - 1];
+					m_vertexCount--;
+					m_runningVtxCount = 2;
+				}
+				else
+				{
+					//hmm.. this correct?
+					m_polygonCount--;
+				}
+				break;
+			case 3:
+				if (m_runningVtxCount == 4)
+				{
+					//first quad in strip: discard first two vertices, restart strip
+					m_polygonCount--;
+					m_vertexRAM[m_vertexCount - 4] = m_vertexRAM[m_vertexCount - 2];
+					m_vertexRAM[m_vertexCount - 3] = m_vertexRAM[m_vertexCount - 1];
+					m_vertexCount -= 2;
+					m_runningVtxCount = 2;
+				}
+				else
+				{
+					m_polygonCount--;
+				}
+				break;
 			}
-			m_polygonCount--;
-			m_vertexCount -= p.numVertices;
-			m_runningVtxCount = 0;			//this is likely not correct for restarting strip
 			return;
 		}
 		//should use a 'clipped' flag instead, this isn't really great
@@ -566,9 +592,19 @@ Vector GPU::getIntersectingPoint(Vector v0, Vector v1, int64_t pa, int64_t pb)
 	v.v[2] = ((d2 * v0.v[2]) - (d1 * v1.v[2])) / delta;
 	v.v[3] = ((d2 * v0.v[3]) - (d1 * v1.v[3])) / delta;
 
-	//todo: interpolate colours
-	//should be same thing, split up into r,g,b then interpolate
-	v.color = v0.color;
+	int64_t r0 = (v0.color & 0x1F);
+	int64_t g0 = (v0.color >> 5) & 0x1F;
+	int64_t b0 = (v0.color >> 10) & 0x1F;
+
+	int64_t r1 = (v1.color & 0x1F);
+	int64_t g1 = (v1.color >> 5) & 0x1F;
+	int64_t b1 = (v1.color >> 10) & 0x1F;
+
+	int64_t r = ((d2 * r0) - (d1 * r1)) / delta;
+	int64_t g = ((d2 * g0) - (d1 * g1)) / delta;
+	int64_t b = ((d2 * b0) - (d1 * b1)) / delta;
+
+	v.color = (r & 0x1F) | ((g & 0x1F) << 5) | ((b & 0x1F) << 10);
 	return v;
 }
 
