@@ -2,7 +2,20 @@
 
 void GPU::debug_render()
 {
-	memset(depthBuffer, 0xFF, 256 * 192 * sizeof(uint32_t));
+	//can we speed up this loop somehow?
+	//X=(X*200h)+((X+1)/8000h)*1FFh".
+	uint32_t depth = clearDepth & 0x7FFF;
+	depth = (depth * 0x200) + ((depth + 1) / 0x8000) * 0x1ff;
+	uint16_t clearCol = clearColor & 0x7FFF;
+	for (int y = 0; y < 192; y++)
+	{
+		for (int x = 0; x < 256; x++)
+		{
+			renderBuffer[(y * 256) + x] = 0x8000;	//todo: figure out alpha
+			depthBuffer[(y * 256) + x] = depth;
+		}
+	}
+
 	for (int i = 0; i < m_polygonCount; i++)
 	{
 		Poly p = m_polygonRAM[i];
@@ -19,7 +32,7 @@ void GPU::debug_render()
 				screenY = 192 - (fixedPointDiv(screenY, (cur.v[3] << 1)) >> 12);
 
 				// (((Z * 0x4000 / W) + 0x3FFF) * 0x200) & 0xFFFFFF
-				int64_t z = (((cur.v[2] * 0x4000 / cur.v[3]) + 0x3FFF) * 0x200) & 0xFFFFF;
+				int64_t z = (((cur.v[2] * 0x4000 / cur.v[3]) + 0x3FFF) * 0x200) & 0xFFFFFF;
 
 				Vector v = {};
 				v.v[0] = screenX;

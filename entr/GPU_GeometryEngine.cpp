@@ -370,7 +370,6 @@ void GPU::cmd_swapBuffers()
 	debug_render();
 
 	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
-	memset(renderBuffer, 0xFF, 256 * 192 * sizeof(uint16_t));
 	
 	m_vertexCount = 0;
 	m_polygonCount = 0;

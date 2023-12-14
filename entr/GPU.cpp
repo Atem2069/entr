@@ -72,6 +72,18 @@ void GPU::write(uint32_t address, uint8_t value)
 	case 0x04000603:
 		GXSTAT &= 0x3FFFFFFF; GXSTAT |= (value & 0xC0) << 24;
 		break;
+	case 0x04000350:
+		clearColor &= 0xFF00; clearColor |= value;
+		break;
+	case 0x04000351:
+		clearColor &= 0xFF; clearColor |= (value << 8);
+		break;
+	case 0x04000354:
+		clearDepth &= 0xFF00; clearDepth |= value;
+		break;
+	case 0x04000355:
+		clearDepth &= 0xFF; clearDepth |= (value << 8);
+		break;
 	}
 }
 
