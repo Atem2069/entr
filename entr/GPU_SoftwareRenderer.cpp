@@ -10,6 +10,7 @@ void GPU::debug_render()
 		for (int j = 0; j < p.numVertices; j++)
 		{
 			Vector cur = p.m_vertices[j];
+			Vector vec = cur;
 			if (cur.v[3] > 0)					//hack to prevent div by 0, also cull polygon if w less than 0.
 			{
 				int64_t screenX = fixedPointMul((cur.v[0] + cur.v[3]), 256 << 12);
@@ -33,27 +34,14 @@ void GPU::debug_render()
 		if (!draw)
 			continue;
 		rasterizePolygon(p);
-		/*Vector v0 = p.m_vertices[0];
-		Vector v1 = p.m_vertices[1];
-		Vector v2 = p.m_vertices[2];
-		Vector v3 = p.m_vertices[3];
-		if (p.numVertices == 3)
+		/*
+		for (int i = 0; i < p.numVertices; i++)
 		{
-			//0,1, 0,2, 1,2
-
+			Vector v0 = p.m_vertices[i];
+			Vector v1 = p.m_vertices[(i + 1) % p.numVertices];
 			debug_drawLine(v0.v[0], v0.v[1], v1.v[0], v1.v[1]);
-			debug_drawLine(v0.v[0], v0.v[1], v2.v[0], v2.v[1]);
-			debug_drawLine(v1.v[0], v1.v[1], v2.v[0], v2.v[1]);
 		}
-		else
-		{
-			//0,1, 1,2, 2,3, 3,0
-
-			debug_drawLine(v0.v[0], v0.v[1], v1.v[0], v1.v[1]);
-			debug_drawLine(v1.v[0], v1.v[1], v2.v[0], v2.v[1]);
-			debug_drawLine(v2.v[0], v2.v[1], v3.v[0], v3.v[1]);
-			debug_drawLine(v3.v[0], v3.v[1], v0.v[0], v0.v[1]);
-		}*/
+		*/
 	}
 }
 
@@ -138,13 +126,14 @@ void GPU::rasterizePolygon(Poly p)
 		xMax = r1.v[0];
 	}
 	
-	//some hacks to clamp xmin,xmax,...
-	//i need clipping very very soon..
+	//clamp ymin,ymax so we don't draw insane polys
+	//we probably have clipping bugs so this is necessary
 	largeY = std::min(largeY, 192);
 	y = std::max(0, y);
 	while (y < largeY)
 	{
 		//rasterize
+		//same for xmin,xmax
 		xMin = std::max(xMin, 0);
 		xMax = std::min(xMax, 255);
 		for (int x = xMin; x <= xMax; x++)
@@ -231,7 +220,7 @@ void GPU::plotLow(int x0, int y0, int x1, int y1)
 
 	for (int x = x0; x < x1; x++)
 	{
-		if ((x > 0 && x < 256) && (y > 0 && y < 192))
+		if ((x >= 0 && x < 256) && (y >= 0 && y < 192))
 			renderBuffer[(256 * y) + x] = 0x001F;
 		if (D > 0)
 		{
@@ -258,7 +247,7 @@ void GPU::plotHigh(int x0, int y0, int x1, int y1)
 
 	for (int y = y0; y < y1; y++)
 	{
-		if ((x > 0 && x < 256) && (y > 0 && y < 192))
+		if ((x >= 0 && x < 256) && (y >= 0 && y < 192))
 			renderBuffer[(256 * y) + x] = 0x001F;
 		if (D > 0)
 		{

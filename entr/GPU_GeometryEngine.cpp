@@ -455,10 +455,12 @@ void GPU::submitPolygon()
 		break;
 	}
 
-	//this is bad. polygon submit code could do with a rethink
+	//holy fuck. this is the singlemost worst piece of shit i've written in my entire life, I hate this
 	if (submitted)
 	{
-		Poly clippedPoly = clipPolygon(p);
+		bool clip = false;
+		Poly clippedPoly = clipPolygon(p,clip);
+
 		if (clippedPoly.numVertices == 0)
 		{
 			switch (m_primitiveType)
@@ -502,40 +504,82 @@ void GPU::submitPolygon()
 			return;
 		}
 		//should use a 'clipped' flag instead, this isn't really great
-		else if (clippedPoly.numVertices != p.numVertices)
+		else if (clip)
 		{
-			//need to do this properly lol.
-			//iirc just discard old vertices, write new ones and make sure strips are restarted
-			//we do winding order weird tho... so make sure it's preserved. e.g. alternating strip winding order, and crossed quads
 			m_polygonRAM[m_polygonCount - 1] = clippedPoly;
+			//hack for winding order:
+			Vector v1 = m_vertexRAM[m_vertexCount - 3];
+			Vector v2 = m_vertexRAM[m_vertexCount - 2];
+			Vector v3 = m_vertexRAM[m_vertexCount - 1];
+
+			switch (m_primitiveType)
+			{
+			case 0: case 1:
+				m_vertexCount -= p.numVertices;
+				for (int i = 0; i < clippedPoly.numVertices; i++)
+				{
+					m_vertexRAM[m_vertexCount++] = clippedPoly.m_vertices[i];
+				}
+				break;
+			case 2:
+			{
+				m_vertexCount -= p.numVertices;
+				for (int i = 0; i < clippedPoly.numVertices; i++)
+				{
+					m_vertexRAM[m_vertexCount++] = clippedPoly.m_vertices[i];
+				}
+
+				m_vertexRAM[m_vertexCount++] = v2;
+				m_vertexRAM[m_vertexCount++] = v3;
+
+				break;
+			}
+			case 3:
+			{
+				m_vertexCount -= p.numVertices;
+				for (int i = 0; i < clippedPoly.numVertices; i++)
+				{
+					m_vertexRAM[m_vertexCount++] = clippedPoly.m_vertices[i];
+				}
+				m_vertexRAM[m_vertexCount++] = v2;
+				m_vertexRAM[m_vertexCount++] = v3;
+				m_runningVtxCount = 2;
+				break;
+			}
+			}
 		}
 
 		//determine winding order of poly
-		m_polygonRAM[m_polygonCount - 1].cw = getWindingOrder(p.m_vertices[0], p.m_vertices[1], p.m_vertices[2]);
+		m_polygonRAM[m_polygonCount - 1].cw = getWindingOrder(clippedPoly.m_vertices[0], clippedPoly.m_vertices[1], clippedPoly.m_vertices[2]);
 	}
-
 }
 
-Poly GPU::clipPolygon(Poly p)
+Poly GPU::clipPolygon(Poly p, bool& clip)
 {
 	Poly out = {};
 	//discard polygon if bad w.
-	for (int i = 0; i < p.numVertices; i++)
-	{
-		if (p.m_vertices[i].v[3] <= 0)
-			return out;
-	}
+	//for (int i = 0; i < p.numVertices; i++)
+	//{
+	//	if (p.m_vertices[i].v[3] <= 0)
+	//		return out;
+	//}
 
+	clip = false;
 	//clip against all 6 planes
-	out = clipAgainstEdge(5, p);
-	for (int i = 4; i >= 0; i--)
-		out = clipAgainstEdge(i, out);
+	out = clipAgainstEdge(0, p,clip);
+	for (int i = 1; i < 6; i++)
+	{
+		bool tmp = false;
+		out = clipAgainstEdge(i, out, tmp);
+		clip |= tmp;
+	}
 
 	return out;
 }
 
-Poly GPU::clipAgainstEdge(int edge, Poly p)
+Poly GPU::clipAgainstEdge(int edge, Poly p, bool& clip)
 {
+	clip = false;
 	Poly out = {};
 	//could cleanup with lut?
 	int sign = (edge & 0b1);
@@ -563,6 +607,7 @@ Poly GPU::clipAgainstEdge(int edge, Poly p)
 			{
 				Vector clippedPt = getIntersectingPoint(cur, last, curPt, lastPt);
 				out.m_vertices[out.numVertices++] = clippedPt;
+				clip = true;
 			}
 			out.m_vertices[out.numVertices++] = cur;
 		}
@@ -570,8 +615,9 @@ Poly GPU::clipAgainstEdge(int edge, Poly p)
 		//same as previous case, intersection between line (cur->last) and clip plane
 		else if (lastPt >= -last.v[3])
 		{
+			clip = true;
 			Vector clippedPt = getIntersectingPoint(cur, last, curPt, lastPt);
-			out.m_vertices[out.numVertices++] = clippedPt;
+				out.m_vertices[out.numVertices++] = clippedPt;
 		}
 	}
 

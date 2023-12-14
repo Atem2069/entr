@@ -165,8 +165,8 @@ private:
 		return result;
 	}
 
-	Poly clipPolygon(Poly p);
-	Poly clipAgainstEdge(int edge, Poly p);
+	Poly clipPolygon(Poly p, bool& clip);
+	Poly clipAgainstEdge(int edge, Poly p, bool& clip);
 	Vector getIntersectingPoint(Vector v0, Vector v1, int64_t pa, int64_t pb);
 	bool getWindingOrder(Vector v0, Vector v1, Vector v2);
 
