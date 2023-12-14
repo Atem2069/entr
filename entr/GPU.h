@@ -141,31 +141,13 @@ private:
 	void submitVertex(Vector vtx);
 	void submitPolygon();
 
-	void debug_render();
+	void render();
 	
 	void rasterizePolygon(Poly p);
 
 	void debug_drawLine(int x0, int y0, int x1, int y1);
 	void plotLow(int x0, int y0, int x1, int y1);
 	void plotHigh(int x0, int y0, int x1, int y1);
-
-	//shitty debug command
-	double debug_cvtVtx16(uint16_t vtx)
-	{
-		bool negative = (vtx >> 15);
-		if (negative)
-			vtx = (~vtx) + 1;
-		double result = 0, counter = 4;
-		for (int i = 14; i >= 0; i--)
-		{
-			if ((vtx >> i) & 0b1)
-				result += counter;
-			counter /= 2;
-		}
-		if (negative)
-			result = -result;
-		return result;
-	}
 
 	Poly clipPolygon(Poly p, bool& clip);
 	Poly clipAgainstEdge(int edge, Poly p, bool& clip);

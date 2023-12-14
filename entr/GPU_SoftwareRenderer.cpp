@@ -1,6 +1,6 @@
 #include "GPU.h"
 
-void GPU::debug_render()
+void GPU::render()
 {
 	//can we speed up this loop somehow?
 	//X=(X*200h)+((X+1)/8000h)*1FFh".

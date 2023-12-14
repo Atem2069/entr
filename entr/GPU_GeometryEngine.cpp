@@ -367,7 +367,7 @@ void GPU::cmd_swapBuffers()
 	//SwapBuffers should ideally halt command processing, rendering starts in vblank?
 	//need to doublecheck gbatek for when command processing starts again
 	//this probs destroys performance a lot bc unnecessary command processing.
-	debug_render();
+	render();
 
 	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
 	
