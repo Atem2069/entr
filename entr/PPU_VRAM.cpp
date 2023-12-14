@@ -59,6 +59,9 @@ void PPU::rebuildPageTables()
 		for (int i = 0; i < 8; i++)
 			m_mem->AObjPageTable[((OFS & 0b1) << 3) + i] = m_mem->VRAM + (16384 * i);
 		break;
+	case 3:
+		m_mem->TexturePageTable[OFS] = m_mem->VRAM;
+		break;
 	}
 
 	MST = VRAMCNT_B & 0b11;
@@ -77,6 +80,9 @@ void PPU::rebuildPageTables()
 		for (int i = 0; i < 8; i++)
 			m_mem->AObjPageTable[((OFS & 0b1) << 3) + i] = m_mem->VRAM + BOffs + (16384 * i);
 		break;
+	case 3:
+		m_mem->TexturePageTable[OFS] = m_mem->VRAM + BOffs;
+		break;
 	}
 
 	MST = VRAMCNT_C & 0b111;
@@ -94,6 +100,9 @@ void PPU::rebuildPageTables()
 	case 2:
 		m_mem->VRAM_C_ARM7 = true;
 		m_mem->ARM7VRAMPageTable[(OFS & 0b1)] = m_mem->VRAM + COffs;
+		break;
+	case 3:
+		m_mem->TexturePageTable[OFS] = m_mem->VRAM + COffs;
 		break;
 	case 4:
 		for (int i = 0; i < 8; i++)
@@ -115,6 +124,9 @@ void PPU::rebuildPageTables()
 	case 2:
 		m_mem->VRAM_D_ARM7 = true;
 		m_mem->ARM7VRAMPageTable[(OFS & 0b1)] = m_mem->VRAM + DOffs;
+		break;
+	case 3:
+		m_mem->TexturePageTable[OFS] = m_mem->VRAM + DOffs;
 		break;
 	case 4:
 		for (int i = 0; i < 8; i++)
@@ -138,6 +150,10 @@ void PPU::rebuildPageTables()
 		for (int i = 0; i < 4; i++)
 			m_mem->AObjPageTable[i] = m_mem->VRAM + EOffs + (16384 * i);
 		break;
+	case 3:
+		for (int i = 0; i < 4; i++)
+			m_mem->TexPalettePageTable[i] = m_mem->VRAM + EOffs + (16384 * i);
+		break;
 	case 4:
 		m_mem->ABGExtPalPageTable[0] = m_mem->VRAM + EOffs;
 		m_mem->ABGExtPalPageTable[1] = m_mem->VRAM + EOffs + 16384;
@@ -158,6 +174,9 @@ void PPU::rebuildPageTables()
 	case 2:
 		m_mem->AObjPageTable[(OFS & 1) | (OFS & 2) << 1] = m_mem->VRAM + FOffs;
 		m_mem->AObjPageTable[(OFS & 1) | (OFS & 2) << 1 | 2] = m_mem->VRAM + FOffs;	//also mirrored
+		break;
+	case 3:
+		m_mem->TexPalettePageTable[(OFS & 1) + ((OFS & 2) << 1)] = m_mem->VRAM + FOffs;
 		break;
 	case 4:
 		m_mem->ABGExtPalPageTable[(OFS & 0b1)] = m_mem->VRAM + FOffs;
@@ -181,6 +200,9 @@ void PPU::rebuildPageTables()
 	case 2:
 		m_mem->AObjPageTable[(OFS & 1) | (OFS & 2) << 1] = m_mem->VRAM + GOffs;
 		m_mem->AObjPageTable[(OFS & 1) | (OFS & 2) << 1 | 2] = m_mem->VRAM + GOffs;	//also mirrored
+		break;
+	case 3:
+		m_mem->TexPalettePageTable[(OFS & 1) + ((OFS & 2) << 1)] = m_mem->VRAM + GOffs;
 		break;
 	case 4:
 		m_mem->ABGExtPalPageTable[(OFS & 0b1)] = m_mem->VRAM + GOffs;

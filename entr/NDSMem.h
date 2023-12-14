@@ -23,13 +23,17 @@ struct NDSMem
 	uint8_t* AObjPageTable[16];
 	uint8_t* BBGPageTable[8];
 	uint8_t* BObjPageTable[8];
-	uint8_t* ARM7VRAMPageTable[2];	//2 128KB regions
+	uint8_t* ARM7VRAMPageTable[2];		//2 128KB regions
 
 	//extended palettes (not mapped to CPU-visible address space)
 	uint8_t* ABGExtPalPageTable[2];
-	uint8_t* AObjExtPalPageTable;	//single 8KB region
+	uint8_t* AObjExtPalPageTable;		//single 8KB region
 	uint8_t* BBGExtPalPageTable[2];
-	uint8_t* BObjExtPalPageTable;	//same as engine a, 1 8KB region
+	uint8_t* BObjExtPalPageTable;		//same as engine a, 1 8KB region
+
+	//texture/palette slots
+	uint8_t* TexturePageTable[4];		//4 128KB regions
+	uint8_t* TexPalettePageTable[6];	//6 16KB regions
 
 	bool VRAM_C_ARM7 = false;
 	bool VRAM_D_ARM7 = false;
