@@ -27,6 +27,8 @@ struct Vector
 
 struct TextureParameters
 {
+	//palette base not set by TEXIMAGE_PARAM, but cleaner to keep it here
+	uint32_t paletteBase;
 	uint32_t VRAMOffs;
 	uint32_t sizeX;
 	uint32_t sizeY;
@@ -169,6 +171,8 @@ private:
 	void cmd_vertexYZ(uint32_t* params);
 	void cmd_vertexDiff(uint32_t* params);
 	void cmd_setPolygonAttributes(uint32_t* params);
+	void cmd_setTexImageParameters(uint32_t* params);
+	void cmd_setPaletteBase(uint32_t* params);
 	void cmd_endVertexList();
 	void cmd_materialColor0(uint32_t* params);
 	void cmd_swapBuffers();

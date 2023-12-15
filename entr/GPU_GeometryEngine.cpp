@@ -354,6 +354,26 @@ void GPU::cmd_setPolygonAttributes(uint32_t* params)
 	//todo: rest of attribs, e.g. depth test, alpha...
 }
 
+void GPU::cmd_setTexImageParameters(uint32_t* params)
+{
+	curTexParams.VRAMOffs = (params[0] & 0xFFFF) << 3;
+	curTexParams.sizeX = 8 << ((params[0] >> 20) & 0b111);
+	curTexParams.sizeY = 8 << ((params[0] >> 23) & 0b111);
+	curTexParams.format = (params[0] >> 26) & 0b111;
+
+	Logger::msg(LoggerSeverity::Info, std::format("Texture: offs={:#x} size={},{} format={}", curTexParams.VRAMOffs, curTexParams.sizeX, curTexParams.sizeY, curTexParams.format));
+}
+
+void GPU::cmd_setPaletteBase(uint32_t* params)
+{
+	uint32_t offs = params[0] & 0x1FFF;
+	if (curTexParams.format == 2)
+		offs <<= 3;
+	else
+		offs <<= 4;
+	curTexParams.paletteBase = offs;
+}
+
 void GPU::cmd_endVertexList()
 {
 	//this seems to be useless on real hardware.
@@ -412,6 +432,7 @@ void GPU::submitPolygon()
 
 	Poly p = {};
 	p.attribs = curAttributes;
+	p.texParams = curTexParams;
 	bool submitted = false;
 
 	switch (m_primitiveType)
@@ -591,7 +612,9 @@ Poly GPU::clipPolygon(Poly p, bool& clip)
 		out = clipAgainstEdge(i, out, tmp);
 		clip |= tmp;
 	}
+	//don't like setting these again.
 	out.attribs = curAttributes;
+	out.texParams = curTexParams;
 	return out;
 }
 
