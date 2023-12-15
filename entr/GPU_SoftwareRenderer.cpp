@@ -39,12 +39,14 @@ void GPU::render()
 				v.v[1] = screenY;
 				v.v[2] = z;
 				v.color = cur.color;
+				v.texcoord[0] = cur.texcoord[0];
+				v.texcoord[1] = cur.texcoord[1];
 				p.m_vertices[j] = v;
 			}
 			else
 				draw = false;
 		}
-		if (!draw)
+		if (!draw || (p.attribs.mode==3))
 			continue;
 		rasterizePolygon(p);
 		/*
@@ -161,6 +163,15 @@ void GPU::rasterizePolygon(Poly p)
 			int32_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
 			int32_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 			int32_t z = linearInterpolate(x, zl, zr, xMin, xMax) & 0xFFFFF;
+
+			//interpolate u/v coords
+			int32_t ul = linearInterpolate(y, l1.texcoord[0], l2.texcoord[0], l1.v[1], l2.v[1]);
+			int32_t ur = linearInterpolate(y, r1.texcoord[0], r2.texcoord[0], r1.v[1], r2.v[1]);
+			int32_t u = linearInterpolate(x, ul, ur, xMin, xMax);
+			int32_t vl = linearInterpolate(y, l1.texcoord[1], l2.texcoord[1], l1.v[1], l2.v[1]);
+			int32_t vr = linearInterpolate(y, r1.texcoord[1], r2.texcoord[1], r1.v[1], r2.v[1]);
+			int32_t v = linearInterpolate(x, vl, vr, xMin, xMax);
+
 			if (y >= 0 && y < 192 && x>=0 && x < 256)
 			{
 				if ((uint32_t)z < depthBuffer[(y * 256) + x])

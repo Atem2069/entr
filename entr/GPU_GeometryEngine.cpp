@@ -359,6 +359,11 @@ void GPU::cmd_endVertexList()
 	//this seems to be useless on real hardware.
 }
 
+void GPU::cmd_texcoord(uint32_t* params)
+{
+	curTexcoords[0] = params[0] & 0xFFFF;
+	curTexcoords[1] = (params[0] >> 16) & 0xFFFF;
+}
 
 void GPU::cmd_vtxColor(uint32_t* params)
 {
@@ -390,6 +395,9 @@ void GPU::submitVertex(Vector vtx)
 {
 	Vector clipPoint = multiplyVectorMatrix(vtx, m_clipMatrix);
 	clipPoint.color = m_lastColor;
+	//shift to same precision as vtxs, etc. with 12 bit precision
+	clipPoint.texcoord[0] = (int64_t)(curTexcoords[0]) << 8;
+	clipPoint.texcoord[1] = (int64_t)(curTexcoords[1]) << 8;
 	m_vertexRAM[m_vertexCount++] = clipPoint;
 	m_runningVtxCount++;
 	submitPolygon();
@@ -403,6 +411,7 @@ void GPU::submitPolygon()
 		return;
 
 	Poly p = {};
+	p.attribs = curAttributes;
 	bool submitted = false;
 
 	switch (m_primitiveType)
@@ -646,6 +655,8 @@ Vector GPU::getIntersectingPoint(Vector v0, Vector v1, int64_t pa, int64_t pb)
 	v.v[1] = ((d2 * v0.v[1]) - (d1 * v1.v[1])) / delta;
 	v.v[2] = ((d2 * v0.v[2]) - (d1 * v1.v[2])) / delta;
 	v.v[3] = ((d2 * v0.v[3]) - (d1 * v1.v[3])) / delta;
+	v.texcoord[0] = ((d2 * v0.texcoord[0]) - (d1 * v1.texcoord[0])) / delta;
+	v.texcoord[1] = ((d2 * v0.texcoord[1]) - (d1 * v1.texcoord[1])) / delta;
 
 	int64_t r0 = (v0.color & 0x1F);
 	int64_t g0 = (v0.color >> 5) & 0x1F;

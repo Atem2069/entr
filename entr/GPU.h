@@ -21,7 +21,17 @@ struct Matrix
 struct Vector
 {
 	int64_t v[4];
+	int64_t texcoord[2];
 	uint16_t color;
+};
+
+struct TextureParameters
+{
+	uint32_t VRAMOffs;
+	uint32_t sizeX;
+	uint32_t sizeY;
+	uint8_t format;
+	//todo: transformation mode for texcoords,...
 };
 
 struct PolyAttributes
@@ -37,6 +47,8 @@ struct Poly
 	Vector m_vertices[10];	//polygon can be clipped with up to 10 vtxs
 	bool cw;
 	PolyAttributes attribs;
+	TextureParameters texParams;
+
 };
 
 class GPU
@@ -129,7 +141,9 @@ private:
 
 	Vector m_lastVertex = {};
 	uint16_t m_lastColor = {};
+	int32_t curTexcoords[2] = {};
 	PolyAttributes pendingAttributes = {}, curAttributes = {};
+	TextureParameters curTexParams = {};
 
 	//gpu commands
 	void cmd_setMatrixMode(uint32_t* params);
@@ -147,6 +161,7 @@ private:
 	void cmd_multiplyByTrans(uint32_t* params);
 	void cmd_vtxColor(uint32_t* params);
 	void cmd_beginVertexList(uint32_t* params);
+	void cmd_texcoord(uint32_t* params);
 	void cmd_vertex16Bit(uint32_t* params);
 	void cmd_vertex10Bit(uint32_t* params);
 	void cmd_vertexXY(uint32_t* params);
