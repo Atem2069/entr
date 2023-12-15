@@ -172,12 +172,14 @@ void GPU::rasterizePolygon(Poly p)
 			int32_t vr = linearInterpolate(y, r1.texcoord[1], r2.texcoord[1], r1.v[1], r2.v[1]);
 			int32_t v = linearInterpolate(x, vl, vr, xMin, xMax);
 
+			col = decodeTexture(u, v, p.texParams);
+
 			if (y >= 0 && y < 192 && x>=0 && x < 256)
 			{
 				if ((uint32_t)z < depthBuffer[(y * 256) + x])
 				{
 					depthBuffer[(y * 256) + x] = z;
-					renderBuffer[(y * 256) + x] = col & 0x7FFF;	//lol. do proper interpolation
+					renderBuffer[(y * 256) + x] = col & 0x7FFF;	
 				}
 			}
 		}
@@ -208,6 +210,73 @@ void GPU::rasterizePolygon(Poly p)
 		xMin = linearInterpolate(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1]);
 		xMax = linearInterpolate(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1]);
 	}
+}
+
+uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
+{
+	//fixed point -> integer
+	u >>= 4; v >>= 4;
+	//shitty clamping. should fix.
+	u &= (params.sizeX - 1);
+	v &= (params.sizeY - 1);
+
+	uint16_t col = 0x7FFF;
+
+	if (params.format == 2)
+		params.paletteBase <<= 3;
+	else
+		params.paletteBase <<= 4;
+
+	switch (params.format)
+	{
+	//mode 2 seems broken, need to revisit (probs something silly)
+	case 2:
+	{
+		uint32_t offs = ((params.sizeX * v) + u);
+		uint32_t byte = gpuReadTex(params.VRAMOffs + (offs>>2));
+		byte >>= (2 * (offs & 0b11));
+		byte &= 0b11;
+		uint32_t palAddr = (byte * 2) + params.paletteBase;
+		uint8_t colLow = gpuReadPal(palAddr);
+		uint8_t colHigh = gpuReadPal(palAddr + 1);
+		col = (colHigh << 8) | colLow;
+		break;
+	}
+	case 3:
+	{
+		//get base addr for texel
+		uint32_t offs = ((params.sizeX * v) + u);
+		uint32_t byte = gpuReadTex(params.VRAMOffs + (offs>>1));
+		if (offs & 0b1)
+			byte >>= 4;
+		byte &= 0xF;
+		uint32_t palAddr = (byte * 2) + params.paletteBase;
+		uint8_t colLow = gpuReadPal(palAddr);
+		uint8_t colHigh = gpuReadPal(palAddr + 1);
+		col = (colHigh << 8) | colLow;
+		break;
+	}
+	case 4:
+	{
+		uint32_t offs = (params.sizeX * v) + u;
+		uint32_t byte = gpuReadTex(params.VRAMOffs + offs);
+		uint32_t palAddr = (byte * 2) + params.paletteBase;
+		uint8_t colLow = gpuReadPal(palAddr);
+		uint8_t colHigh = gpuReadPal(palAddr + 1);
+		col = (colHigh << 8) | colLow;
+		break;
+	}
+	case 7:
+	{
+		uint32_t offs = (params.sizeX * v * 2) + u * 2;
+		uint8_t colLow = gpuReadTex(params.VRAMOffs + offs);
+		uint8_t colHigh = gpuReadTex(params.VRAMOffs + offs + 1);
+		col = (colHigh << 8) | colLow;
+		break;
+	}
+	}
+
+	return col;
 }
 
 void GPU::debug_drawLine(int x0, int y0, int x1, int y1)

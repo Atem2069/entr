@@ -150,7 +150,7 @@ private:
 
 	Vector m_lastVertex = {};
 	uint16_t m_lastColor = {};
-	int32_t curTexcoords[2] = {};
+	int16_t curTexcoords[2] = {};
 	PolyAttributes pendingAttributes = {}, curAttributes = {};
 	TextureParameters curTexParams = {};
 
@@ -190,6 +190,7 @@ private:
 	void render();
 	
 	void rasterizePolygon(Poly p);
+	uint16_t decodeTexture(int32_t u, int32_t v, TextureParameters params);
 
 	void debug_drawLine(int x0, int y0, int x1, int y1);
 	void plotLow(int x0, int y0, int x1, int y1);
@@ -297,7 +298,7 @@ private:
 	}
 
 	//interpolation
-	int linearInterpolate(int x, int y1, int y2, int x1, int x2)
+	int64_t linearInterpolate(int64_t x, int64_t y1, int64_t y2, int64_t x1, int64_t x2)
 	{
 		if (x1 == x2)
 		{

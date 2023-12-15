@@ -361,16 +361,12 @@ void GPU::cmd_setTexImageParameters(uint32_t* params)
 	curTexParams.sizeY = 8 << ((params[0] >> 23) & 0b111);
 	curTexParams.format = (params[0] >> 26) & 0b111;
 
-	Logger::msg(LoggerSeverity::Info, std::format("Texture: offs={:#x} size={},{} format={}", curTexParams.VRAMOffs, curTexParams.sizeX, curTexParams.sizeY, curTexParams.format));
+	//Logger::msg(LoggerSeverity::Info, std::format("Texture: offs={:#x} size={},{} format={}", curTexParams.VRAMOffs, curTexParams.sizeX, curTexParams.sizeY, curTexParams.format));
 }
 
 void GPU::cmd_setPaletteBase(uint32_t* params)
 {
 	uint32_t offs = params[0] & 0x1FFF;
-	if (curTexParams.format == 2)
-		offs <<= 3;
-	else
-		offs <<= 4;
 	curTexParams.paletteBase = offs;
 }
 
@@ -416,8 +412,8 @@ void GPU::submitVertex(Vector vtx)
 	Vector clipPoint = multiplyVectorMatrix(vtx, m_clipMatrix);
 	clipPoint.color = m_lastColor;
 	//shift to same precision as vtxs, etc. with 12 bit precision
-	clipPoint.texcoord[0] = (int64_t)(curTexcoords[0]) << 8;
-	clipPoint.texcoord[1] = (int64_t)(curTexcoords[1]) << 8;
+	clipPoint.texcoord[0] = (int64_t)(curTexcoords[0]);
+	clipPoint.texcoord[1] = (int64_t)(curTexcoords[1]);
 	m_vertexRAM[m_vertexCount++] = clipPoint;
 	m_runningVtxCount++;
 	submitPolygon();
