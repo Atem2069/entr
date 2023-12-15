@@ -28,6 +28,10 @@ uint8_t GPU::read(uint32_t address)
 {
 	switch (address)
 	{
+	case 0x04000060:
+		return DISP3DCNT & 0xFF;
+	case 0x04000061:
+		return (DISP3DCNT >> 8) & 0xFF;
 	case 0x04000600:
 		GXSTAT |= 0b10;
 		return GXSTAT & 0xFF;
@@ -61,6 +65,12 @@ void GPU::write(uint32_t address, uint8_t value)
 {
 	switch (address)
 	{
+	case 0x04000060:
+		DISP3DCNT &= 0xFF00; DISP3DCNT |= value; 
+		break;
+	case 0x04000061:
+		DISP3DCNT &= 0xFF; DISP3DCNT |= (value << 8);
+		break;
 	case 0x04000601:
 		GXSTAT &= 0xFFFFDFFF; GXSTAT |= (value & 0x20) << 8;		
 		if ((value >> 7) & 0b1)

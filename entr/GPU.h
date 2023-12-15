@@ -71,6 +71,7 @@ private:
 
 	uint8_t m_primitiveType = 0;
 
+	uint16_t DISP3DCNT = {};
 	uint32_t GXSTAT = {};
 	uint16_t clearDepth = {};
 	uint16_t clearColor = {};	//this is a 32 bit register, bit hacky rn. should fix

@@ -539,7 +539,7 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 	//this is horrible, need to move into switch statement.
 	if (address==0x04000304 || address==0x04000305 || address >= 0x04000000 && address <= 0x04000058 || (address >= 0x04000240 && address <= 0x04000249 && address != 0x04000247) || (address >= 0x04001000 && address <= 0x04001058))
 		return m_ppu->readIO(address);
-	if (address >= 0x04000320 && address <= 0x040006a3)
+	if (address==0x04000060 || address==0x04000061 || (address >= 0x04000320 && address <= 0x040006a3))
 		return m_gpu->read(address);
 	switch (address)
 	{
@@ -594,7 +594,7 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		m_ppu->writeIO(address, value);
 		return;
 	}
-	if (address >= 0x04000320 && address <= 0x040006a3)
+	if (address==0x04000060 || address==0x04000061 || (address >= 0x04000320 && address <= 0x040006a3))
 	{
 		m_gpu->write(address, value);
 		return;
