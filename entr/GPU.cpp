@@ -269,6 +269,7 @@ void GPU::processCommand()
 		case 0x26: cmd_vertexXZ(params); break;
 		case 0x27: cmd_vertexYZ(params); break;
 		case 0x28: cmd_vertexDiff(params); break;
+		case 0x29: cmd_setPolygonAttributes(params); break;
 		case 0x30: cmd_materialColor0(params); break;
 		case 0x40: cmd_beginVertexList(params); break;
 		case 0x41: cmd_endVertexList(); break;

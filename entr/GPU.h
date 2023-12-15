@@ -24,11 +24,19 @@ struct Vector
 	uint16_t color;
 };
 
+struct PolyAttributes
+{
+	bool drawFront;
+	bool drawBack;
+	uint8_t mode;
+};
+
 struct Poly
 {
 	uint8_t numVertices;
 	Vector m_vertices[10];	//polygon can be clipped with up to 10 vtxs
 	bool cw;
+	PolyAttributes attribs;
 };
 
 class GPU
@@ -121,6 +129,7 @@ private:
 
 	Vector m_lastVertex = {};
 	uint16_t m_lastColor = {};
+	PolyAttributes pendingAttributes = {}, curAttributes = {};
 
 	//gpu commands
 	void cmd_setMatrixMode(uint32_t* params);
@@ -144,6 +153,7 @@ private:
 	void cmd_vertexXZ(uint32_t* params);
 	void cmd_vertexYZ(uint32_t* params);
 	void cmd_vertexDiff(uint32_t* params);
+	void cmd_setPolygonAttributes(uint32_t* params);
 	void cmd_endVertexList();
 	void cmd_materialColor0(uint32_t* params);
 	void cmd_swapBuffers();

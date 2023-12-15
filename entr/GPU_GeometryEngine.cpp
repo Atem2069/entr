@@ -259,6 +259,7 @@ void GPU::cmd_beginVertexList(uint32_t* params)
 	uint32_t primitiveType = params[0] & 0b11;		//should do something with this soon when emitting polys
 	m_primitiveType = primitiveType;
 	m_runningVtxCount = 0;							//reset running vertex count - primitive type may have changed so we construct new polys with the new vtx list being sent
+	curAttributes = pendingAttributes;
 }
 
 //i don't like the code duplication here, should ideally clean this up.
@@ -342,6 +343,15 @@ void GPU::cmd_vertexDiff(uint32_t* params)
 	Vector point = m_lastVertex;
 	point.v[0] += x; point.v[1] += y; point.v[2] += z; point.v[3] = (1 << 12);
 	submitVertex(point);
+}
+
+void GPU::cmd_setPolygonAttributes(uint32_t* params)
+{
+	pendingAttributes = {};
+	pendingAttributes.mode = (params[0] >> 4) & 0b11;
+	pendingAttributes.drawBack = (params[0] >> 5) & 0b1;
+	pendingAttributes.drawFront = (params[0] >> 6) & 0b1;
+	//todo: rest of attribs, e.g. depth test, alpha...
 }
 
 void GPU::cmd_endVertexList()
@@ -457,10 +467,13 @@ void GPU::submitPolygon()
 	//holy fuck. this is the singlemost worst piece of shit i've written in my entire life, I hate this
 	if (submitted)
 	{
+		//determine winding order of poly
+		m_polygonRAM[m_polygonCount-1].cw = getWindingOrder(p.m_vertices[0], p.m_vertices[1], p.m_vertices[2]);
 		bool clip = false;
 		Poly clippedPoly = clipPolygon(p,clip);
+		clippedPoly.cw = m_polygonRAM[m_polygonCount-1].cw;	//clipping won't affect winding order
 
-		if (clippedPoly.numVertices == 0)
+		if ((clippedPoly.numVertices == 0))
 		{
 			switch (m_primitiveType)
 			{
@@ -547,9 +560,6 @@ void GPU::submitPolygon()
 			}
 			}
 		}
-
-		//determine winding order of poly
-		m_polygonRAM[m_polygonCount - 1].cw = getWindingOrder(clippedPoly.m_vertices[0], clippedPoly.m_vertices[1], clippedPoly.m_vertices[2]);
 	}
 }
 
@@ -572,7 +582,7 @@ Poly GPU::clipPolygon(Poly p, bool& clip)
 		out = clipAgainstEdge(i, out, tmp);
 		clip |= tmp;
 	}
-
+	out.attribs = curAttributes;
 	return out;
 }
 
