@@ -128,6 +128,7 @@ public:
 
 	static void NDS9_HBlankDMACallback(void* context);
 	static void NDS9_VBlankDMACallback(void* context);
+	static void NDS9_GXFIFODMACallback(void* context);
 	static void NDS9_CartridgeDMACallback(void* context);
 	static void NDS7_CartridgeDMACallback(void* context);
 
@@ -163,6 +164,7 @@ private:
 	void NDS9DMA_onHBlank();
 	void NDS9DMA_onVBlank();
 	void NDS9DMA_onCartridge();
+	void NDS9DMA_onGXFIFO();
 
 	uint8_t WRAMCNT = 0;
 	uint16_t EXMEMCNT = {};

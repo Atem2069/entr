@@ -192,6 +192,10 @@ void GPU::onProcessCommandEvent()
 {
 	processCommand();
 	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
+
+	//trigger gxfifo dma if less than half full
+	if (GXFIFO.size() <= 128)
+		m_callback(m_callbackCtx);
 }
 
 void GPU::checkGXFIFOIRQs()

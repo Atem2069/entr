@@ -405,6 +405,8 @@ void Bus::NDS9_doDMATransfer(int channel)
 	int numWords = m_NDS9Channels[channel].internalWordCount;
 	if (numWords == 0)
 		numWords = 0x20000;
+	
+	//numwords might be fixed to 112 if gxfifo is empty. CHECK
 
 	uint8_t srcAddressControl = (m_NDS9Channels[channel].control >> 7) & 0b11;
 	uint8_t destAddressControl = (m_NDS9Channels[channel].control >> 5) & 0b11;
@@ -514,6 +516,18 @@ void Bus::NDS9DMA_onCartridge()
 	}
 }
 
+void Bus::NDS9DMA_onGXFIFO()
+{
+	for (int i = 0; i < 4; i++)
+	{
+		DMAChannel curChannel = m_NDS9Channels[i];
+		bool channelEnabled = (curChannel.control >> 15) & 0b1;
+		uint8_t startTiming = (curChannel.control >> 11) & 0b111;
+		if (channelEnabled && (startTiming == 7))
+			NDS9_doDMATransfer(i);
+	}
+}
+
 void Bus::NDS9_HBlankDMACallback(void* context)
 {
 	Bus* thisPtr = (Bus*)context;
@@ -530,4 +544,10 @@ void Bus::NDS9_CartridgeDMACallback(void* context)
 {
 	Bus* thisPtr = (Bus*)context;
 	thisPtr->NDS9DMA_onCartridge();
+}
+
+void Bus::NDS9_GXFIFODMACallback(void* context)
+{
+	Bus* thisPtr = (Bus*)context;
+	thisPtr->NDS9DMA_onGXFIFO();
 }

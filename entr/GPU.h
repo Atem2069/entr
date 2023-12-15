@@ -39,6 +39,12 @@ public:
 
 	void init(InterruptManager* interruptManager, Scheduler* scheduler);
 
+	void registerCallbacks(callbackFn DMACallback, void* ctx)
+	{
+		m_callback = DMACallback;
+		m_callbackCtx = ctx;
+	}
+
 	uint8_t read(uint32_t address);
 	void write(uint32_t address, uint8_t value);
 
@@ -49,6 +55,9 @@ public:
 
 	static uint16_t output[256 * 192];
 private:
+	callbackFn m_callback;
+	void* m_callbackCtx;
+
 	uint16_t renderBuffer[256 * 192];
 	uint32_t depthBuffer[256 * 192];
 	InterruptManager* m_interruptManager;
