@@ -3,6 +3,7 @@
 #include"Logger.h"
 #include"InterruptManager.h"
 #include"Scheduler.h"
+#include"NDSMem.h"
 #include<queue>
 
 struct GXFIFOCommand
@@ -61,6 +62,11 @@ public:
 
 	void init(InterruptManager* interruptManager, Scheduler* scheduler);
 
+	void registerMemory(NDSMem* mem)
+	{
+		m_mem = mem;
+	}
+
 	void registerCallbacks(callbackFn DMACallback, void* ctx)
 	{
 		m_callback = DMACallback;
@@ -77,6 +83,7 @@ public:
 
 	static uint16_t output[256 * 192];
 private:
+	NDSMem* m_mem;
 	callbackFn m_callback;
 	void* m_callbackCtx;
 
@@ -313,5 +320,28 @@ private:
 		uint16_t g = linearInterpolate(x, g1, g2, x1, x2) & 0x1F;
 		uint16_t b = linearInterpolate(x, b1, b2, x1, x2) & 0x1F;
 		return r | (g << 5) | (b << 10);
+	}
+
+	//read fns for tex/pal mem
+	//could potentially speed up by figuring out what slot a texture lies in only initially, then just reading from page?
+	uint8_t gpuReadTex(uint32_t address)
+	{
+		uint8_t page = (address >> 17);
+		uint32_t offset = address & 0x1FFFF;
+		uint8_t* pagePtr = m_mem->TexturePageTable[page];
+		if (!pagePtr)
+			return 0;
+		return pagePtr[offset];
+	}
+
+	uint8_t gpuReadPal(uint32_t address)
+	{
+
+		uint8_t page = (address >> 14);
+		uint32_t offset = address & 0x3FFF;
+		uint8_t* pagePtr = m_mem->TexPalettePageTable[page];
+		if (!pagePtr)
+			return 0;
+		return pagePtr[offset];
 	}
 };
