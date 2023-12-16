@@ -102,6 +102,9 @@ void GPU::cmd_loadIdentity()
 		m_coordinateMatrix = m_identityMatrix;
 		m_directionalMatrix = m_identityMatrix;
 		break;
+	case 3:
+		m_textureMatrix = m_identityMatrix;
+		break;
 	}
 
 	m_clipMatrix = multiplyMatrices(m_coordinateMatrix, m_projectionMatrix);
@@ -121,6 +124,9 @@ void GPU::cmd_load4x4Matrix(uint32_t* params)
 		m_coordinateMatrix = gen4x4Matrix(params);
 		m_directionalMatrix = m_coordinateMatrix;
 		break;
+	case 3:
+		m_textureMatrix = gen4x4Matrix(params);
+		break;
 	}
 
 	m_clipMatrix = multiplyMatrices(m_coordinateMatrix, m_projectionMatrix);
@@ -139,6 +145,9 @@ void GPU::cmd_load4x3Matrix(uint32_t* params)
 	case 2:
 		m_coordinateMatrix = gen4x3Matrix(params);
 		m_directionalMatrix = m_coordinateMatrix;
+		break;
+	case 3:
+		m_textureMatrix = gen4x3Matrix(params);
 		break;
 	}
 
@@ -160,6 +169,9 @@ void GPU::cmd_multiply4x4Matrix(uint32_t* params)
 		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
 		m_directionalMatrix = multiplyMatrices(m, m_directionalMatrix);
 		break;
+	case 3:
+		m_textureMatrix = multiplyMatrices(m, m_textureMatrix);
+		break;
 	}
 
 	m_clipMatrix = multiplyMatrices(m_coordinateMatrix, m_projectionMatrix);
@@ -179,6 +191,9 @@ void GPU::cmd_multiply4x3Matrix(uint32_t* params)
 	case 2:
 		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
 		m_directionalMatrix = multiplyMatrices(m, m_directionalMatrix);
+		break;
+	case 3:
+		m_textureMatrix = multiplyMatrices(m, m_textureMatrix);
 		break;
 	}
 
@@ -200,6 +215,8 @@ void GPU::cmd_multiply3x3Matrix(uint32_t* params)
 		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
 		m_directionalMatrix = multiplyMatrices(m, m_directionalMatrix);
 		break;
+	case 3:
+		m_textureMatrix = multiplyMatrices(m, m_textureMatrix);
 	}
 
 	m_clipMatrix = multiplyMatrices(m_coordinateMatrix, m_projectionMatrix);
@@ -221,6 +238,9 @@ void GPU::cmd_multiplyByScale(uint32_t* params)
 		break;
 	case 1: case 2:
 		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
+		break;
+	case 3:
+		m_textureMatrix = multiplyMatrices(m, m_textureMatrix);
 		break;
 	}
 
@@ -246,6 +266,8 @@ void GPU::cmd_multiplyByTrans(uint32_t* params)
 		m_coordinateMatrix = multiplyMatrices(m, m_coordinateMatrix);
 		m_directionalMatrix = multiplyMatrices(m, m_directionalMatrix);
 		break;
+	case 3:
+		m_textureMatrix = multiplyMatrices(m, m_textureMatrix);
 	}
 
 	m_clipMatrix = multiplyMatrices(m_coordinateMatrix, m_projectionMatrix);
@@ -361,7 +383,7 @@ void GPU::cmd_setTexImageParameters(uint32_t* params)
 	curTexParams.sizeY = 8 << ((params[0] >> 23) & 0b111);
 	curTexParams.format = (params[0] >> 26) & 0b111;
 	curTexParams.col0Transparent = (params[0] >> 29) & 0b1;
-
+	curTexParams.transformationMode = (params[0] >> 30) & 0b11;
 	//Logger::msg(LoggerSeverity::Info, std::format("Texture: offs={:#x} size={},{} format={}", curTexParams.VRAMOffs, curTexParams.sizeX, curTexParams.sizeY, curTexParams.format));
 }
 
@@ -378,8 +400,33 @@ void GPU::cmd_endVertexList()
 
 void GPU::cmd_texcoord(uint32_t* params)
 {
-	curTexcoords[0] = params[0] & 0xFFFF;
-	curTexcoords[1] = (params[0] >> 16) & 0xFFFF;
+	int32_t u = (int16_t)(params[0] & 0xFFFF);
+	int32_t v = (int16_t)((params[0] >> 16) & 0xFFFF);
+
+	switch (curTexParams.transformationMode)
+	{
+	case 0:
+		curTexcoords[0] = u;
+		curTexcoords[1] = v;
+		break;
+	case 1:
+	{
+		Vector vec = {};
+		vec.v[0] = (u << 8);
+		vec.v[1] = (v << 8);
+		vec.v[2] = (1 << 8);
+		vec.v[3] = (1 << 8);
+		vec = multiplyVectorMatrix(vec, m_textureMatrix);
+		curTexcoords[0] = vec.v[0] >> 8;
+		curTexcoords[1] = vec.v[1] >> 8;
+		break;
+	}
+	default:
+		curTexcoords[0] = u;
+		curTexcoords[1] = v;
+	}
+	//curTexcoords[0] = params[0] & 0xFFFF;
+	//curTexcoords[1] = (params[0] >> 16) & 0xFFFF;
 }
 
 void GPU::cmd_vtxColor(uint32_t* params)

@@ -35,7 +35,8 @@ struct TextureParameters
 	uint32_t sizeY;
 	uint8_t format;
 	bool col0Transparent;
-	//todo: transformation mode for texcoords,...
+	uint8_t transformationMode;
+	//todo: missing params
 };
 
 struct PolyAttributes
@@ -137,9 +138,11 @@ private:
 	Matrix m_projectionMatrix = {};
 	Matrix m_coordinateMatrix = {};
 	Matrix m_directionalMatrix = {};
+	Matrix m_textureMatrix = {};
 
 	//matrix stacks
 	Matrix m_projectionStack = {};
+	Matrix m_textureStack = {};
 	//apparently these stacks are 32 long? but entry 31 causes overflow flag. need to handle
 	Matrix m_coordinateStack[32] = {};
 	Matrix m_directionalStack[32] = {};
