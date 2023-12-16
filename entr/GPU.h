@@ -34,6 +34,7 @@ struct TextureParameters
 	uint32_t sizeX;
 	uint32_t sizeY;
 	uint8_t format;
+	bool col0Transparent;
 	//todo: transformation mode for texcoords,...
 };
 

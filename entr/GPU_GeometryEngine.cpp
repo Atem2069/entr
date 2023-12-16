@@ -360,6 +360,7 @@ void GPU::cmd_setTexImageParameters(uint32_t* params)
 	curTexParams.sizeX = 8 << ((params[0] >> 20) & 0b111);
 	curTexParams.sizeY = 8 << ((params[0] >> 23) & 0b111);
 	curTexParams.format = (params[0] >> 26) & 0b111;
+	curTexParams.col0Transparent = (params[0] >> 29) & 0b1;
 
 	//Logger::msg(LoggerSeverity::Info, std::format("Texture: offs={:#x} size={},{} format={}", curTexParams.VRAMOffs, curTexParams.sizeX, curTexParams.sizeY, curTexParams.format));
 }
