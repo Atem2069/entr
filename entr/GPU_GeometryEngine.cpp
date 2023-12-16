@@ -349,8 +349,8 @@ void GPU::cmd_setPolygonAttributes(uint32_t* params)
 {
 	pendingAttributes = {};
 	pendingAttributes.mode = (params[0] >> 4) & 0b11;
-	pendingAttributes.drawBack = (params[0] >> 5) & 0b1;
-	pendingAttributes.drawFront = (params[0] >> 6) & 0b1;
+	pendingAttributes.drawBack = (params[0] >> 6) & 0b1;
+	pendingAttributes.drawFront = (params[0] >> 7) & 0b1;
 	//todo: rest of attribs, e.g. depth test, alpha...
 }
 
