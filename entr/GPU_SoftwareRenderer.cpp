@@ -233,8 +233,20 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 	else
 		params.paletteBase <<= 4;
 
+	//lots of code duplication here, could cleanup
 	switch (params.format)
 	{
+	case 1:
+	{
+		uint32_t offs = ((params.sizeX * v) + u);
+		//todo: alpha
+		uint32_t byte = gpuReadTex(params.VRAMOffs + offs) & 0x1F;
+		uint32_t palAddr = (byte * 2) + params.paletteBase;
+		uint8_t colLow = gpuReadPal(palAddr);
+		uint8_t colHigh = gpuReadPal(palAddr + 1);
+		col = (colHigh << 8) | colLow;
+		break;
+	}
 	//mode 2 seems broken, need to revisit (probs something silly)
 	case 2:
 	{
@@ -272,6 +284,17 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		uint32_t byte = gpuReadTex(params.VRAMOffs + offs);
 		if (params.col0Transparent && !byte)
 			return 0x8000;
+		uint32_t palAddr = (byte * 2) + params.paletteBase;
+		uint8_t colLow = gpuReadPal(palAddr);
+		uint8_t colHigh = gpuReadPal(palAddr + 1);
+		col = (colHigh << 8) | colLow;
+		break;
+	}
+	case 6:
+	{
+		uint32_t offs = ((params.sizeX * v) + u);
+		//todo: alpha
+		uint32_t byte = gpuReadTex(params.VRAMOffs + offs) & 0b111;
 		uint32_t palAddr = (byte * 2) + params.paletteBase;
 		uint8_t colLow = gpuReadPal(palAddr);
 		uint8_t colHigh = gpuReadPal(palAddr + 1);
