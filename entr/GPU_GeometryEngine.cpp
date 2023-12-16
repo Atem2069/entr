@@ -392,12 +392,13 @@ void GPU::cmd_materialColor0(uint32_t* params)
 		m_lastColor = params[0] & 0x7FFF;
 }
 
-void GPU::cmd_swapBuffers()
+void GPU::cmd_swapBuffers(uint32_t* params)
 {
 	//probably SHOULD NOT be doing all this immediately.
 	//SwapBuffers should ideally halt command processing, rendering starts in vblank?
 	//need to doublecheck gbatek for when command processing starts again
 	//this probs destroys performance a lot bc unnecessary command processing.
+	wBuffer = (params[0] >> 1) & 0b1;
 	render();
 
 	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));

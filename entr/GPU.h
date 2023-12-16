@@ -88,7 +88,8 @@ private:
 	void* m_callbackCtx;
 
 	uint16_t renderBuffer[256 * 192];
-	uint32_t depthBuffer[256 * 192];
+	uint64_t depthBuffer[256 * 192];
+	bool wBuffer = false;
 	InterruptManager* m_interruptManager;
 	Scheduler* m_scheduler;
 
@@ -182,7 +183,7 @@ private:
 	void cmd_setPaletteBase(uint32_t* params);
 	void cmd_endVertexList();
 	void cmd_materialColor0(uint32_t* params);
-	void cmd_swapBuffers();
+	void cmd_swapBuffers(uint32_t* params);
 
 	void submitVertex(Vector vtx);
 	void submitPolygon();

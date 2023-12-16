@@ -12,7 +12,7 @@ void GPU::render()
 		for (int x = 0; x < 256; x++)
 		{
 			renderBuffer[(y * 256) + x] = 0x8000;	//todo: figure out alpha
-			depthBuffer[(y * 256) + x] = depth;
+			depthBuffer[(y * 256) + x] = 0xFFFFFFFFFFFFFFFF;
 		}
 	}
 
@@ -31,13 +31,13 @@ void GPU::render()
 				screenX = fixedPointDiv(screenX, (cur.v[3] << 1)) >> 12;
 				screenY = 192 - (fixedPointDiv(screenY, (cur.v[3] << 1)) >> 12);
 
-				// (((Z * 0x4000 / W) + 0x3FFF) * 0x200) & 0xFFFFFF
-				int64_t z = (((cur.v[2] * 0x4000 / cur.v[3]) + 0x3FFF) * 0x200) & 0xFFFFFF;
+				uint64_t z = ((((uint64_t)cur.v[2] << 14) / (int64_t)cur.v[3]) + 0x3FFF) << 9;
 
 				Vector v = {};
 				v.v[0] = screenX;
 				v.v[1] = screenY;
 				v.v[2] = z;
+				v.v[3] = cur.v[3];
 				v.color = cur.color;
 				v.texcoord[0] = cur.texcoord[0];
 				v.texcoord[1] = cur.texcoord[1];
@@ -160,9 +160,15 @@ void GPU::rasterizePolygon(Poly p)
 			uint16_t col = interpolateColor(x, lcol, rcol, xMin, xMax);
 
 			//is interpolating z fine? or should we interpolate 1/z?
-			int32_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
-			int32_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
-			int32_t z = linearInterpolate(x, zl, zr, xMin, xMax) & 0xFFFFF;
+			int64_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
+			int64_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
+			int64_t z = linearInterpolate(x, zl, zr, xMin, xMax);
+
+			int64_t wl = linearInterpolate(y, l1.v[3], l2.v[3], l1.v[1], l2.v[1]);
+			int64_t wr = linearInterpolate(y, r1.v[3], r2.v[3], r1.v[1], r2.v[1]);
+			int64_t w = linearInterpolate(x, wl, wr, xMin, xMax);
+
+			int64_t depth = (wBuffer) ? w : z;
 
 			//interpolate u/v coords
 			int32_t ul = linearInterpolate(y, l1.texcoord[0], l2.texcoord[0], l1.v[1], l2.v[1]);
@@ -176,9 +182,9 @@ void GPU::rasterizePolygon(Poly p)
 
 			if (y >= 0 && y < 192 && x>=0 && x < 256)
 			{
-				if ((uint32_t)z < depthBuffer[(y * 256) + x])
+				if (depth < depthBuffer[(y * 256) + x])
 				{
-					depthBuffer[(y * 256) + x] = z;
+					depthBuffer[(y * 256) + x] = depth;
 					renderBuffer[(y * 256) + x] = col & 0x7FFF;	
 				}
 			}
