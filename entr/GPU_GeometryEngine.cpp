@@ -379,6 +379,10 @@ void GPU::cmd_setPolygonAttributes(uint32_t* params)
 void GPU::cmd_setTexImageParameters(uint32_t* params)
 {
 	curTexParams.VRAMOffs = (params[0] & 0xFFFF) << 3;
+	curTexParams.repeatX = (params[0] >> 16) & 0b1;
+	curTexParams.repeatY = (params[0] >> 17) & 0b1;
+	curTexParams.flipX = (params[0] >> 18) & 0b1;
+	curTexParams.flipY = (params[0] >> 19) & 0b1;
 	curTexParams.sizeX = 8 << ((params[0] >> 20) & 0b111);
 	curTexParams.sizeY = 8 << ((params[0] >> 23) & 0b111);
 	curTexParams.format = (params[0] >> 26) & 0b111;

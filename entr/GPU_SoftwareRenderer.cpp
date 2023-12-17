@@ -222,9 +222,31 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 {
 	//fixed point -> integer
 	u >>= 4; v >>= 4;
-	//shitty clamping. should fix.
-	u &= (params.sizeX - 1);
-	v &= (params.sizeY - 1);
+	
+	if (params.repeatX)
+	{
+		if (params.flipX && (u & params.sizeX))
+			u = -1 - u;
+
+		u &= (params.sizeX - 1);
+	}
+	else
+	{
+		u = std::max(u, 0);
+		u = std::min(u, (int32_t)params.sizeX-1);
+	}
+	if (params.repeatY)
+	{
+		if (params.flipY && (v & params.sizeY))
+			v = -1 - v;
+
+		v &= (params.sizeY - 1);
+	}
+	else
+	{
+		v = std::max(v, 0);
+		v = std::min(v, (int32_t)params.sizeY-1);
+	}
 
 	uint16_t col = 0x7FFF;
 

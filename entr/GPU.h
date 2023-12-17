@@ -31,12 +31,16 @@ struct TextureParameters
 	//palette base not set by TEXIMAGE_PARAM, but cleaner to keep it here
 	uint32_t paletteBase;
 	uint32_t VRAMOffs;
+	bool repeatX;
+	bool repeatY;
+	bool flipX;
+	bool flipY;
 	uint32_t sizeX;
 	uint32_t sizeY;
 	uint8_t format;
 	bool col0Transparent;
 	uint8_t transformationMode;
-	//todo: missing params
+	
 };
 
 struct PolyAttributes
