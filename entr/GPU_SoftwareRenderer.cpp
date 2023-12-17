@@ -290,6 +290,34 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		col = (colHigh << 8) | colLow;
 		break;
 	}
+	case 5:
+	{
+		//get 4x4 tile offset
+		uint32_t tileIdx = ((params.sizeX >> 2) * (v >> 2)) + (u >> 2);
+		uint32_t tileAddr = (tileIdx << 2) + (v & 3);
+		uint32_t byte = gpuReadTex(params.VRAMOffs + tileAddr);
+		byte >>= ((u & 3) << 1);
+		byte &= 0b11;
+
+		uint32_t dataSlotIdx = (params.VRAMOffs + tileAddr) >> 18;
+		uint32_t dataSlotOffs = (params.VRAMOffs + tileAddr) & 0x1FFFF;
+		uint32_t palinfo = 0x20000 + (dataSlotOffs >> 1);
+		if (dataSlotIdx == 1)
+			palinfo += 0x10000;
+		palinfo &= ~0b1;
+		uint8_t palOffsLow = gpuReadTex(palinfo);
+		uint8_t palOffsHigh = gpuReadTex(palinfo + 1);
+		uint32_t palOffs = ((palOffsHigh << 8) | palOffsLow) & 0x3FFF;
+		palOffs = (palOffs << 2);
+
+		uint8_t mode = (palOffsHigh >> 6) & 0b11;
+		//todo: different modes, handle transparent/interpolated colours
+		uint32_t palAddr = params.paletteBase + palOffs + (byte * 2);
+		uint8_t colLow = gpuReadPal(palAddr);
+		uint8_t colHigh = gpuReadPal(palAddr + 1);
+		col = (colHigh << 8) | colLow;
+		break;
+	}
 	case 6:
 	{
 		uint32_t offs = ((params.sizeX * v) + u);

@@ -751,7 +751,7 @@ bool GPU::getWindingOrder(Vector v0, Vector v1, Vector v2)
 	Vector b = {};
 	b.v[0] = v2.v[0] - v1.v[0]; b.v[1] = v2.v[1] - v1.v[1]; b.v[2] = v2.v[2] - v1.v[2];
 
-	Vector cross = crossProduct(a, b);
+	Vector cross = crossProduct(b, a);
 	int64_t dot = dotProduct(cross, v0);
-	return (dot > 0);	//this doesn't seem right. dot < 0 should be cw but uhh..
+	return (dot < 0);	//this doesn't seem right. dot < 0 should be cw but uhh..
 }
