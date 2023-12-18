@@ -124,6 +124,12 @@ public:
 		callbackContext = ctx;
 	}
 
+	void registerGPUCallback(callbackFn SwapBuffersCallback, void* gpuctx)
+	{
+		m_swapBuffersCallback = SwapBuffersCallback;
+		m_gpuctx = gpuctx;
+	}
+
 	void updateDisplayOutput();
 
 	void registerMemory(NDSMem* mem);
@@ -154,6 +160,9 @@ private:
 	callbackFn NDS9_HBlankDMACallback;
 	callbackFn NDS9_VBlankDMACallback;
 	void* callbackContext = nullptr;
+
+	callbackFn m_swapBuffersCallback;
+	void* m_gpuctx = nullptr;
 
 	BackgroundLayer m_engineABgLayers[4] = {};
 	BackgroundLayer m_engineBBgLayers[4] = {};

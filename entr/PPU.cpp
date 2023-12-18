@@ -158,6 +158,8 @@ void PPU::HBlank()
 
 		NDS9_VBlankDMACallback(callbackContext);
 
+		m_swapBuffersCallback(m_gpuctx);
+
 		m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 1607);
 		return;
 	}

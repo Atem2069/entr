@@ -360,6 +360,9 @@ void GPU::cmd_setPolygonAttributes(uint32_t* params)
 	pendingAttributes.mode = (params[0] >> 4) & 0b11;
 	pendingAttributes.drawBack = (params[0] >> 6) & 0b1;
 	pendingAttributes.drawFront = (params[0] >> 7) & 0b1;
+	pendingAttributes.depthEqual = (params[0] >> 14) & 0b1;
+	if (pendingAttributes.depthEqual)
+		std::cout << "oo.. could explain bugs" << '\n';
 	//todo: rest of attribs, e.g. depth test, alpha...
 }
 
@@ -433,18 +436,11 @@ void GPU::cmd_materialColor0(uint32_t* params)
 
 void GPU::cmd_swapBuffers(uint32_t* params)
 {
-	//probably SHOULD NOT be doing all this immediately.
-	//SwapBuffers should ideally halt command processing, rendering starts in vblank?
-	//need to doublecheck gbatek for when command processing starts again
-	//this probs destroys performance a lot bc unnecessary command processing.
+	//stop cmd processing until vblank
+	//then render and restart
+	swapBuffersPending = true;
 	wBuffer = (params[0] >> 1) & 0b1;
-	render();
-
-	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
-	
-	m_vertexCount = 0;
-	m_polygonCount = 0;
-	m_runningVtxCount = 0;
+	m_scheduler->removeEvent(Event::GXFIFO);
 }
 
 void GPU::submitVertex(Vector vtx)
@@ -633,8 +629,8 @@ Poly GPU::clipPolygon(Poly p, bool& clip)
 
 	clip = false;
 	//clip against all 6 planes
-	out = clipAgainstEdge(0, p,clip);
-	for (int i = 1; i < 6; i++)
+	out = clipAgainstEdge(6, p, clip);
+	for (int i = 5; i >= 0; i--)
 	{
 		bool tmp = false;
 		out = clipAgainstEdge(i, out, tmp);

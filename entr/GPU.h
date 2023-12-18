@@ -48,6 +48,7 @@ struct PolyAttributes
 	bool drawFront;
 	bool drawBack;
 	uint8_t mode;
+	bool depthEqual;
 };
 
 struct Poly
@@ -86,6 +87,7 @@ public:
 	void writeCmdPort(uint32_t address, uint32_t value);
 
 	static void GXFIFOEventHandler(void* context);
+	static void VBlankEventHandler(void* context);
 
 	static uint16_t output[256 * 192];
 private:
@@ -96,10 +98,12 @@ private:
 	uint16_t renderBuffer[256 * 192];
 	uint64_t depthBuffer[256 * 192];
 	bool wBuffer = false;
+	bool swapBuffersPending = false;
 	InterruptManager* m_interruptManager;
 	Scheduler* m_scheduler;
 
 	void onProcessCommandEvent();
+	void onVBlank();
 
 	void checkGXFIFOIRQs();
 	void processCommand();

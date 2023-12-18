@@ -22,6 +22,7 @@ void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, C
 
 	m_ppu->registerMemory(m_mem);
 	m_ppu->registerDMACallbacks((callbackFn)&Bus::NDS9_HBlankDMACallback, (callbackFn)&Bus::NDS9_VBlankDMACallback, (void*)this);
+	m_ppu->registerGPUCallback((callbackFn)&GPU::VBlankEventHandler, (void*)gpu);
 	m_gpu->registerMemory(m_mem);
 	m_gpu->registerCallbacks((callbackFn)&Bus::NDS9_GXFIFODMACallback, (void*)this);
 	m_cartridge->registerDMACallbacks((callbackFn)&Bus::NDS7_CartridgeDMACallback, (callbackFn)&Bus::NDS9_CartridgeDMACallback, (void*)this);

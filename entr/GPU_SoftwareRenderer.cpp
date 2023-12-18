@@ -1,5 +1,21 @@
 #include "GPU.h"
 
+void GPU::onVBlank()
+{
+	if (!swapBuffersPending)
+		return;
+
+	swapBuffersPending = false;
+	render();
+
+	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
+
+	m_vertexCount = 0;
+	m_polygonCount = 0;
+	m_runningVtxCount = 0;
+	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
+}
+
 void GPU::render()
 {
 	//can we speed up this loop somehow?
@@ -149,9 +165,7 @@ void GPU::rasterizePolygon(Poly p)
 	{
 		//rasterize
 		//same for xmin,xmax
-		xMin = std::max(xMin, 0);
-		xMax = std::min(xMax, 255);
-		for (int x = xMin; x <= xMax; x++)
+		for (int x = std::max(xMin,0); x <= std::min(xMax,256); x++)
 		{
 			//interpolate color in y, then x
 			uint16_t lcol = interpolateColor(y, l1.color, l2.color, l1.v[1], l2.v[1]);

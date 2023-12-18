@@ -289,4 +289,10 @@ void GPU::GXFIFOEventHandler(void* context)
 	thisPtr->onProcessCommandEvent();
 }
 
+void GPU::VBlankEventHandler(void* context)
+{
+	GPU* thisPtr = (GPU*)context;
+	thisPtr->onVBlank();
+}
+
 uint16_t GPU::output[256 * 192] = {};
