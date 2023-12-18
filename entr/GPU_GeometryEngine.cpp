@@ -17,7 +17,12 @@ void GPU::cmd_pushMatrix()
 	case 1: case 2:
 		m_coordinateStack[m_coordinateStackPointer&0x1F] = m_coordinateMatrix;
 		m_directionalStack[m_coordinateStackPointer&0x1F] = m_directionalMatrix;
-		m_coordinateStackPointer++;
+		m_coordinateStackPointer = (m_coordinateStackPointer + 1) & 63;
+		if (m_coordinateStackPointer > 30)
+		{
+			Logger::msg(LoggerSeverity::Info, "gpu: push oob.");
+			GXSTAT |= (1 << 15);
+		}
 		GXSTAT &= 0xFFFFE0FF;
 		GXSTAT |= (m_coordinateStackPointer & 0x1F) << 8;
 		break;
@@ -30,6 +35,7 @@ void GPU::cmd_popMatrix(uint32_t* params)
 	if ((offs >> 5) & 0b1)
 		offs |= 0xFFFFFFC0;		//sign extend
 
+
 	switch (m_matrixMode)
 	{
 	case 0:
@@ -37,11 +43,11 @@ void GPU::cmd_popMatrix(uint32_t* params)
 		GXSTAT &= ~(1 << 13);
 		break;
 	case 1: case 2:
+		uint32_t before = m_coordinateStackPointer;
 		m_coordinateStackPointer = (m_coordinateStackPointer - offs) & 63;
 		if (m_coordinateStackPointer < 0 || m_coordinateStackPointer > 30)	//games might be silly enough to trigger this.
 		{
 			GXSTAT |= (1 << 15);	
-			Logger::msg(LoggerSeverity::Error, std::format("gpu: exploded.. Coordinate Matrix Stack Pointer is OOB: {}, {}", m_coordinateStackPointer, offs));
 		}
 		m_coordinateMatrix = m_coordinateStack[m_coordinateStackPointer&0x1F];
 		m_directionalMatrix = m_directionalStack[m_coordinateStackPointer&0x1F];
@@ -361,8 +367,6 @@ void GPU::cmd_setPolygonAttributes(uint32_t* params)
 	pendingAttributes.drawBack = (params[0] >> 6) & 0b1;
 	pendingAttributes.drawFront = (params[0] >> 7) & 0b1;
 	pendingAttributes.depthEqual = (params[0] >> 14) & 0b1;
-	if (pendingAttributes.depthEqual)
-		std::cout << "oo.. could explain bugs" << '\n';
 	//todo: rest of attribs, e.g. depth test, alpha...
 }
 

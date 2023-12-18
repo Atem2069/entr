@@ -141,6 +141,7 @@ private:
 
 	//MVP - used for transforming vtxs to clip space
 	Matrix m_clipMatrix = {};
+	Matrix tmp = {};
 
 	//currently selected matrix
 	Matrix m_projectionMatrix = {};
@@ -156,7 +157,7 @@ private:
 	Matrix m_directionalStack[32] = {};
 
 	//stack pointer for coordinate/directional matrix stacks. they share same SP.
-	uint32_t m_coordinateStackPointer = 0;
+	int32_t m_coordinateStackPointer = 0;
 
 	//identity matrix - used for MTX_IDENTITY
 	Matrix m_identityMatrix = {};

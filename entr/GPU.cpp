@@ -22,6 +22,11 @@ void GPU::init(InterruptManager* interruptManager, Scheduler* scheduler)
 	m_identityMatrix.m[5] = (1<<12);
 	m_identityMatrix.m[10] = (1<<12);
 	m_identityMatrix.m[15] = (1<<12);
+
+	m_projectionMatrix = m_identityMatrix;
+	m_coordinateMatrix = m_identityMatrix;
+	m_directionalMatrix = m_identityMatrix;
+	m_textureMatrix = m_identityMatrix;
 }
 
 uint8_t GPU::read(uint32_t address)
@@ -53,12 +58,12 @@ uint8_t GPU::read(uint32_t address)
 	//lmao
 	if (address >= 0x04000640 && address <= 0x0400067f)
 	{
-		address -= 0x04000640;
-		int mtxIdx = address >> 2;
+		int mtxIdx = (address & 0x3C) >> 2;
 		uint32_t m = m_clipMatrix.m[mtxIdx];
-		return (m >> (address & 0b11)) & 0xFF;
+		return (m >> ((address & 0b11)*8)) & 0xFF;
 	}
 
+	return 0;
 }
 
 void GPU::write(uint32_t address, uint8_t value)
@@ -76,6 +81,7 @@ void GPU::write(uint32_t address, uint8_t value)
 		if ((value >> 7) & 0b1)
 		{
 			GXSTAT &= ~(1 << 15);
+			GXSTAT &= ~(1 << 13);
 			//"additionally resets the P rojection Stack Pointer (Bit13), and probably (?) also the Texture stack Pointer" <- todo: implement.
 		}
 		break;
@@ -95,6 +101,7 @@ void GPU::write(uint32_t address, uint8_t value)
 		clearDepth &= 0xFF; clearDepth |= (value << 8);
 		break;
 	}
+
 }
 
 void GPU::writeGXFIFO(uint32_t value)
