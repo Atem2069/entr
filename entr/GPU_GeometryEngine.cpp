@@ -286,8 +286,6 @@ void GPU::cmd_beginVertexList(uint32_t* params)
 //i don't like the code duplication here, should ideally clean this up.
 void GPU::cmd_vertex16Bit(uint32_t* params)
 {
-	if (m_vertexCount >= 6144)
-		return;
 	int16_t x = params[0] & 0xFFFF;
 	int16_t y = (params[0] >> 16) & 0xFFFF;
 	int16_t z = params[1] & 0xFFFF;
@@ -300,8 +298,6 @@ void GPU::cmd_vertex16Bit(uint32_t* params)
 
 void GPU::cmd_vertex10Bit(uint32_t* params)
 {
-	if (m_vertexCount >= 6144)
-		return;
 	int16_t x = (params[0] & 0x3FF) << 6;
 	int16_t y = ((params[0] >> 10) & 0x3FF) << 6;
 	int16_t z = ((params[0] >> 20) & 0x3FF) << 6;
@@ -313,8 +309,6 @@ void GPU::cmd_vertex10Bit(uint32_t* params)
 
 void GPU::cmd_vertexXY(uint32_t* params)
 {
-	if (m_vertexCount >= 6144)
-		return;
 	int16_t x = params[0] & 0xFFFF;
 	int16_t y = (params[0] >> 16) & 0xFFFF;
 
@@ -325,8 +319,6 @@ void GPU::cmd_vertexXY(uint32_t* params)
 
 void GPU::cmd_vertexXZ(uint32_t* params)
 {
-	if (m_vertexCount >= 6144)
-		return;
 	int16_t x = params[0] & 0xFFFF;
 	int16_t z = (params[0] >> 16) & 0xFFFF;
 
@@ -337,8 +329,6 @@ void GPU::cmd_vertexXZ(uint32_t* params)
 
 void GPU::cmd_vertexYZ(uint32_t* params)
 {
-	if (m_vertexCount >= 6144)
-		return;
 	int16_t y = params[0] & 0xFFFF;
 	int16_t z = (params[0] >> 16) & 0xFFFF;
 
@@ -349,8 +339,6 @@ void GPU::cmd_vertexYZ(uint32_t* params)
 
 void GPU::cmd_vertexDiff(uint32_t* params)
 {
-	if (m_vertexCount >= 6144)
-		return;
 	int16_t x = params[0] & 0x3FF;
 	int16_t y = (params[0] >> 10) & 0x3FF;
 	int16_t z = (params[0] >> 20) & 0x3FF;
@@ -461,6 +449,8 @@ void GPU::cmd_swapBuffers(uint32_t* params)
 
 void GPU::submitVertex(Vector vtx)
 {
+	if(m_vertexCount >= 6144)
+		return;
 	Vector clipPoint = multiplyVectorMatrix(vtx, m_clipMatrix);
 	clipPoint.color = m_lastColor;
 	//shift to same precision as vtxs, etc. with 12 bit precision
@@ -550,7 +540,7 @@ void GPU::submitPolygon()
 		bool clip = false;
 		Poly clippedPoly = clipPolygon(p,clip);
 		clippedPoly.cw = m_polygonRAM[m_polygonCount-1].cw;	//clipping won't affect winding order
-		bool cull = (!clippedPoly.attribs.drawBack) && clippedPoly.cw;
+		bool cull = (!clippedPoly.attribs.drawBack && clippedPoly.cw) || (!clippedPoly.attribs.drawFront && !clippedPoly.cw);
 		if ((clippedPoly.numVertices == 0) || cull)
 		{
 			switch (m_primitiveType)
@@ -560,41 +550,26 @@ void GPU::submitPolygon()
 				m_vertexCount -= p.numVertices;
 				break;
 			case 2:
-				//if (cull)
-				//{
-				//	m_polygonCount--;
-				//	return;
-				//}
-				if (m_runningVtxCount == 3)
-				{
-					//first tri in strip: discard first vertex, restart strip
-					m_polygonCount--;
-					m_vertexRAM[m_vertexCount - 3] = m_vertexRAM[m_vertexCount - 2];
-					m_vertexRAM[m_vertexCount - 2] = m_vertexRAM[m_vertexCount - 1];
-					m_vertexCount--;
-					m_runningVtxCount = 3;
-				}
-				else
-				{
-					//hmm.. this correct?
-					m_polygonCount--;
-				}
+			{
+				m_polygonCount--;
+				Vector v2 = m_vertexRAM[m_vertexCount - 2];
+				Vector v3 = m_vertexRAM[m_vertexCount - 1];
+				m_vertexCount -= 3;
+				m_vertexRAM[m_vertexCount++] = v2;
+				m_vertexRAM[m_vertexCount++] = v3;
 				break;
+			}
 			case 3:
-				if (m_runningVtxCount == 4)
-				{
-					//first quad in strip: discard first two vertices, restart strip
-					m_polygonCount--;
-					m_vertexRAM[m_vertexCount - 4] = m_vertexRAM[m_vertexCount - 2];
-					m_vertexRAM[m_vertexCount - 3] = m_vertexRAM[m_vertexCount - 1];
-					m_vertexCount -= 2;
-					m_runningVtxCount = 2;
-				}
-				else
-				{
-					m_polygonCount--;
-				}
+			{
+				m_polygonCount--;
+				Vector v2 = m_vertexRAM[m_vertexCount - 2];
+				Vector v3 = m_vertexRAM[m_vertexCount - 1];
+				m_vertexCount -= 4;
+				m_vertexRAM[m_vertexCount++] = v2;
+				m_vertexRAM[m_vertexCount++] = v3;
+				m_runningVtxCount = 2;
 				break;
+			}
 			}
 			return;
 		}

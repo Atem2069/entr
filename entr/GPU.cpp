@@ -183,7 +183,6 @@ void GPU::writeCmdPort(uint32_t address, uint32_t value)
 			}
 		}
 	}
-
 }
 
 //calling this every cycle is probably slow - could deschedule/schedule depending on whether
@@ -236,9 +235,9 @@ void GPU::processCommand()
 	int numParams = m_cmdParameterLUT[cmd.command];
 	if (numParams)
 		numParams -= 1;
-	//this should never ever happen. I should remove this check probs
+
 	if (GXFIFO.size() < numParams)
-		Logger::msg(LoggerSeverity::Error, std::format("gpu: gxfifo state fucked, not enough params to process command!!!!! {} {}",GXFIFO.size(),numParams));
+		return;
 	else
 	{
 		params[0] = cmd.parameter;
