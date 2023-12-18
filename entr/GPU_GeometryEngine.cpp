@@ -550,8 +550,8 @@ void GPU::submitPolygon()
 		bool clip = false;
 		Poly clippedPoly = clipPolygon(p,clip);
 		clippedPoly.cw = m_polygonRAM[m_polygonCount-1].cw;	//clipping won't affect winding order
-
-		if ((clippedPoly.numVertices == 0))
+		bool cull = (!clippedPoly.attribs.drawBack) && clippedPoly.cw;
+		if ((clippedPoly.numVertices == 0) || cull)
 		{
 			switch (m_primitiveType)
 			{
@@ -560,6 +560,11 @@ void GPU::submitPolygon()
 				m_vertexCount -= p.numVertices;
 				break;
 			case 2:
+				//if (cull)
+				//{
+				//	m_polygonCount--;
+				//	return;
+				//}
 				if (m_runningVtxCount == 3)
 				{
 					//first tri in strip: discard first vertex, restart strip
@@ -567,7 +572,7 @@ void GPU::submitPolygon()
 					m_vertexRAM[m_vertexCount - 3] = m_vertexRAM[m_vertexCount - 2];
 					m_vertexRAM[m_vertexCount - 2] = m_vertexRAM[m_vertexCount - 1];
 					m_vertexCount--;
-					m_runningVtxCount = 2;
+					m_runningVtxCount = 3;
 				}
 				else
 				{
