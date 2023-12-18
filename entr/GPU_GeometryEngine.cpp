@@ -41,7 +41,6 @@ void GPU::cmd_popMatrix(uint32_t* params)
 		if (m_coordinateStackPointer < 0 || m_coordinateStackPointer > 30)	//games might be silly enough to trigger this.
 		{
 			GXSTAT |= (1 << 15);	
-			m_coordinateStackPointer = 0;
 			Logger::msg(LoggerSeverity::Error, std::format("gpu: exploded.. Coordinate Matrix Stack Pointer is OOB: {}, {}", m_coordinateStackPointer, offs));
 		}
 		m_coordinateMatrix = m_coordinateStack[m_coordinateStackPointer&0x1F];
