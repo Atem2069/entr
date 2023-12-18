@@ -159,7 +159,7 @@ private:
 
 	Vector m_lastVertex = {};
 	uint16_t m_lastColor = {};
-	int16_t curTexcoords[2] = {};
+	int64_t curTexcoords[2] = {};
 	PolyAttributes pendingAttributes = {}, curAttributes = {};
 	TextureParameters curTexParams = {};
 

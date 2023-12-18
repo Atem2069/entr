@@ -410,8 +410,8 @@ void GPU::cmd_texcoord(uint32_t* params)
 	switch (curTexParams.transformationMode)
 	{
 	case 0:
-		curTexcoords[0] = u;
-		curTexcoords[1] = v;
+		curTexcoords[0] = u << 8;
+		curTexcoords[1] = v << 8;
 		break;
 	case 1:
 	{
@@ -421,13 +421,13 @@ void GPU::cmd_texcoord(uint32_t* params)
 		vec.v[2] = (1 << 8);
 		vec.v[3] = (1 << 8);
 		vec = multiplyVectorMatrix(vec, m_textureMatrix);
-		curTexcoords[0] = vec.v[0] >> 8;
-		curTexcoords[1] = vec.v[1] >> 8;
+		curTexcoords[0] = vec.v[0];
+		curTexcoords[1] = vec.v[1];
 		break;
 	}
 	default:
-		curTexcoords[0] = u;
-		curTexcoords[1] = v;
+		curTexcoords[0] = u << 8;
+		curTexcoords[1] = v << 8;
 	}
 	//curTexcoords[0] = params[0] & 0xFFFF;
 	//curTexcoords[1] = (params[0] >> 16) & 0xFFFF;

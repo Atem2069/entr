@@ -221,7 +221,7 @@ void GPU::rasterizePolygon(Poly p)
 uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 {
 	//fixed point -> integer
-	u >>= 4; v >>= 4;
+	u >>= 12; v >>= 12;
 	
 	if (params.repeatX)
 	{
