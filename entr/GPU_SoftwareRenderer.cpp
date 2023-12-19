@@ -163,33 +163,36 @@ void GPU::rasterizePolygon(Poly p)
 	y = std::max(0, y);
 	while (y < largeY)
 	{
-		//rasterize
-		//same for xmin,xmax
+		//interpolate attributes in y 
+		uint16_t lcol = interpolateColor(y, l1.color, l2.color, l1.v[1], l2.v[1]);
+		uint16_t rcol = interpolateColor(y, r1.color, r2.color, r1.v[1], r2.v[1]);
+
+		int64_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
+		int64_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
+
+		int64_t wl = linearInterpolate(y, l1.v[3], l2.v[3], l1.v[1], l2.v[1]);
+		int64_t wr = linearInterpolate(y, r1.v[3], r2.v[3], r1.v[1], r2.v[1]);
+
+		int32_t ul = linearInterpolate(y, l1.texcoord[0], l2.texcoord[0], l1.v[1], l2.v[1]);
+		int32_t ur = linearInterpolate(y, r1.texcoord[0], r2.texcoord[0], r1.v[1], r2.v[1]);
+
+		int32_t vl = linearInterpolate(y, l1.texcoord[1], l2.texcoord[1], l1.v[1], l2.v[1]);
+		int32_t vr = linearInterpolate(y, r1.texcoord[1], r2.texcoord[1], r1.v[1], r2.v[1]);
 		for (int x = std::max(xMin,0); x <= std::min(xMax,256); x++)
 		{
-			//interpolate color in y, then x
-			uint16_t lcol = interpolateColor(y, l1.color, l2.color, l1.v[1], l2.v[1]);
-			uint16_t rcol = interpolateColor(y, r1.color, r2.color, r1.v[1], r2.v[1]);
-			//interpolate in x
+			//interpolate attributes in x.
+			//todo: perspective correct interpolation, proper interpolation for w
 			uint16_t col = interpolateColor(x, lcol, rcol, xMin, xMax);
 
 			//is interpolating z fine? or should we interpolate 1/z?
-			int64_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
-			int64_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 			int64_t z = linearInterpolate(x, zl, zr, xMin, xMax);
 
-			int64_t wl = linearInterpolate(y, l1.v[3], l2.v[3], l1.v[1], l2.v[1]);
-			int64_t wr = linearInterpolate(y, r1.v[3], r2.v[3], r1.v[1], r2.v[1]);
 			int64_t w = linearInterpolate(x, wl, wr, xMin, xMax);
 
 			int64_t depth = (wBuffer) ? w : z;
 
 			//interpolate u/v coords
-			int32_t ul = linearInterpolate(y, l1.texcoord[0], l2.texcoord[0], l1.v[1], l2.v[1]);
-			int32_t ur = linearInterpolate(y, r1.texcoord[0], r2.texcoord[0], r1.v[1], r2.v[1]);
 			int32_t u = linearInterpolate(x, ul, ur, xMin, xMax);
-			int32_t vl = linearInterpolate(y, l1.texcoord[1], l2.texcoord[1], l1.v[1], l2.v[1]);
-			int32_t vr = linearInterpolate(y, r1.texcoord[1], r2.texcoord[1], r1.v[1], r2.v[1]);
 			int32_t v = linearInterpolate(x, vl, vr, xMin, xMax);
 
 			col = decodeTexture(u, v, p.texParams);
