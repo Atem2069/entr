@@ -293,19 +293,19 @@ private:
 			int64_t ay1 = v.v[0]; int64_t ay2 = v.v[1]; int64_t ay3 = v.v[2]; int64_t ay4 = v.v[3];
 			int64_t b1x = m.m[yxToIdx(0, x)]; int64_t b2x = m.m[yxToIdx(1, x)]; int64_t b3x = m.m[yxToIdx(2, x)]; int64_t b4x = m.m[yxToIdx(3, x)];
 			int64_t a = (ay1 * b1x) >> 12; int64_t b = (ay2 * b2x) >> 12; int64_t c = (ay3 * b3x) >> 12; int64_t d = (ay4 * b4x) >> 12;
-			res.v[x] = (int32_t)(a + b + c + d);
+			res.v[x] = (a + b + c + d);
 		}
 		return res;
 	}
 
 	//fixed point helpers
-	int32_t fixedPointMul(int32_t a, int32_t b)
+	int64_t fixedPointMul(int64_t a, int64_t b)
 	{
 		int64_t res = ((int64_t)a) * ((int64_t)b);
 		return (res >> 12);
 	}
 
-	int32_t fixedPointDiv(int32_t a, int32_t b)
+	int64_t fixedPointDiv(int64_t a, int64_t b)
 	{
 		int64_t quotient = ((int64_t)a << 12) / (int64_t)b;
 		return quotient;

@@ -773,7 +773,7 @@ void Bus::NDS9_writeIO32(uint32_t address, uint32_t value)
 		m_gpu->writeGXFIFO(value);
 		return;
 	}
-	if (address >= 0x04000440 && address <= 0x0400058c)
+	if (address >= 0x04000440 && address <= 0x040005c8)
 	{
 		m_gpu->writeCmdPort(address, value);
 		return;
