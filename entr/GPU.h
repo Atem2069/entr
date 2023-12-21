@@ -22,7 +22,7 @@ struct Matrix
 struct Vector
 {
 	int64_t v[4];
-	int64_t texcoord[2];
+	int16_t texcoord[2];
 	uint16_t color;
 };
 
@@ -320,6 +320,21 @@ private:
 		}
 		//r1.v[0] + ((y - r1.v[1]) * (r2.v[0] - r1.v[0])) / (r2.v[1] - r1.v[1]);
 		return y1 + ((x - x1) * (y2 - y1)) / (x2-x1);
+	}
+
+	int64_t interpolatePerspectiveCorrect(uint64_t length, uint64_t a, uint64_t u1, uint64_t u2, uint64_t w1, uint64_t w2)
+	{
+		//bandaid fix for div by zero
+		if (a==0)
+		{
+			return u1;
+		}
+		//should move factor calc out of here, unnecessary work
+		int64_t factor = ((a * w1) << 9) / (((length - a) * w2) + (a * w1));
+		if (u1 <= u2)
+			return u1 + (((u2 - u1) * factor) >> 9);
+		else
+			return u2 + (((u1 - u2) * ((1<<9) - factor)) >> 9);
 	}
 
 	uint16_t interpolateColor(int x, int y1, int y2, int x1, int x2)

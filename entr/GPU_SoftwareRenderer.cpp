@@ -164,6 +164,35 @@ void GPU::rasterizePolygon(Poly p)
 	y = std::max(0, y);
 	while (y < largeY)
 	{
+		int64_t wl = {}, wr = {};
+		int32_t ul, ur, vl, vr;
+		//interpolate linearly if w values equal
+		if (l1.v[3] == l2.v[3])
+		{
+			wl = linearInterpolate(y, l1.v[3], l2.v[3], l1.v[1], l2.v[1]);
+			ul = linearInterpolate(y, l1.texcoord[0], l2.texcoord[0], l1.v[1], l2.v[1]);
+			vl = linearInterpolate(y, l1.texcoord[1], l2.texcoord[1], l1.v[1], l2.v[1]);
+		}
+		else
+		{
+			wl = interpolatePerspectiveCorrect((l2.v[1] - l1.v[1]) + 1, y - l1.v[1], l1.v[3], l2.v[3], l1.v[3], l2.v[3]);
+			ul = interpolatePerspectiveCorrect((l2.v[1] - l1.v[1]) + 1, y - l1.v[1], l1.texcoord[0]+0xFFFF, l2.texcoord[0]+0xFFFF, l1.v[3], l2.v[3])-0xFFFF;
+			vl = interpolatePerspectiveCorrect((l2.v[1] - l1.v[1]) + 1, y - l1.v[1], l1.texcoord[1]+0xFFFF, l2.texcoord[1]+0xFFFF, l1.v[3], l2.v[3])-0xFFFF;
+		}
+
+		if (r1.v[3] == r2.v[3])
+		{
+			wr = linearInterpolate(y, r1.v[3], r2.v[3], r1.v[1], r2.v[1]);
+			ur = linearInterpolate(y, r1.texcoord[0], r2.texcoord[0], r1.v[1], r2.v[1]);
+			vr = linearInterpolate(y, r1.texcoord[1], r2.texcoord[1], r1.v[1], r2.v[1]);
+		}
+		else
+		{
+			wr = interpolatePerspectiveCorrect((r2.v[1] - r1.v[1]) + 1, y - r1.v[1], r1.v[3], r2.v[3], r1.v[3], r2.v[3]);
+			ur = interpolatePerspectiveCorrect((r2.v[1] - r1.v[1]) + 1, y - r1.v[1], r1.texcoord[0] + 0xFFFF, r2.texcoord[0]+0xFFFF, r1.v[3], r2.v[3])-0xFFFF;
+			vr = interpolatePerspectiveCorrect((r2.v[1] - r1.v[1]) + 1, y - r1.v[1], r1.texcoord[1] + 0xFFFF, r2.texcoord[1]+0xFFFF, r1.v[3], r2.v[3])-0xFFFF;
+		}
+		//todo: perspective correct interp for this
 		//interpolate attributes in y 
 		uint16_t lcol = interpolateColor(y, l1.color, l2.color, l1.v[1], l2.v[1]);
 		uint16_t rcol = interpolateColor(y, r1.color, r2.color, r1.v[1], r2.v[1]);
@@ -171,31 +200,28 @@ void GPU::rasterizePolygon(Poly p)
 		int64_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
 		int64_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 
-		int64_t wl = linearInterpolate(y, l1.v[3], l2.v[3], l1.v[1], l2.v[1]);
-		int64_t wr = linearInterpolate(y, r1.v[3], r2.v[3], r1.v[1], r2.v[1]);
-
-		int32_t ul = linearInterpolate(y, l1.texcoord[0], l2.texcoord[0], l1.v[1], l2.v[1]);
-		int32_t ur = linearInterpolate(y, r1.texcoord[0], r2.texcoord[0], r1.v[1], r2.v[1]);
-
-		int32_t vl = linearInterpolate(y, l1.texcoord[1], l2.texcoord[1], l1.v[1], l2.v[1]);
-		int32_t vr = linearInterpolate(y, r1.texcoord[1], r2.texcoord[1], r1.v[1], r2.v[1]);
 		for (int x = std::max(xMin,0); x <= std::min(xMax,256); x++)
 		{
-			//interpolate attributes in x.
-			//todo: perspective correct interpolation, proper interpolation for w
+			//todo: perspective correct color interpolation
 			uint16_t col = interpolateColor(x, lcol, rcol, xMin, xMax);
 
 			//is interpolating z fine? or should we interpolate 1/z?
 			int64_t z = linearInterpolate(x, zl, zr, xMin, xMax);
-
-			int64_t w = linearInterpolate(x, wl, wr, xMin, xMax);
+			int64_t w = {}, u = {}, v = {};
+			if (wl == wr)
+			{
+				w = linearInterpolate(x, wl, wr, xMin, xMax);
+				u = linearInterpolate(x, ul, ur, xMin, xMax);
+				v = linearInterpolate(x, vl, vr, xMin, xMax);
+			}
+			else
+			{
+				w = interpolatePerspectiveCorrect((xMax - xMin) + 1, x - xMin, wl, wr, wl, wr);
+				u = interpolatePerspectiveCorrect((xMax - xMin) + 1, x - xMin, ul + 0xFFFF, ur + 0xFFFF, wl, wr)-0xFFFF;
+				v = interpolatePerspectiveCorrect((xMax - xMin) + 1, x - xMin, vl + 0xFFFF, vr + 0xFFFF, wl, wr)-0xFFFF;
+			}
 
 			int64_t depth = (wBuffer) ? w : z;
-
-			//interpolate u/v coords
-			int32_t u = linearInterpolate(x, ul, ur, xMin, xMax);
-			int32_t v = linearInterpolate(x, vl, vr, xMin, xMax);
-
 			col = decodeTexture(u, v, p.texParams);
 
 			if (y >= 0 && y < 192 && x>=0 && x < 256 && !(col>>15))
@@ -235,7 +261,7 @@ void GPU::rasterizePolygon(Poly p)
 uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 {
 	//fixed point -> integer
-	u >>= 12; v >>= 12;
+	u >>= 4; v >>= 4;
 	
 	if (params.repeatX)
 	{
