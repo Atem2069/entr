@@ -238,14 +238,14 @@ void GPU::rasterizePolygon(Poly p)
 		y++;
 
 		//this is in dire need of a cleanup
-		if (y > l2.v[1])	//reached end of left slope
+		if (y >= l2.v[1])	//reached end of left slope
 		{
 			l1 = l2;
 			l2Idx = (l2Idx + leftStep) % p.numVertices;
 			l2 = p.m_vertices[l2Idx];
 			xMin = l1.v[0];
 		}
-		if (y > r2.v[1])
+		if (y >= r2.v[1])
 		{
 			r1 = r2;
 			r2Idx = (r2Idx + rightStep) % p.numVertices;
