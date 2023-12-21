@@ -375,4 +375,14 @@ private:
 			return 0;
 		return pagePtr[offset];
 	}
+
+	uint16_t gpuReadPal16(uint32_t address)
+	{
+		uint8_t page = (address >> 14);
+		uint32_t offset = address & 0x3FFF;
+		uint8_t* pagePtr = m_mem->TexPalettePageTable[page];
+		if (!pagePtr)
+			return 0;
+		return (pagePtr[offset + 1] << 8) | pagePtr[offset];
+	}
 };

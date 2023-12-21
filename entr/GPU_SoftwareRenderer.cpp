@@ -308,9 +308,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		//todo: alpha
 		uint32_t byte = gpuReadTex(params.VRAMOffs + offs) & 0x1F;
 		uint32_t palAddr = (byte * 2) + params.paletteBase;
-		uint8_t colLow = gpuReadPal(palAddr);
-		uint8_t colHigh = gpuReadPal(palAddr + 1);
-		col = (colHigh << 8) | colLow;
+		col = gpuReadPal16(palAddr);
 		break;
 	}
 	//mode 2 seems broken, need to revisit (probs something silly)
@@ -323,9 +321,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		if (params.col0Transparent && !byte)
 			return 0x8000;
 		uint32_t palAddr = (byte * 2) + params.paletteBase;
-		uint8_t colLow = gpuReadPal(palAddr);
-		uint8_t colHigh = gpuReadPal(palAddr + 1);
-		col = (colHigh << 8) | colLow;
+		col = gpuReadPal16(palAddr);
 		break;
 	}
 	case 3:
@@ -339,9 +335,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		if (params.col0Transparent && !byte)
 			return 0x8000;
 		uint32_t palAddr = (byte * 2) + params.paletteBase;
-		uint8_t colLow = gpuReadPal(palAddr);
-		uint8_t colHigh = gpuReadPal(palAddr + 1);
-		col = (colHigh << 8) | colLow;
+		col = gpuReadPal16(palAddr);
 		break;
 	}
 	case 4:
@@ -351,9 +345,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		if (params.col0Transparent && !byte)
 			return 0x8000;
 		uint32_t palAddr = (byte * 2) + params.paletteBase;
-		uint8_t colLow = gpuReadPal(palAddr);
-		uint8_t colHigh = gpuReadPal(palAddr + 1);
-		col = (colHigh << 8) | colLow;
+		col = gpuReadPal16(palAddr);
 		break;
 	}
 	case 5:
@@ -371,17 +363,67 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		if (dataSlotIdx == 1)
 			palinfo += 0x10000;
 		palinfo &= ~0b1;
+
 		uint8_t palOffsLow = gpuReadTex(palinfo);
 		uint8_t palOffsHigh = gpuReadTex(palinfo + 1);
 		uint32_t palOffs = ((palOffsHigh << 8) | palOffsLow) & 0x3FFF;
 		palOffs = (palOffs << 2);
-
-		uint8_t mode = (palOffsHigh >> 6) & 0b11;
-		//todo: different modes, handle transparent/interpolated colours
 		uint32_t palAddr = params.paletteBase + palOffs + (byte * 2);
-		uint8_t colLow = gpuReadPal(palAddr);
-		uint8_t colHigh = gpuReadPal(palAddr + 1);
-		col = (colHigh << 8) | colLow;
+		uint8_t mode = (palOffsHigh >> 6) & 0b11;
+		switch (mode)
+		{
+		case 0:
+		{
+			if (byte == 3)
+				return 0x8000;
+			col = gpuReadPal16(palAddr);
+			break;
+		}
+		case 1:
+		{
+			if (byte == 3)
+				return 0x8000;
+			if (byte == 2)
+			{
+				uint16_t col0 = gpuReadPal16(params.paletteBase + palOffs);
+				uint16_t col1 = gpuReadPal16(params.paletteBase + palOffs + 2);
+				uint32_t r0 = col0 & 0x1F, g0 = (col0 >> 5) & 0x1F, b0 = (col0 >> 10) & 0x1F;
+				uint32_t r1 = col1 & 0x1F, g1 = (col1 >> 5) & 0x1F, b1 = (col1 >> 10) & 0x1F;
+				uint32_t r = (r0 + r1) >> 1, g = (g0 + g1) >> 1, b = (b0 + b1) >> 1;
+				col = (r & 0x1F) | ((g & 0x1F) << 5) | ((b & 0x1F) << 10);
+			}
+			else
+				col = gpuReadPal16(palAddr);
+			break;
+		}
+		case 2:
+		{
+			col = gpuReadPal16(palAddr);
+			break;
+		}
+		case 3:
+		{
+			uint16_t col0 = gpuReadPal16(params.paletteBase + palOffs);
+			uint16_t col1 = gpuReadPal16(params.paletteBase + palOffs + 2);
+			uint32_t r0 = col0 & 0x1F, g0 = (col0 >> 5) & 0x1F, b0 = (col0 >> 10) & 0x1F;
+			uint32_t r1 = col1 & 0x1F, g1 = (col1 >> 5) & 0x1F, b1 = (col1 >> 10) & 0x1F;
+			if (byte == 2)
+			{
+				uint32_t r = ((r0 * 5) + (r1 * 3)) >> 3, g = ((g0 * 5) + (g1 * 3)) >> 3, b = ((b0 * 5) + (b1 * 3)) >> 3;
+				col = (r & 0x1F) | ((g & 0x1F) << 5) | ((b & 0x1F) << 10);
+			}
+			else if (byte == 3)
+			{
+				uint32_t r = ((r0 * 3) + (r1 * 5)) >> 3, g = ((g0 * 3) + (g1 * 5)) >> 3, b = ((b0 * 3) + (b1 * 5)) >> 3;
+				col = (r & 0x1F) | ((g & 0x1F) << 5) | ((b & 0x1F) << 10);
+			}
+			else
+			{
+				col = gpuReadPal16(palAddr);
+			}
+			break;
+		}
+		}
 		break;
 	}
 	case 6:
@@ -390,9 +432,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		//todo: alpha
 		uint32_t byte = gpuReadTex(params.VRAMOffs + offs) & 0b111;
 		uint32_t palAddr = (byte * 2) + params.paletteBase;
-		uint8_t colLow = gpuReadPal(palAddr);
-		uint8_t colHigh = gpuReadPal(palAddr + 1);
-		col = (colHigh << 8) | colLow;
+		col = gpuReadPal16(palAddr);
 		break;
 	}
 	case 7:
