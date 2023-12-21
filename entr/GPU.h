@@ -43,6 +43,17 @@ struct TextureParameters
 	
 };
 
+enum TextureType
+{
+	Tex_A3I5=1,
+	Tex_Palette4Color=2,
+	Tex_Palette16Color=3,
+	Tex_Palette256Color=4,
+	Tex_Compressed=5,
+	Tex_A5I3=6,
+	Tex_DirectColor=7
+};
+
 struct PolyAttributes
 {
 	bool drawFront;

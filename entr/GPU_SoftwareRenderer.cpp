@@ -302,7 +302,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 	//lots of code duplication here, could cleanup
 	switch (params.format)
 	{
-	case 1:
+	case Tex_A3I5:
 	{
 		uint32_t offs = ((params.sizeX * v) + u);
 		//todo: alpha
@@ -312,7 +312,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		break;
 	}
 	//mode 2 seems broken, need to revisit (probs something silly)
-	case 2:
+	case Tex_Palette4Color:
 	{
 		uint32_t offs = ((params.sizeX * v) + u);
 		uint32_t byte = gpuReadTex(params.VRAMOffs + (offs>>2));
@@ -324,7 +324,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		col = gpuReadPal16(palAddr);
 		break;
 	}
-	case 3:
+	case Tex_Palette16Color:
 	{
 		//get base addr for texel
 		uint32_t offs = ((params.sizeX * v) + u);
@@ -338,7 +338,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		col = gpuReadPal16(palAddr);
 		break;
 	}
-	case 4:
+	case Tex_Palette256Color:
 	{
 		uint32_t offs = (params.sizeX * v) + u;
 		uint32_t byte = gpuReadTex(params.VRAMOffs + offs);
@@ -348,7 +348,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		col = gpuReadPal16(palAddr);
 		break;
 	}
-	case 5:
+	case Tex_Compressed:
 	{
 		//get 4x4 tile offset
 		uint32_t tileIdx = ((params.sizeX >> 2) * (v >> 2)) + (u >> 2);
@@ -426,7 +426,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		}
 		break;
 	}
-	case 6:
+	case Tex_A5I3:
 	{
 		uint32_t offs = ((params.sizeX * v) + u);
 		//todo: alpha
@@ -435,7 +435,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		col = gpuReadPal16(palAddr);
 		break;
 	}
-	case 7:
+	case Tex_DirectColor:
 	{
 		uint32_t offs = (params.sizeX * v * 2) + u * 2;
 		uint8_t colLow = gpuReadTex(params.VRAMOffs + offs);
