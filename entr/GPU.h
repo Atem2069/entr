@@ -322,19 +322,20 @@ private:
 		return y1 + ((x - x1) * (y2 - y1)) / (x2-x1);
 	}
 
-	int64_t interpolatePerspectiveCorrect(uint64_t length, uint64_t a, uint64_t u1, uint64_t u2, uint64_t w1, uint64_t w2)
+	uint64_t calcFactor(uint64_t length, uint64_t x, uint64_t w1, uint64_t w2, uint64_t shiftAmt)
 	{
-		//bandaid fix for div by zero
-		if (a==0)
-		{
-			return u1;
-		}
-		//should move factor calc out of here, unnecessary work
-		int64_t factor = ((a * w1) << 9) / (((length - a) * w2) + (a * w1));
+		//horrible horrible hack
+		if (length <= 1)
+			return 0;
+		return ((x * w1) << shiftAmt) / (((length - x) * w2) + (x * w1));
+	}
+
+	int64_t interpolatePerspectiveCorrect(uint64_t factor, uint64_t shiftAmt, uint64_t u1, uint64_t u2)
+	{
 		if (u1 <= u2)
-			return u1 + (((u2 - u1) * factor) >> 9);
+			return u1 + (((u2 - u1) * factor) >> shiftAmt);
 		else
-			return u2 + (((u1 - u2) * ((1<<9) - factor)) >> 9);
+			return u2 + (((u1 - u2) * ((1<<shiftAmt) - factor)) >> shiftAmt);
 	}
 
 	uint16_t interpolateColor(int x, int y1, int y2, int x1, int x2)
