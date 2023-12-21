@@ -306,8 +306,11 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 	{
 		uint32_t offs = ((params.sizeX * v) + u);
 		//todo: alpha
-		uint32_t byte = gpuReadTex(params.VRAMOffs + offs) & 0x1F;
-		uint32_t palAddr = (byte * 2) + params.paletteBase;
+		uint32_t byte = gpuReadTex(params.VRAMOffs + offs);
+		uint32_t palIndex = byte & 0x1F;
+		if (!(byte & 0xE0))	//hacky, need proper alpha blending for these textures
+			return 0x8000;
+		uint32_t palAddr = (palIndex * 2) + params.paletteBase;
 		col = gpuReadPal16(palAddr);
 		break;
 	}
@@ -430,8 +433,11 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 	{
 		uint32_t offs = ((params.sizeX * v) + u);
 		//todo: alpha
-		uint32_t byte = gpuReadTex(params.VRAMOffs + offs) & 0b111;
-		uint32_t palAddr = (byte * 2) + params.paletteBase;
+		uint32_t byte = gpuReadTex(params.VRAMOffs + offs);
+		uint8_t palIndex = byte & 0b111;
+		if (!(byte & 0xF8))	//hacky, need to handle alpha properly.
+			return 0x8000;
+		uint32_t palAddr = (palIndex * 2) + params.paletteBase;
 		col = gpuReadPal16(palAddr);
 		break;
 	}
