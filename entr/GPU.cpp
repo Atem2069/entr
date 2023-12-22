@@ -196,7 +196,20 @@ void GPU::writeCmdPort(uint32_t address, uint32_t value)
 //processing is stopped (SwapBuffers), or we know GXFIFO is empty..
 void GPU::onProcessCommandEvent()
 {
-	processCommand();
+	//evil hack: we sync quite loosely, but some games depend on cmds being executed fairly quick to read back CLIPMTX_RESULT
+	//so.... just execute a bunch of commands at once :)
+	GXSTAT &= ~(1 << 24);
+	GXSTAT &= ~(1 << 25);
+	GXSTAT &= ~(1 << 26);
+	GXSTAT &= ~(1 << 27);
+	checkGXFIFOIRQs();
+
+	int i = 0;
+	while (!GXFIFO.empty() && i < 16)
+	{
+		processCommand();
+		i++;
+	}
 
 	if (swapBuffersPending)
 		return;
@@ -227,13 +240,7 @@ void GPU::checkGXFIFOIRQs()
 void GPU::processCommand()
 {
 	//not a fan of this function as a whole, must admit. 
-	GXSTAT &= ~(1 << 24);
-	GXSTAT &= ~(1 << 25);
-	GXSTAT &= ~(1 << 26);
 	GXSTAT &= ~(1 << 27);
-
-	checkGXFIFOIRQs();		//initial check, as fifo may be empty.
-
 	if (GXFIFO.empty())
 		return;
 
