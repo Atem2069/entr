@@ -588,19 +588,23 @@ void GPU::submitPolygon()
 				m_vertexCount -= p.numVertices;
 				for (int i = 0; i < clippedPoly.numVertices; i++)
 				{
-					m_vertexRAM[m_vertexCount++] = clippedPoly.m_vertices[i];
+					if(m_vertexCount<6144)
+						m_vertexRAM[m_vertexCount++] = clippedPoly.m_vertices[i];
 				}
 				break;
 			case 2:
 			{
 				m_vertexCount -= p.numVertices;
 				for (int i = 0; i < clippedPoly.numVertices; i++)
-				{
-					m_vertexRAM[m_vertexCount++] = clippedPoly.m_vertices[i];
+				{	
+					if(m_vertexCount<6144)
+						m_vertexRAM[m_vertexCount++] = clippedPoly.m_vertices[i];
 				}
-
-				m_vertexRAM[m_vertexCount++] = v2;
-				m_vertexRAM[m_vertexCount++] = v3;
+				if (m_vertexCount < 6142)
+				{
+					m_vertexRAM[m_vertexCount++] = v2;
+					m_vertexRAM[m_vertexCount++] = v3;
+				}
 
 				break;
 			}
@@ -609,10 +613,14 @@ void GPU::submitPolygon()
 				m_vertexCount -= p.numVertices;
 				for (int i = 0; i < clippedPoly.numVertices; i++)
 				{
-					m_vertexRAM[m_vertexCount++] = clippedPoly.m_vertices[i];
+					if(m_vertexCount<6144)
+						m_vertexRAM[m_vertexCount++] = clippedPoly.m_vertices[i];
 				}
-				m_vertexRAM[m_vertexCount++] = v2;
-				m_vertexRAM[m_vertexCount++] = v3;
+				if (m_vertexCount < 6142)
+				{
+					m_vertexRAM[m_vertexCount++] = v2;
+					m_vertexRAM[m_vertexCount++] = v3;
+				}
 				m_runningVtxCount = 2;
 				break;
 			}

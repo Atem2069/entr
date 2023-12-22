@@ -42,10 +42,12 @@ void GPU::render()
 			Vector vec = cur;
 			if (cur.v[3] > 0)					//hack to prevent div by 0, also cull polygon if w less than 0.
 			{
-				int64_t screenX = fixedPointMul((cur.v[0] + cur.v[3]), 256 << 12);
-				int64_t screenY = fixedPointMul((cur.v[1] + cur.v[3]), 192 << 12);
-				screenX = fixedPointDiv(screenX, (cur.v[3] << 1)) >> 12;
-				screenY = 192 - (fixedPointDiv(screenY, (cur.v[3] << 1)) >> 12);
+				//int64_t screenX = fixedPointMul((cur.v[0] + cur.v[3]), 256 << 12);
+				//int64_t screenY = fixedPointMul((cur.v[1] + cur.v[3]), 192 << 12);
+				//screenX = fixedPointDiv(screenX, (cur.v[3] << 1)) >> 12;
+				//screenY = 192 - (fixedPointDiv(screenY, (cur.v[3] << 1)) >> 12);
+				int64_t screenX = ((cur.v[0] + cur.v[3]) * 256) / (cur.v[3] << 1);
+				int64_t screenY = ((-cur.v[1] + cur.v[3]) * 192) / (cur.v[3] << 1);
 
 				uint64_t z = ((((uint64_t)cur.v[2] << 14) / (int64_t)cur.v[3]) + 0x3FFF) << 9;
 
