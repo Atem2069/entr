@@ -197,6 +197,9 @@ void GPU::writeCmdPort(uint32_t address, uint32_t value)
 void GPU::onProcessCommandEvent()
 {
 	processCommand();
+
+	if (swapBuffersPending)
+		return;
 	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
 
 	//trigger gxfifo dma if less than half full
