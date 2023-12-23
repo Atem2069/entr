@@ -164,7 +164,7 @@ void GPU::rasterizePolygon(Poly p)
 	//we probably have clipping bugs so this is necessary
 	largeY = std::min(largeY, 192);
 	y = std::max(0, y);
-	while (y < largeY)
+	while (y <= largeY)
 	{
 		int64_t wl = {}, wr = {};
 		int32_t ul = {}, ur = {}, vl = {}, vr = {};
@@ -180,8 +180,8 @@ void GPU::rasterizePolygon(Poly p)
 		{
 			uint64_t factorL = calcFactor((l2.v[1] - l1.v[1]) + 1, (y - l1.v[1]), l1.v[3], l2.v[3], 9);
 			wl = interpolatePerspectiveCorrect(factorL, 9, l1.v[3], l2.v[3]);
-			ul = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[0] + 0xFFFF, l2.texcoord[0] + 0xFFFF) - 0xFFFF;
-			vl = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[1] + 0xFFFF, l2.texcoord[1] + 0xFFFF) - 0xFFFF;
+			ul = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[0], l2.texcoord[0]);
+			vl = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[1], l2.texcoord[1]);
 		}
 
 		if (r1.v[3] == r2.v[3])
@@ -194,8 +194,8 @@ void GPU::rasterizePolygon(Poly p)
 		{
 			uint64_t factorR = calcFactor((r2.v[1] - r1.v[1]) + 1, (y - r1.v[1]), r1.v[3], r2.v[3], 9);
 			wr = interpolatePerspectiveCorrect(factorR, 9, r1.v[3], r2.v[3]);
-			ur = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[0] + 0xFFFF, r2.texcoord[0] + 0xFFFF) - 0xFFFF;
-			vr = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[1] + 0xFFFF, r2.texcoord[1] + 0xFFFF) - 0xFFFF;
+			ur = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[0], r2.texcoord[0]);
+			vr = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[1], r2.texcoord[1]);
 		}
 		//todo: perspective correct interp for this
 		//interpolate attributes in y 
@@ -223,8 +223,8 @@ void GPU::rasterizePolygon(Poly p)
 			{
 				uint64_t factor = calcFactor((xMax - xMin) + 1, x - xMin, wl, wr, 8);
 				w = interpolatePerspectiveCorrect(factor, 8, wl, wr);
-				u = interpolatePerspectiveCorrect(factor, 8, ul + 0xFFFF, ur + 0xFFFF) - 0xFFFF;
-				v = interpolatePerspectiveCorrect(factor, 8, vl + 0xFFFF, vr + 0xFFFF) - 0xFFFF;
+				u = interpolatePerspectiveCorrect(factor, 8, ul, ur);
+				v = interpolatePerspectiveCorrect(factor, 8, vl, vr);
 			}
 
 			int64_t depth = (wBuffer) ? w : z;
@@ -251,6 +251,8 @@ void GPU::rasterizePolygon(Poly p)
 			l2 = p.m_vertices[l2Idx];
 			xMin = l1.v[0];
 		}
+		else
+			xMin = linearInterpolate(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1]);
 		if (y >= r2.v[1])
 		{
 			r1 = r2;
@@ -258,9 +260,8 @@ void GPU::rasterizePolygon(Poly p)
 			r2 = p.m_vertices[r2Idx];
 			xMax = r1.v[0];
 		}
-
-		xMin = linearInterpolate(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1]);
-		xMax = linearInterpolate(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1]);
+		else
+			xMax = linearInterpolate(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1]);
 	}
 }
 

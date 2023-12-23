@@ -288,8 +288,8 @@ private:
 			{
 				int64_t ay1 = a.m[yxToIdx(y, 0)]; int64_t ay2 = a.m[yxToIdx(y, 1)]; int64_t ay3 = a.m[yxToIdx(y, 2)]; int64_t ay4 = a.m[yxToIdx(y, 3)];
 				int64_t b1x = b.m[yxToIdx(0, x)]; int64_t b2x = b.m[yxToIdx(1, x)]; int64_t b3x = b.m[yxToIdx(2, x)]; int64_t b4x = b.m[yxToIdx(3, x)];
-				int64_t a = (ay1 * b1x) >> 12; int64_t b = (ay2 * b2x) >> 12; int64_t c = (ay3 * b3x) >> 12; int64_t d = (ay4 * b4x) >> 12;
-				res.m[yxToIdx(y, x)] = (int32_t)(a + b + c + d);
+				int64_t a = (ay1 * b1x); int64_t b = (ay2 * b2x); int64_t c = (ay3 * b3x); int64_t d = (ay4 * b4x);
+				res.m[yxToIdx(y, x)] = (a + b + c + d) >> 12;
 			}
 		}
 		return res;
@@ -303,8 +303,8 @@ private:
 		{
 			int64_t ay1 = v.v[0]; int64_t ay2 = v.v[1]; int64_t ay3 = v.v[2]; int64_t ay4 = v.v[3];
 			int64_t b1x = m.m[yxToIdx(0, x)]; int64_t b2x = m.m[yxToIdx(1, x)]; int64_t b3x = m.m[yxToIdx(2, x)]; int64_t b4x = m.m[yxToIdx(3, x)];
-			int64_t a = (ay1 * b1x) >> 12; int64_t b = (ay2 * b2x) >> 12; int64_t c = (ay3 * b3x) >> 12; int64_t d = (ay4 * b4x) >> 12;
-			res.v[x] = (a + b + c + d);
+			int64_t a = (ay1 * b1x); int64_t b = (ay2 * b2x); int64_t c = (ay3 * b3x); int64_t d = (ay4 * b4x);
+			res.v[x] = (a + b + c + d) >> 12;
 		}
 		return res;
 	}
@@ -335,17 +335,28 @@ private:
 
 	uint64_t calcFactor(uint64_t length, uint64_t x, uint64_t w1, uint64_t w2, uint64_t shiftAmt)
 	{
-		//horrible horrible hack
-		if (length <= 1)
+		uint64_t w1Denom = w1;
+		if (shiftAmt == 9)
+		{
+			w1 >>= 1;
+			w2 >>= 1;
+			w1Denom >>= 1;
+			if ((w1 & 1) && !(w2 & 1))
+				w1Denom++;
+		}
+
+		uint64_t numer = ((x * w1) << shiftAmt);
+		uint64_t denom = (((length - x) * w2) + (x * w1Denom));
+		if (!denom)
 			return 0;
-		return ((x * w1) << shiftAmt) / (((length - x) * w2) + (x * w1));
+		return numer / denom;
 	}
 
-	int64_t interpolatePerspectiveCorrect(uint64_t factor, uint64_t shiftAmt, uint64_t u1, uint64_t u2)
+	int64_t interpolatePerspectiveCorrect(int64_t factor, int64_t shiftAmt, int64_t u1, int64_t u2)
 	{
-		if (u1 <= u2)
-			return u1 + (((u2 - u1) * factor) >> shiftAmt);
-		else
+		//if (u1 <= u2)
+		//	return u1 + (((u2 - u1) * factor) >> shiftAmt);
+		//else
 			return u2 + (((u1 - u2) * ((1<<shiftAmt) - factor)) >> shiftAmt);
 	}
 
