@@ -499,21 +499,33 @@ template<Engine engine> void PPU::composeLayers()
 template<Engine engine> Window PPU::getPointAttributes(int x, int y)
 {
 	Window* m_windows = nullptr;
+	SpriteAttribute* m_spriteAttributeBuffer = nullptr;
 	if constexpr (engine == Engine::A)
+	{
 		m_windows = m_engineAWindows;
+		m_spriteAttributeBuffer = m_engineASpriteAttribBuffer;
+	}
 	else
+	{
 		m_windows = m_engineBWindows;
+		m_spriteAttributeBuffer = m_engineBSpriteAttribBuffer;
+	}
 
+	//window disabled - all layers enabled
 	if (!(m_windows[0].enabled || m_windows[1].enabled || m_windows[2].enabled))
 		return m_defaultWindow;
 
+	//regular windows
 	for (int i = 0; i < 2; i++)
 	{
 		if (m_windows[i].enabled && (x >= m_windows[i].x1 && (x < m_windows[i].x2 || m_windows[i].x1 > m_windows[i].x2)) && (y >= m_windows[i].y1 && (y < m_windows[i].y2 || m_windows[i].y1 > m_windows[i].y2)))
 			return m_windows[i];
 	}
 
-	//todo: obj window
+	//obj window
+	if (m_windows[2].enabled && m_spriteAttributeBuffer[x].objWindow)
+		return m_windows[2];
+
 	return m_windows[3];	//outside window
 }
 
