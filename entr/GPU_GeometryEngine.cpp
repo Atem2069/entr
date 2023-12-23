@@ -735,14 +735,25 @@ Vector GPU::getIntersectingPoint(Vector v0, Vector v1, int64_t pa, int64_t pb)
 
 bool GPU::getWindingOrder(Vector v0, Vector v1, Vector v2)
 {
+	//replace z component with vtx's w component. we're still in homogenous clip space so need w to define depth
 	v0.v[2] = v0.v[3]; v1.v[2] = v1.v[3]; v2.v[2] = v2.v[3];
-	//oh no
-	Vector a = {};
-	a.v[0] = v0.v[0] - v1.v[0]; a.v[1] = v0.v[1] - v1.v[1]; a.v[2] = v0.v[2] - v1.v[2];
-	Vector b = {};
-	b.v[0] = v2.v[0] - v1.v[0]; b.v[1] = v2.v[1] - v1.v[1]; b.v[2] = v2.v[2] - v1.v[2];
 
-	Vector cross = crossProduct(b, a);
+	Vector a = {};
+	a.v[0] = v2.v[0] - v1.v[0]; a.v[1] = v2.v[1] - v1.v[1]; a.v[2] = v2.v[2] - v1.v[2];
+	Vector b = {};
+	b.v[0] = v0.v[0] - v1.v[0]; b.v[1] = v0.v[1] - v1.v[1]; b.v[2] = v0.v[2] - v1.v[2];
+
+	Vector cross = crossProduct(a, b);
+
+	//normalize cross product until it fits into a 32 bit int.
+	//otherwise we can get a 64 bit int overflow when calculating dot product, which screws up winding order
+	while (cross.v[0] != (int32_t)cross.v[0] || cross.v[1] != (int32_t)cross.v[1] || cross.v[2] != (int32_t)cross.v[2])
+	{
+		cross.v[0] >>= 4;
+		cross.v[1] >>= 4;
+		cross.v[2] >>= 4;
+	}
+
 	int64_t dot = dotProduct(cross, v0);
-	return (dot < 0);	//this doesn't seem right. dot < 0 should be cw but uhh..
+	return (dot < 0);
 }
