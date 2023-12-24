@@ -123,6 +123,8 @@ private:
 	std::queue<uint32_t> m_pendingParameters;
 	std::queue<GXFIFOCommand> GXFIFO;
 
+	uint32_t viewportX1=0, viewportX2=255, viewportY1=0, viewportY2=191;
+
 	//todo: handle 2 sets of poly/vtx ram, swapped w/ SwapBuffers call
 	Vector m_vertexRAM[6144];
 	Poly m_polygonRAM[2048];
@@ -208,6 +210,7 @@ private:
 	void cmd_endVertexList();
 	void cmd_materialColor0(uint32_t* params);
 	void cmd_swapBuffers(uint32_t* params);
+	void cmd_setViewport(uint32_t* params);
 
 	void submitVertex(Vector vtx);
 	void submitPolygon();

@@ -447,6 +447,15 @@ void GPU::cmd_swapBuffers(uint32_t* params)
 	m_scheduler->removeEvent(Event::GXFIFO);
 }
 
+void GPU::cmd_setViewport(uint32_t* params)
+{
+	//are y1/y2 right?
+	viewportX1 = params[0] & 0xFF;
+	viewportY1 = 191 - ((params[0] >> 24) & 0xFF);
+	viewportX2 = (params[0] >> 16) & 0xFF;
+	viewportY2 = 191 - (params[0] >> 8) & 0xFF;
+}
+
 void GPU::submitVertex(Vector vtx)
 {
 	if(m_vertexCount >= 6144)
