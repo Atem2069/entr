@@ -332,6 +332,8 @@ private:
 
 	uint32_t DISPCAPCNT = {};
 	bool m_capturePending = false, m_captureInProgress = false;
+	uint16_t captureBuffer[256];
+	void captureLine();
 
 	void rebuildPageTables();
 };

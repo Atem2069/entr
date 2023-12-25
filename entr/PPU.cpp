@@ -57,9 +57,7 @@ void PPU::HDraw()
 	//renderLCDCMode();
 
 	uint8_t displayMode = (m_engineARegisters.DISPCNT >> 16) & 0b11;
-	if (displayMode == 2)
-		renderLCDCMode();
-	else if (displayMode == 1)
+	if (displayMode == 1 || (m_captureInProgress && !((DISPCAPCNT>>24)&0b1)))
 	{
 		uint8_t mode = m_engineARegisters.DISPCNT & 0b111;
 		switch (mode)
@@ -84,6 +82,10 @@ void PPU::HDraw()
 			break;
 		}
 		composeLayers<Engine::A>();
+	}
+	if (displayMode == 2)
+	{
+		renderLCDCMode();
 	}
 	else
 		composeLayers<Engine::A>();		//not a fan of this approach. could check for switch to display mode 0, then just clear framebuffer white..
@@ -120,6 +122,9 @@ void PPU::HDraw()
 	else
 		composeLayers<Engine::B>();
 
+	if (m_captureInProgress)
+		captureLine();
+
 	//line=2130 cycles. hdraw=1606 cycles? hblank=524 cycles
 	setHBlankFlag(true);
 	m_state = PPUState::HBlank;
@@ -150,6 +155,13 @@ void PPU::HBlank()
 			m_interruptManager->NDS9_requestInterrupt(InterruptType::VBlank);
 		if (((NDS7_DISPSTAT >> 3) & 0b1))
 			m_interruptManager->NDS7_requestInterrupt(InterruptType::VBlank);
+
+		//disable display capture
+		if (m_captureInProgress)
+		{
+			m_captureInProgress = false;
+			DISPCAPCNT &= ~(1 << 31);
+		}
 
 		setVBlankFlag(true);
 		m_state = PPUState::VBlank;
@@ -206,6 +218,13 @@ void PPU::VBlank()
 		m_engineBRegisters.BG2Y_dirty = false;
 		m_engineBRegisters.BG3X_dirty = false;
 		m_engineBRegisters.BG3Y_dirty = false;
+
+		//enable capture if pending
+		if (m_capturePending)
+		{
+			m_captureInProgress = true;
+			m_capturePending = false;
+		}
 	}
 	else
 	{
@@ -230,7 +249,7 @@ void PPU::renderLCDCMode()
 		uint8_t colLow = basePtr[address];
 		uint8_t colHigh = basePtr[address + 1];
 		uint16_t col = ((colHigh << 8) | colLow);
-		m_renderBuffer[pageIdx][((VCOUNT * 256) + i)] = col16to32(col);
+		m_renderBuffer[pageIdx][EngineA_RenderBase + ((VCOUNT * 256) + i)] = col16to32(col);
 	}
 }
 
@@ -492,6 +511,15 @@ template<Engine engine> void PPU::composeLayers()
 		if ((!(spritePixel >> 15)) && spriteAttributeBuffer[i].priority <= bestPriority && pointAttribs.objDrawable)
 			finalCol = spritePixel;
 
+		if constexpr (engine == Engine::A)
+		{
+			captureBuffer[i] = finalCol;
+			uint8_t displayMode = (m_engineARegisters.DISPCNT >> 16) & 0b11;
+			if (displayMode == 2)
+				continue;
+		}
+
+		//bad hack
 		m_renderBuffer[pageIdx][renderBase + (256 * VCOUNT) + i] = col16to32(finalCol);
 	}
 }
@@ -1768,8 +1796,10 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 	case 0x04000067:
 		DISPCAPCNT &= 0x00FFFFFF; DISPCAPCNT |= (value << 24);
 		//begin new capture, starts at next frame
-		if ((!m_captureInProgress && !m_capturePending) && (DISPCAPCNT >> 31))
+		if (!m_capturePending && (DISPCAPCNT >> 31))
+		{
 			m_capturePending = true;
+		}
 		break;
 	}
 }
@@ -1858,6 +1888,63 @@ uint32_t PPU::col16to32(uint16_t col)
 	blue = (blue << 3) | (blue >> 2);
 
 	return (red << 24) | (green << 16) | (blue << 8) | 0x000000FF;
+}
+
+void PPU::captureLine()
+{
+	//todo: handle reading src image from vram, blending etc.
+	uint32_t writeAddr = ((DISPCAPCNT >> 16) & 0b11) * 0x20000;
+	uint32_t writeOffs = ((DISPCAPCNT >> 18) & 0b11) * 0x8000;
+
+	uint8_t captureSize = (DISPCAPCNT >> 20) & 0b11;
+	uint32_t captureWidth = 256, captureHeight = 192;
+	switch (captureSize)
+	{
+	case 0:
+		captureWidth = 128;
+		captureHeight = 128;
+		break;
+	case 1:
+		captureWidth = 256;
+		captureHeight = 64;
+		break;
+	case 2:
+		captureWidth = 256;
+		captureHeight = 128;
+		break;
+	}
+
+	if (VCOUNT >= captureHeight)
+		return;
+
+	uint16_t* srcA = captureBuffer;
+	if ((DISPCAPCNT >> 24) & 0b1)
+		srcA = &GPU::output[256 * VCOUNT];
+
+	//writeAddr += ((captureWidth * VCOUNT) << 1);
+	writeOffs = writeOffs + ((captureWidth * VCOUNT) << 1) & 0x1FFFF;
+	writeAddr += writeOffs;
+
+	uint32_t srcBAddr = ((DISPCAPCNT >> 26) & 0b11) * 0x8000;
+	uint8_t mode = (DISPCAPCNT >> 29) & 0b11;
+
+	switch (mode)
+	{
+	case 0: case 2:
+		memcpy(m_mem->VRAM + writeAddr, srcA, captureWidth * sizeof(uint16_t));
+		break;
+	case 1:
+	{
+		for (int i = 0; i < 256; i++)
+		{
+			uint32_t offs = srcBAddr + ((i + (256 * VCOUNT)) * 2);
+			uint8_t colLow = m_mem->VRAM[offs];
+			uint8_t colHigh = m_mem->VRAM[offs + 1];
+			m_mem->VRAM[writeAddr + (i << 1)] = ((colHigh << 8) | colLow) & 0x7FFF;
+		}
+		break;
+	}
+	}
 }
 
 void PPU::onSchedulerEvent(void* context)

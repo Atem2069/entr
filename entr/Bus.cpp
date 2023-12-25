@@ -584,7 +584,9 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 		return ((EXMEMCNT >> 8) & 0xFF);
 	case 0x04000300:
 		return NDS9_POSTFLG;
-		return 0;
+		//ugh...
+	case 0x04000064: case 0x04000065: case 0x04000066: case 0x04000067:
+		return m_ppu->readIO(address);
 	}
 	return 0;
 }
@@ -726,6 +728,9 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 	case 0x04000300:
 		NDS9_POSTFLG = 1;
 		NDS9_POSTFLG |= (value & 0b10);
+		break;
+	case 0x04000064: case 0x04000065: case 0x04000066: case 0x04000067:
+		m_ppu->writeIO(address, value);
 		break;
 	}
 }
