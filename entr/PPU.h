@@ -330,5 +330,8 @@ private:
 	uint8_t VRAMCNT_H = {};
 	uint8_t VRAMCNT_I = {};
 
+	uint32_t DISPCAPCNT = {};
+	bool m_capturePending = false, m_captureInProgress = false;
+
 	void rebuildPageTables();
 };

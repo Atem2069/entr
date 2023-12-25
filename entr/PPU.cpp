@@ -1372,6 +1372,14 @@ uint8_t PPU::readIO(uint32_t address)
 		return m_engineARegisters.WINOUT & 0x3F;
 	case 0x0400004B:
 		return (m_engineARegisters.WINOUT >> 8) & 0x3F;
+	case 0x04000064:
+		return DISPCAPCNT & 0xFF;
+	case 0x04000065:
+		return (DISPCAPCNT >> 8) & 0xFF;
+	case 0x04000066:
+		return (DISPCAPCNT >> 16) & 0xFF;
+	case 0x04000067:
+		return (DISPCAPCNT >> 24) & 0xFF;
 	case 0x04001000:
 		return m_engineBRegisters.DISPCNT & 0xFF;
 	case 0x04001001:
@@ -1748,8 +1756,21 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		m_windows[2].objDrawable = (m_registers->WINOUT >> 12) & 0b1;
 		m_windows[2].blendable = (m_registers->WINOUT >> 13) & 0b1;
 		break;
-		//default:
-	//	Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO write! addr={:#x} val={:#x}", address, value));
+	case 0x04000064:
+		DISPCAPCNT &= 0xFFFFFF00; DISPCAPCNT |= value;
+		break;
+	case 0x04000065:
+		DISPCAPCNT &= 0xFFFF00FF; DISPCAPCNT |= (value << 8);
+		break;
+	case 0x04000066:
+		DISPCAPCNT &= 0xFF00FFFF; DISPCAPCNT |= (value << 16);
+		break;
+	case 0x04000067:
+		DISPCAPCNT &= 0x00FFFFFF; DISPCAPCNT |= (value << 24);
+		//begin new capture, starts at next frame
+		if ((!m_captureInProgress && !m_capturePending) && (DISPCAPCNT >> 31))
+			m_capturePending = true;
+		break;
 	}
 }
 
