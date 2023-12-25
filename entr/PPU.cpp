@@ -87,7 +87,7 @@ void PPU::HDraw()
 	{
 		renderLCDCMode();
 	}
-	else
+	if(!displayMode)
 		composeLayers<Engine::A>();		//not a fan of this approach. could check for switch to display mode 0, then just clear framebuffer white..
 
 	displayMode = (m_engineBRegisters.DISPCNT >> 16) & 0b11;
@@ -1922,28 +1922,24 @@ void PPU::captureLine()
 		srcA = &GPU::output[256 * VCOUNT];
 
 	//writeAddr += ((captureWidth * VCOUNT) << 1);
-	writeOffs = writeOffs + ((captureWidth * VCOUNT) << 1) & 0x1FFFF;
+	writeOffs = (writeOffs + ((captureWidth * VCOUNT) << 1)) & 0x1FFFF;
 	writeAddr += writeOffs;
 
-	uint32_t srcBAddr = ((DISPCAPCNT >> 26) & 0b11) * 0x8000;
+	uint32_t srcBAddr = (((m_engineARegisters.DISPCNT >> 18) & 0b11) * 0x20000) + (((DISPCAPCNT >> 26) & 0b11) * 0x8000);
 	uint8_t mode = (DISPCAPCNT >> 29) & 0b11;
 
 	switch (mode)
 	{
-	case 0: case 2:
+	case 0:
 		memcpy(m_mem->VRAM + writeAddr, srcA, captureWidth * sizeof(uint16_t));
 		break;
 	case 1:
-	{
-		for (int i = 0; i < 256; i++)
-		{
-			uint32_t offs = srcBAddr + ((i + (256 * VCOUNT)) * 2);
-			uint8_t colLow = m_mem->VRAM[offs];
-			uint8_t colHigh = m_mem->VRAM[offs + 1];
-			m_mem->VRAM[writeAddr + (i << 1)] = ((colHigh << 8) | colLow) & 0x7FFF;
-		}
+		memcpy(m_mem->VRAM + writeAddr, m_mem->VRAM + srcBAddr + (((VCOUNT * 256) << 1)&0x1FFFF), captureWidth * sizeof(uint16_t));
 		break;
-	}
+	case 2:
+		//todo: make this work properly. i.e. blend src a/b.
+		memcpy(m_mem->VRAM + writeAddr, srcA, captureWidth * sizeof(uint16_t));
+		break;
 	}
 }
 
