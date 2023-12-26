@@ -224,7 +224,29 @@ void GPU::rasterizePolygon(Poly p)
 			}
 
 			int64_t depth = (wBuffer) ? w : z;
-			col = decodeTexture(u, v, p.texParams);
+			uint16_t texCol = decodeTexture(u, v, p.texParams);
+
+			//should perhaps put this into 'decodeTexture'
+			//should also account for different modes, e.g. this assumes modulation
+			if (!(texCol >> 15))
+			{
+				/*
+				*   R = ((Rt+1)*(Rv+1)-1)/64
+					G = ((Gt+1)*(Gv+1)-1)/64
+					B = ((Bt+1)*(Bv+1)-1)/64
+					A = ((At+1)*(Av+1)-1)/64
+
+				*/
+				uint32_t r1 = (texCol & 0x1F), g1 = (texCol >> 5) & 0x1F, b1 = (texCol >> 10) & 0x1F;
+				uint32_t r2 = (col & 0x1F), g2 = (col >> 5) & 0x1F, b2 = (col >> 10) & 0x1F;
+				uint32_t R = ((r1 + 1) * (r2 + 1) - 1) / 32;
+				uint32_t G = ((g1 + 1) * (g2 + 1) - 1) / 32;
+				uint32_t B = ((b1 + 1) * (b2 + 1) - 1) / 32;
+				col = (R & 0x1F) | ((G & 0x1F) << 5) | ((B & 0x1F) << 10);
+			}
+			//bad bad hack. need to do proper alpha blending
+			else
+				col = 0x8000;
 
 			if (y >= 0 && y < 192 && x>=0 && x < 256 && !(col>>15))
 			{
