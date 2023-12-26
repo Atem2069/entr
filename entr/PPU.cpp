@@ -1937,8 +1937,36 @@ void PPU::captureLine()
 		memcpy(m_mem->VRAM + writeAddr, m_mem->VRAM + srcBAddr + (((VCOUNT * 256) << 1)&0x1FFFF), captureWidth * sizeof(uint16_t));
 		break;
 	case 2:
-		//todo: make this work properly. i.e. blend src a/b.
-		memcpy(m_mem->VRAM + writeAddr, srcA, captureWidth * sizeof(uint16_t));
+	{
+		/*
+		Dest_Intensity = ((SrcA_Intensitity * SrcA_Alpha * EVA)
+			+ (SrcB_Intensitity * SrcB_Alpha * EVB)) / 16
+			Dest_Alpha = (SrcA_Alpha AND(EVA > 0)) OR(SrcB_Alpha AND EVB > 0))
+		*/
+
+		srcBAddr += ((VCOUNT * captureWidth) << 1) & 0x1FFFF;
+		uint32_t EVA = DISPCAPCNT & 0x1F;
+		uint32_t EVB = ((DISPCAPCNT >> 8) & 0x1F);
+
+		for (int x = 0; x < captureWidth; x++)
+		{
+			uint16_t colA = srcA[x];
+			uint16_t colB = (m_mem->VRAM[srcBAddr + (x << 1)]) | (m_mem->VRAM[srcBAddr + (x << 1) + 1] << 8);
+
+			uint32_t r1 = colA & 0x1F, g1 = (colA >> 5) & 0x1F, b1 = (colA >> 10) & 0x1F;
+			uint32_t r2 = colB & 0x1F, g2 = (colB >> 5) & 0x1F, b2 = (colB >> 10) & 0x1F;
+
+			//todo: figure out alpha
+			uint32_t r = ((r1 * EVA) + (r2 * EVB)) / 16;
+			uint32_t g = ((g1 * EVA) + (g2 * EVB)) / 16;
+			uint32_t b = ((b1 * EVA) + (b2 * EVB)) / 16;
+
+			uint16_t col = (r & 0x1F) | ((g & 0x1F) << 5) | ((b & 0x1F) << 10);
+			m_mem->VRAM[writeAddr + (x << 1)] = col & 0xFF;
+			m_mem->VRAM[writeAddr + (x << 1) + 1] = (col >> 8) & 0x7F;
+		}
+
+	}
 		break;
 	}
 }
