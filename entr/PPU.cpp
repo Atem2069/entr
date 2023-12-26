@@ -225,6 +225,22 @@ void PPU::VBlank()
 			m_captureInProgress = true;
 			m_capturePending = false;
 		}
+
+		//handle display swap
+		if (displaySwapPending)
+		{
+			displaySwapPending = false;
+			if (!(POWCNT1 >> 15))
+			{
+				EngineA_RenderBase = 256 * 192;
+				EngineB_RenderBase = 0;
+			}
+			else
+			{
+				EngineA_RenderBase = 0;
+				EngineB_RenderBase = 256 * 192;
+			}
+		}
 	}
 	else
 	{
@@ -1472,16 +1488,7 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		break;
 	case 0x04000305:
 		POWCNT1 &= 0x00FF; POWCNT1 |= (value << 8);
-		if (!(POWCNT1 >> 15))
-		{
-			EngineA_RenderBase = 256 * 192;
-			EngineB_RenderBase = 0;
-		}
-		else
-		{
-			EngineA_RenderBase = 0;
-			EngineB_RenderBase = 256 * 192;
-		}
+		displaySwapPending = true;
 		break;
 		//vram banking.. aaa
 	case 0x04000240:
