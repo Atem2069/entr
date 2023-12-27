@@ -201,7 +201,7 @@ void GPU::rasterizePolygon(Poly p)
 		int64_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
 		int64_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 
-		for (int x = std::max(xMin,0); x <= std::min(xMax,256); x++)
+		for (int x = std::max(xMin,0); x <= std::min(xMax,255); x++)
 		{
 			//todo: perspective correct color interpolation
 			uint16_t col = interpolateColor(x, lcol, rcol, xMin, xMax);

@@ -1932,7 +1932,9 @@ void PPU::captureLine()
 	writeOffs = (writeOffs + ((captureWidth * VCOUNT) << 1)) & 0x1FFFF;
 	writeAddr += writeOffs;
 
-	uint32_t srcBAddr = (((m_engineARegisters.DISPCNT >> 18) & 0b11) * 0x20000) + (((DISPCAPCNT >> 26) & 0b11) * 0x8000);
+	uint32_t srcBAddr = (((m_engineARegisters.DISPCNT >> 18) & 0b11) * 0x20000);
+	if(((m_engineARegisters.DISPCNT >> 16) & 0b11) != 2)
+		srcBAddr += (((DISPCAPCNT >> 26) & 0b11) * 0x8000);
 	uint8_t mode = (DISPCAPCNT >> 29) & 0b11;
 
 	switch (mode)
