@@ -1,6 +1,4 @@
 # entr
 WIP Nintendo DS Emulator.
 
-![image](https://github.com/Atem2069/entr/assets/23128103/faa29a47-85c6-4f17-a1ef-40b544b30a9c)
-
-
+![Untitled](https://github.com/Atem2069/entr/assets/23128103/70819f49-91ab-4977-871a-889c396e6483)
