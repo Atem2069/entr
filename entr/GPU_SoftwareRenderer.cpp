@@ -174,7 +174,21 @@ void GPU::rasterizePolygon(Poly p)
 		}
 		else
 		{
-			uint64_t factorL = calcFactor((l2.v[1] - l1.v[1]) + 1, (y - l1.v[1]), l1.v[3], l2.v[3], 9);
+			//uint64_t factorL = calcFactor((l2.v[1] - l1.v[1]) + 1, (y - l1.v[1]), l1.v[3], l2.v[3], 9);
+			uint64_t x1 = l1.v[1], x2 = l2.v[1], x = y;
+			bool xMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
+			if (xMajor)
+			{
+				x1 = l1.v[0]; x2 = l2.v[0]; x = xMin;
+				if (x1 > x2)
+				{
+					uint64_t tmp = x1;
+					x1 = x2;
+					x2 = tmp;
+					x = (x2 - x) + x1;
+				}
+			}
+			uint64_t factorL = calcFactor((x2-x1) + 1, (x - x1), l1.v[3], l2.v[3], 9);
 			wl = interpolatePerspectiveCorrect(factorL, 9, l1.v[3], l2.v[3]);
 			ul = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[0], l2.texcoord[0]);
 			vl = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[1], l2.texcoord[1]);
@@ -188,7 +202,21 @@ void GPU::rasterizePolygon(Poly p)
 		}
 		else
 		{
-			uint64_t factorR = calcFactor((r2.v[1] - r1.v[1]) + 1, (y - r1.v[1]), r1.v[3], r2.v[3], 9);
+			//uint64_t factorR = calcFactor((r2.v[1] - r1.v[1]) + 1, (y - r1.v[1]), r1.v[3], r2.v[3], 9);
+			uint64_t x1 = r1.v[1], x2 = r2.v[1], x = y;
+			bool xMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
+			if (xMajor)
+			{
+				x1 = r1.v[0], x2 = r2.v[0], x = xMax;
+				if (x1 > x2)
+				{
+					uint64_t tmp = x1;
+					x1 = x2;
+					x2 = tmp;
+					x = (x2 - x) + x1;
+				}
+			}
+			uint64_t factorR = calcFactor((x2-x1) + 1, (x-x1), r1.v[3], r2.v[3], 9);
 			wr = interpolatePerspectiveCorrect(factorR, 9, r1.v[3], r2.v[3]);
 			ur = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[0], r2.texcoord[0]);
 			vr = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[1], r2.texcoord[1]);
@@ -262,6 +290,7 @@ void GPU::rasterizePolygon(Poly p)
 		y++;
 
 		//this is in dire need of a cleanup
+		//todo: proper x-major interpolation for poly edges
 		if (y >= l2.v[1])	//reached end of left slope
 		{
 			l1 = l2;

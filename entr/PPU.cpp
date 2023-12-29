@@ -1937,12 +1937,15 @@ void PPU::captureLine()
 		srcBAddr += (((DISPCAPCNT >> 26) & 0b11) * 0x8000);
 	uint8_t mode = (DISPCAPCNT >> 29) & 0b11;
 
+	//this seems to cause issues with ARM7-mapped VRAM. SHOULD CHECK that banks are LCDC-allocated. fix later
 	switch (mode)
 	{
 	case 0:
+		return;
 		memcpy(m_mem->VRAM + writeAddr, srcA, captureWidth * sizeof(uint16_t));
 		break;
 	case 1:
+		return;
 		memcpy(m_mem->VRAM + writeAddr, m_mem->VRAM + srcBAddr + (((VCOUNT * 256) << 1)&0x1FFFF), captureWidth * sizeof(uint16_t));
 		break;
 	case 2:
