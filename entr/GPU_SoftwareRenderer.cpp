@@ -155,6 +155,10 @@ void GPU::rasterizePolygon(Poly p)
 		r2 = p.m_vertices[r2Idx];
 		xMax = r1.v[0];
 	}
+
+	//determine whether initial edges are x-major
+	bool lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
+	bool rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
 	
 	//clamp ymin,ymax so we don't draw insane polys
 	//we probably have clipping bugs so this is necessary
@@ -174,10 +178,8 @@ void GPU::rasterizePolygon(Poly p)
 		}
 		else
 		{
-			//uint64_t factorL = calcFactor((l2.v[1] - l1.v[1]) + 1, (y - l1.v[1]), l1.v[3], l2.v[3], 9);
 			uint64_t x1 = l1.v[1], x2 = l2.v[1], x = y;
-			bool xMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
-			if (xMajor)
+			if (lEdgeXMajor)
 			{
 				x1 = l1.v[0]; x2 = l2.v[0]; x = xMin;
 				if (x1 > x2)
@@ -202,10 +204,8 @@ void GPU::rasterizePolygon(Poly p)
 		}
 		else
 		{
-			//uint64_t factorR = calcFactor((r2.v[1] - r1.v[1]) + 1, (y - r1.v[1]), r1.v[3], r2.v[3], 9);
 			uint64_t x1 = r1.v[1], x2 = r2.v[1], x = y;
-			bool xMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
-			if (xMajor)
+			if (rEdgeXMajor)
 			{
 				x1 = r1.v[0], x2 = r2.v[0], x = xMax;
 				if (x1 > x2)
@@ -297,6 +297,8 @@ void GPU::rasterizePolygon(Poly p)
 			l2Idx = (l2Idx + leftStep) % p.numVertices;
 			l2 = p.m_vertices[l2Idx];
 			xMin = l1.v[0];
+			
+			lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
 		}
 		else
 			xMin = linearInterpolate(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1]);
@@ -306,6 +308,8 @@ void GPU::rasterizePolygon(Poly p)
 			r2Idx = (r2Idx + rightStep) % p.numVertices;
 			r2 = p.m_vertices[r2Idx];
 			xMax = r1.v[0];
+
+			rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
 		}
 		else
 			xMax = linearInterpolate(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1]);
