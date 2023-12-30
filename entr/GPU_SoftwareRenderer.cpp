@@ -168,6 +168,7 @@ void GPU::rasterizePolygon(Poly p)
 	{
 		int64_t wl = {}, wr = {};
 		int32_t ul = {}, ur = {}, vl = {}, vr = {};
+		uint16_t lcol = {}, rcol = {};
 
 		//interpolate linearly if w values equal
 		if (l1.v[3] == l2.v[3])
@@ -175,6 +176,7 @@ void GPU::rasterizePolygon(Poly p)
 			wl = linearInterpolate(y, l1.v[3], l2.v[3], l1.v[1], l2.v[1]);
 			ul = linearInterpolate(y, l1.texcoord[0], l2.texcoord[0], l1.v[1], l2.v[1]);
 			vl = linearInterpolate(y, l1.texcoord[1], l2.texcoord[1], l1.v[1], l2.v[1]);
+			lcol = interpolateColor(y, l1.color, l2.color, l1.v[1], l2.v[1]);
 		}
 		else
 		{
@@ -194,6 +196,7 @@ void GPU::rasterizePolygon(Poly p)
 			wl = interpolatePerspectiveCorrect(factorL, 9, l1.v[3], l2.v[3]);
 			ul = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[0], l2.texcoord[0]);
 			vl = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[1], l2.texcoord[1]);
+			lcol = interpolateColorPerspectiveCorrect(factorL, 9, l1.color, l2.color);
 		}
 
 		if (r1.v[3] == r2.v[3])
@@ -201,6 +204,7 @@ void GPU::rasterizePolygon(Poly p)
 			wr = linearInterpolate(y, r1.v[3], r2.v[3], r1.v[1], r2.v[1]);
 			ur = linearInterpolate(y, r1.texcoord[0], r2.texcoord[0], r1.v[1], r2.v[1]);
 			vr = linearInterpolate(y, r1.texcoord[1], r2.texcoord[1], r1.v[1], r2.v[1]);
+			rcol = interpolateColor(y, r1.color, r2.color, r1.v[1], r2.v[1]);
 		}
 		else
 		{
@@ -220,20 +224,15 @@ void GPU::rasterizePolygon(Poly p)
 			wr = interpolatePerspectiveCorrect(factorR, 9, r1.v[3], r2.v[3]);
 			ur = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[0], r2.texcoord[0]);
 			vr = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[1], r2.texcoord[1]);
+			rcol = interpolateColorPerspectiveCorrect(factorR, 9, r1.color, r2.color);
 		}
-		//todo: perspective correct interp for this
-		//interpolate attributes in y 
-		uint16_t lcol = interpolateColor(y, l1.color, l2.color, l1.v[1], l2.v[1]);
-		uint16_t rcol = interpolateColor(y, r1.color, r2.color, r1.v[1], r2.v[1]);
 
 		int64_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
 		int64_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 
 		for (int x = std::max(xMin,0); x <= std::min(xMax,255); x++)
 		{
-			//todo: perspective correct color interpolation
-			uint16_t col = interpolateColor(x, lcol, rcol, xMin, xMax);
-
+			uint16_t col = {};
 			//is interpolating z fine? or should we interpolate 1/z?
 			int64_t z = linearInterpolate(x, zl, zr, xMin, xMax);
 			int64_t w = {}, u = {}, v = {};
@@ -242,6 +241,7 @@ void GPU::rasterizePolygon(Poly p)
 				w = linearInterpolate(x, wl, wr, xMin, xMax);
 				u = linearInterpolate(x, ul, ur, xMin, xMax);
 				v = linearInterpolate(x, vl, vr, xMin, xMax);
+				col = interpolateColor(x, lcol, rcol, xMin, xMax);
 			}
 			else
 			{
@@ -249,6 +249,7 @@ void GPU::rasterizePolygon(Poly p)
 				w = interpolatePerspectiveCorrect(factor, 8, wl, wr);
 				u = interpolatePerspectiveCorrect(factor, 8, ul, ur);
 				v = interpolatePerspectiveCorrect(factor, 8, vl, vr);
+				col = interpolateColorPerspectiveCorrect(factor, 8, lcol, rcol);
 			}
 
 			int64_t depth = (wBuffer) ? w : z;

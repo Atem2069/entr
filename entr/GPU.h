@@ -378,6 +378,23 @@ private:
 		return r | (g << 5) | (b << 10);
 	}
 
+	uint16_t interpolateColorPerspectiveCorrect(int64_t factor, int64_t shiftAmt, uint16_t col1, uint16_t col2)
+	{
+		uint16_t r1 = col1 & 0x1F;
+		uint16_t g1 = (col1 >> 5) & 0x1F;
+		uint16_t b1 = (col1 >> 10) & 0x1F;
+
+		uint16_t r2 = col2 & 0x1F;
+		uint16_t g2 = (col2 >> 5) & 0x1F;
+		uint16_t b2 = (col2 >> 10) & 0x1F;
+
+		uint16_t r = interpolatePerspectiveCorrect(factor, shiftAmt, r1, r2) & 0x1F;
+		uint16_t g = interpolatePerspectiveCorrect(factor, shiftAmt, g1, g2) & 0x1F;
+		uint16_t b = interpolatePerspectiveCorrect(factor, shiftAmt, b1, b2) & 0x1F;
+
+		return r | (g << 5) | (b << 10);
+	}
+
 	//read fns for tex/pal mem
 	//could potentially speed up by figuring out what slot a texture lies in only initially, then just reading from page?
 	uint8_t gpuReadTex(uint32_t address)
