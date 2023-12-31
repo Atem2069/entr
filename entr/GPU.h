@@ -18,8 +18,7 @@ struct Matrix
 	int32_t m[16];
 };
 
-//todo: change this to 'Vertex', 'Vector' is a bad name
-struct Vector
+struct Vertex
 {
 	int64_t v[4];
 	int16_t texcoord[2];
@@ -65,7 +64,7 @@ struct PolyAttributes
 struct Poly
 {
 	uint8_t numVertices;
-	Vector m_vertices[10];	//polygon can be clipped with up to 10 vtxs
+	Vertex m_vertices[10];	//polygon can be clipped with up to 10 vtxs
 	bool cw;
 	PolyAttributes attribs;
 	TextureParameters texParams;
@@ -126,7 +125,7 @@ private:
 	uint32_t viewportX1=0, viewportX2=255, viewportY1=0, viewportY2=191;
 
 	//todo: handle 2 sets of poly/vtx ram, swapped w/ SwapBuffers call
-	Vector m_vertexRAM[6144];
+	Vertex m_vertexRAM[6144];
 	Poly m_polygonRAM[2048];
 	uint32_t m_vertexCount = 0, m_polygonCount = 0;
 	uint32_t m_runningVtxCount = 0;	//reset at BEGIN_VTXS command
@@ -175,7 +174,7 @@ private:
 	//identity matrix - used for MTX_IDENTITY
 	Matrix m_identityMatrix = {};
 
-	Vector m_lastVertex = {};
+	Vertex m_lastVertex = {};
 	uint16_t m_lastColor = {};
 	int64_t curTexcoords[2] = {};
 	PolyAttributes pendingAttributes = {}, curAttributes = {};
@@ -212,7 +211,7 @@ private:
 	void cmd_swapBuffers(uint32_t* params);
 	void cmd_setViewport(uint32_t* params);
 
-	void submitVertex(Vector vtx);
+	void submitVertex(Vertex vtx);
 	void submitPolygon();
 
 	void render();
@@ -226,21 +225,21 @@ private:
 
 	Poly clipPolygon(Poly p, bool& clip);
 	Poly clipAgainstEdge(int edge, Poly p, bool& clip);
-	Vector getIntersectingPoint(Vector v0, Vector v1, int64_t pa, int64_t pb);
-	bool getWindingOrder(Vector v0, Vector v1, Vector v2);
+	Vertex getIntersectingPoint(Vertex v0, Vertex v1, int64_t pa, int64_t pb);
+	bool getWindingOrder(Vertex v0, Vertex v1, Vertex v2);
 
 	//should move this all to a new header.
 	
-	inline Vector crossProduct(Vector a, Vector b)
+	inline Vertex crossProduct(Vertex a, Vertex b)
 	{
-		Vector c = {};
+		Vertex c = {};
 		c.v[0] = (a.v[1] * b.v[2]) - (a.v[2] * b.v[1]);
 		c.v[1] = (a.v[2] * b.v[0]) - (a.v[0] * b.v[2]);
 		c.v[2] = (a.v[0] * b.v[1]) - (a.v[1] * b.v[0]);
 		return c;
 	}
 	
-	inline int64_t dotProduct(Vector a, Vector b)
+	inline int64_t dotProduct(Vertex a, Vertex b)
 	{
 		return (a.v[0] * b.v[0]) + (a.v[1] * b.v[1]) + (a.v[2] * b.v[2]);
 	}
@@ -298,10 +297,10 @@ private:
 		return res;
 	}
 
-	inline Vector multiplyVectorMatrix(Vector v, Matrix m)
+	inline Vertex multiplyVectorMatrix(Vertex v, Matrix m)
 	{
 		//could manually unroll this.
-		Vector res = {};
+		Vertex res = {};
 		for (int x = 0; x < 4; x++)
 		{
 			int64_t ay1 = v.v[0]; int64_t ay2 = v.v[1]; int64_t ay3 = v.v[2]; int64_t ay4 = v.v[3];

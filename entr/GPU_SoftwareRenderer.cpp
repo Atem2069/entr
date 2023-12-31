@@ -38,8 +38,8 @@ void GPU::render()
 		bool draw = true;
 		for (int j = 0; j < p.numVertices; j++)
 		{
-			Vector cur = p.m_vertices[j];
-			Vector vec = cur;
+			Vertex cur = p.m_vertices[j];
+			Vertex vec = cur;
 			if (cur.v[3] > 0)					//hack to prevent div by 0, also cull polygon if w less than 0.
 			{
 				int64_t screenX = (((cur.v[0] + cur.v[3]) * ((viewportX2-viewportX1)+1)) / (cur.v[3] << 1)) + viewportX1;
@@ -47,7 +47,7 @@ void GPU::render()
 
 				uint64_t z = ((((uint64_t)cur.v[2] << 14) / (int64_t)cur.v[3]) + 0x3FFF) << 9;
 
-				Vector v = {};
+				Vertex v = {};
 				v.v[0] = screenX;
 				v.v[1] = screenY;
 				v.v[2] = z;
@@ -66,8 +66,8 @@ void GPU::render()
 		/*
 		for (int i = 0; i < p.numVertices; i++)
 		{
-			Vector v0 = p.m_vertices[i];
-			Vector v1 = p.m_vertices[(i + 1) % p.numVertices];
+			Vertex v0 = p.m_vertices[i];
+			Vertex v1 = p.m_vertices[(i + 1) % p.numVertices];
 			debug_drawLine(v0.v[0], v0.v[1], v1.v[0], v1.v[1]);
 		}
 		*/
@@ -116,8 +116,8 @@ void GPU::rasterizePolygon(Poly p)
 	//if (smallY < 0 || smallY >= 192 || largeY < 0 || largeY >= 192)
 	//	return;
 
-	Vector l1 = {}, l2 = {};
-	Vector r1 = {}, r2 = {};
+	Vertex l1 = {}, l2 = {};
+	Vertex r1 = {}, r2 = {};
 
 	int leftStep = 1;
 	int rightStep = p.numVertices - 1;

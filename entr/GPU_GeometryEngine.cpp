@@ -297,7 +297,7 @@ void GPU::cmd_vertex16Bit(uint32_t* params)
 	int16_t z = params[1] & 0xFFFF;
 
 
-	Vector point = {};
+	Vertex point = {};
 	point.v[0] = x; point.v[1] = y; point.v[2] = z; point.v[3] = (1 << 12);
 	submitVertex(point);
 }
@@ -308,7 +308,7 @@ void GPU::cmd_vertex10Bit(uint32_t* params)
 	int16_t y = ((params[0] >> 10) & 0x3FF) << 6;
 	int16_t z = ((params[0] >> 20) & 0x3FF) << 6;
 
-	Vector point = {};
+	Vertex point = {};
 	point.v[0] = x; point.v[1] = y; point.v[2] = z; point.v[3] = (1 << 12);
 	submitVertex(point);
 }
@@ -318,7 +318,7 @@ void GPU::cmd_vertexXY(uint32_t* params)
 	int16_t x = params[0] & 0xFFFF;
 	int16_t y = (params[0] >> 16) & 0xFFFF;
 
-	Vector point = {};
+	Vertex point = {};
 	point.v[0] = x; point.v[1] = y; point.v[2] = m_lastVertex.v[2]; point.v[3] = (1 << 12);
 	submitVertex(point);
 }
@@ -328,7 +328,7 @@ void GPU::cmd_vertexXZ(uint32_t* params)
 	int16_t x = params[0] & 0xFFFF;
 	int16_t z = (params[0] >> 16) & 0xFFFF;
 
-	Vector point = {};
+	Vertex point = {};
 	point.v[0] = x; point.v[1] = m_lastVertex.v[1]; point.v[2] = z; point.v[3] = (1 << 12);
 	submitVertex(point);
 }
@@ -338,7 +338,7 @@ void GPU::cmd_vertexYZ(uint32_t* params)
 	int16_t y = params[0] & 0xFFFF;
 	int16_t z = (params[0] >> 16) & 0xFFFF;
 
-	Vector point = {};
+	Vertex point = {};
 	point.v[0] = m_lastVertex.v[0]; point.v[1] = y; point.v[2] = z; point.v[3] = (1 << 12);
 	submitVertex(point);
 }
@@ -355,7 +355,7 @@ void GPU::cmd_vertexDiff(uint32_t* params)
 	if ((z >> 9) & 0b1)
 		z |= 0xFC00;
 	
-	Vector point = m_lastVertex;
+	Vertex point = m_lastVertex;
 	point.v[0] += x; point.v[1] += y; point.v[2] += z; point.v[3] = (1 << 12);
 	submitVertex(point);
 }
@@ -409,7 +409,7 @@ void GPU::cmd_texcoord(uint32_t* params)
 		break;
 	case 1:
 	{
-		Vector vec = {};
+		Vertex vec = {};
 		vec.v[0] = (u << 8);
 		vec.v[1] = (v << 8);
 		vec.v[2] = (1 << 8);
@@ -456,11 +456,11 @@ void GPU::cmd_setViewport(uint32_t* params)
 	viewportY2 = 191 - (params[0] >> 8) & 0xFF;
 }
 
-void GPU::submitVertex(Vector vtx)
+void GPU::submitVertex(Vertex vtx)
 {
 	if(m_vertexCount >= 6144)
 		return;
-	Vector clipPoint = multiplyVectorMatrix(vtx, m_clipMatrix);
+	Vertex clipPoint = multiplyVectorMatrix(vtx, m_clipMatrix);
 	clipPoint.color = m_lastColor;
 	//shift to same precision as vtxs, etc. with 12 bit precision
 	clipPoint.texcoord[0] = (int64_t)(curTexcoords[0]);
@@ -561,8 +561,8 @@ void GPU::submitPolygon()
 			case 2:
 			{
 				m_polygonCount--;
-				Vector v2 = m_vertexRAM[m_vertexCount - 2];
-				Vector v3 = m_vertexRAM[m_vertexCount - 1];
+				Vertex v2 = m_vertexRAM[m_vertexCount - 2];
+				Vertex v3 = m_vertexRAM[m_vertexCount - 1];
 				m_vertexCount -= 3;
 				m_vertexRAM[m_vertexCount++] = v2;
 				m_vertexRAM[m_vertexCount++] = v3;
@@ -571,8 +571,8 @@ void GPU::submitPolygon()
 			case 3:
 			{
 				m_polygonCount--;
-				Vector v2 = m_vertexRAM[m_vertexCount - 2];
-				Vector v3 = m_vertexRAM[m_vertexCount - 1];
+				Vertex v2 = m_vertexRAM[m_vertexCount - 2];
+				Vertex v3 = m_vertexRAM[m_vertexCount - 1];
 				m_vertexCount -= 4;
 				m_vertexRAM[m_vertexCount++] = v2;
 				m_vertexRAM[m_vertexCount++] = v3;
@@ -587,9 +587,9 @@ void GPU::submitPolygon()
 		{
 			m_polygonRAM[m_polygonCount - 1] = clippedPoly;
 			//hack for winding order:
-			Vector v1 = m_vertexRAM[m_vertexCount - 3];
-			Vector v2 = m_vertexRAM[m_vertexCount - 2];
-			Vector v3 = m_vertexRAM[m_vertexCount - 1];
+			Vertex v1 = m_vertexRAM[m_vertexCount - 3];
+			Vertex v2 = m_vertexRAM[m_vertexCount - 2];
+			Vertex v3 = m_vertexRAM[m_vertexCount - 1];
 
 			switch (m_primitiveType)
 			{
@@ -673,8 +673,8 @@ Poly GPU::clipAgainstEdge(int edge, Poly p, bool& clip)
 
 	for (int i = 0; i < p.numVertices; i++)
 	{
-		Vector cur = p.m_vertices[i];
-		Vector last = p.m_vertices[(i - 1 + p.numVertices) % p.numVertices];
+		Vertex cur = p.m_vertices[i];
+		Vertex last = p.m_vertices[(i - 1 + p.numVertices) % p.numVertices];
 
 		int64_t curPt = cur.v[axis];
 		int64_t lastPt = last.v[axis];
@@ -691,7 +691,7 @@ Poly GPU::clipAgainstEdge(int edge, Poly p, bool& clip)
 			//find intersection between line cur->last and clip plane, then insert
 			if (lastPt < -last.v[3])
 			{
-				Vector clippedPt = getIntersectingPoint(cur, last, curPt, lastPt);
+				Vertex clippedPt = getIntersectingPoint(cur, last, curPt, lastPt);
 				out.m_vertices[out.numVertices++] = clippedPt;
 				clip = true;
 			}
@@ -702,7 +702,7 @@ Poly GPU::clipAgainstEdge(int edge, Poly p, bool& clip)
 		else if (lastPt >= -last.v[3])
 		{
 			clip = true;
-			Vector clippedPt = getIntersectingPoint(cur, last, curPt, lastPt);
+			Vertex clippedPt = getIntersectingPoint(cur, last, curPt, lastPt);
 				out.m_vertices[out.numVertices++] = clippedPt;
 		}
 	}
@@ -710,9 +710,9 @@ Poly GPU::clipAgainstEdge(int edge, Poly p, bool& clip)
 	return out;
 }
 
-Vector GPU::getIntersectingPoint(Vector v0, Vector v1, int64_t pa, int64_t pb)
+Vertex GPU::getIntersectingPoint(Vertex v0, Vertex v1, int64_t pa, int64_t pb)
 {
-	Vector v = {};
+	Vertex v = {};
 	int64_t d1 = pa + v0.v[3];
 	int64_t d2 = pb + v1.v[3];
 	if (d2 == d1)
@@ -742,17 +742,17 @@ Vector GPU::getIntersectingPoint(Vector v0, Vector v1, int64_t pa, int64_t pb)
 	return v;
 }
 
-bool GPU::getWindingOrder(Vector v0, Vector v1, Vector v2)
+bool GPU::getWindingOrder(Vertex v0, Vertex v1, Vertex v2)
 {
 	//replace z component with vtx's w component. we're still in homogenous clip space so need w to define depth
 	v0.v[2] = v0.v[3]; v1.v[2] = v1.v[3]; v2.v[2] = v2.v[3];
 
-	Vector a = {};
+	Vertex a = {};
 	a.v[0] = v2.v[0] - v1.v[0]; a.v[1] = v2.v[1] - v1.v[1]; a.v[2] = v2.v[2] - v1.v[2];
-	Vector b = {};
+	Vertex b = {};
 	b.v[0] = v0.v[0] - v1.v[0]; b.v[1] = v0.v[1] - v1.v[1]; b.v[2] = v0.v[2] - v1.v[2];
 
-	Vector cross = crossProduct(a, b);
+	Vertex cross = crossProduct(a, b);
 
 	//normalize cross product until it fits into a 32 bit int.
 	//otherwise we can get a 64 bit int overflow when calculating dot product, which screws up winding order

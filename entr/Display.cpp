@@ -25,7 +25,7 @@ Display::Display(int scaleFactor)
 		return;
 	}
 
-	Vertex vertices[6] =
+	GLRenderer::Vertex vertices[6] =
 	{
 		{{1.0f,-1.0f,0.0f},{1.0f,1.0f} },
 		{{1.0f,1.0f,0.0f}, {1.0f,0.0f}},
@@ -37,16 +37,16 @@ Display::Display(int scaleFactor)
 
 	glGenBuffers(1, &m_VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLRenderer::Vertex), &vertices[0], GL_STATIC_DRAW);
 
 	glGenVertexArrays(1, &m_VAO);
 	glBindVertexArray(m_VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLRenderer::Vertex), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLRenderer::Vertex), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
 	GLuint m_vs = 0, m_fs = 0;

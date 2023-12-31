@@ -10,24 +10,27 @@
 
 //Simple GL display backend. Takes in pixel data from emu and renders as a textured quad
 
-struct vec3
+namespace GLRenderer
 {
-	float x;
-	float y;
-	float z;
-};
+	struct vec3
+	{
+		float x;
+		float y;
+		float z;
+	};
 
-struct vec2
-{
-	float x;
-	float y;
-};
+	struct vec2
+	{
+		float x;
+		float y;
+	};
 
-struct Vertex
-{
-	vec3 position;
-	vec3 uv;
-};
+	struct Vertex
+	{
+		vec3 position;
+		vec3 uv;
+	};
+}
 
 class Display
 {
