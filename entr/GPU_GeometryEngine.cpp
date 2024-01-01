@@ -280,16 +280,12 @@ void GPU::cmd_multiplyByTrans(uint32_t* params)
 
 void GPU::cmd_beginVertexList(uint32_t* params)
 {
-	//just so I don't forget.
-	//triangle strips emit triangles as:
-	//0,1,2 2,1,3 2,3,4 ...
-	uint32_t primitiveType = params[0] & 0b11;		//should do something with this soon when emitting polys
+	uint32_t primitiveType = params[0] & 0b11;		
 	m_primitiveType = primitiveType;
 	m_runningVtxCount = 0;							//reset running vertex count - primitive type may have changed so we construct new polys with the new vtx list being sent
 	curAttributes = pendingAttributes;
 }
 
-//i don't like the code duplication here, should ideally clean this up.
 void GPU::cmd_vertex16Bit(uint32_t* params)
 {
 	int16_t x = params[0] & 0xFFFF;
@@ -382,7 +378,6 @@ void GPU::cmd_setTexImageParameters(uint32_t* params)
 	curTexParams.format = (params[0] >> 26) & 0b111;
 	curTexParams.col0Transparent = (params[0] >> 29) & 0b1;
 	curTexParams.transformationMode = (params[0] >> 30) & 0b11;
-	//Logger::msg(LoggerSeverity::Info, std::format("Texture: offs={:#x} size={},{} format={}", curTexParams.VRAMOffs, curTexParams.sizeX, curTexParams.sizeY, curTexParams.format));
 }
 
 void GPU::cmd_setPaletteBase(uint32_t* params)
@@ -423,8 +418,6 @@ void GPU::cmd_texcoord(uint32_t* params)
 		curTexcoords[0] = u;
 		curTexcoords[1] = v;
 	}
-	//curTexcoords[0] = params[0] & 0xFFFF;
-	//curTexcoords[1] = (params[0] >> 16) & 0xFFFF;
 }
 
 void GPU::cmd_vtxColor(uint32_t* params)
@@ -462,7 +455,7 @@ void GPU::submitVertex(Vertex vtx)
 		return;
 	Vertex clipPoint = multiplyVectorMatrix(vtx, m_clipMatrix);
 	clipPoint.color = m_lastColor;
-	//shift to same precision as vtxs, etc. with 12 bit precision
+
 	clipPoint.texcoord[0] = (int64_t)(curTexcoords[0]);
 	clipPoint.texcoord[1] = (int64_t)(curTexcoords[1]);
 	m_vertexRAM[m_vertexCount++] = clipPoint;
@@ -529,7 +522,6 @@ void GPU::submitPolygon()
 	case 3:
 		if (m_runningVtxCount >= 4 && (!(m_runningVtxCount & 0b1)))
 		{
-			//i think this is right, not sure... but it seems polys are 0123 2345 4567 ...
 			p.numVertices = 4;
 			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 4];
 			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
@@ -582,7 +574,7 @@ void GPU::submitPolygon()
 			}
 			return;
 		}
-		//should use a 'clipped' flag instead, this isn't really great
+
 		else if (clip)
 		{
 			m_polygonRAM[m_polygonCount - 1] = clippedPoly;
@@ -641,12 +633,6 @@ void GPU::submitPolygon()
 Poly GPU::clipPolygon(Poly p, bool& clip)
 {
 	Poly out = {};
-	//discard polygon if bad w.
-	//for (int i = 0; i < p.numVertices; i++)
-	//{
-	//	if (p.m_vertices[i].v[3] <= 0)
-	//		return out;
-	//}
 
 	clip = false;
 	//clip against all 6 planes

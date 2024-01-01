@@ -39,8 +39,7 @@ void GPU::render()
 		for (int j = 0; j < p.numVertices; j++)
 		{
 			Vertex cur = p.m_vertices[j];
-			Vertex vec = cur;
-			if (cur.v[3] > 0)					//hack to prevent div by 0, also cull polygon if w less than 0.
+			if (cur.v[3] > 0)					//only transform if vtx w component is 0.
 			{
 				int64_t screenX = (((cur.v[0] + cur.v[3]) * ((viewportX2-viewportX1)+1)) / (cur.v[3] << 1)) + viewportX1;
 				int64_t screenY = (((-cur.v[1] + cur.v[3]) * ((viewportY2-viewportY1)+1)) / (cur.v[3] << 1)) + viewportY1;
@@ -111,10 +110,6 @@ void GPU::rasterizePolygon(Poly p)
 			bottomVtxIdx = i;
 		}
 	}
-
-	//hacky
-	//if (smallY < 0 || smallY >= 192 || largeY < 0 || largeY >= 192)
-	//	return;
 
 	Vertex l1 = {}, l2 = {};
 	Vertex r1 = {}, r2 = {};
