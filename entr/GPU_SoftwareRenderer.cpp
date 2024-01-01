@@ -18,19 +18,10 @@ void GPU::onVBlank()
 
 void GPU::render()
 {
-	//can we speed up this loop somehow?
-	//X=(X*200h)+((X+1)/8000h)*1FFh".
-	uint32_t depth = clearDepth & 0x7FFF;
-	depth = (depth * 0x200) + ((depth + 1) / 0x8000) * 0x1ff;
-	uint16_t clearCol = clearColor & 0x7FFF;
-	for (int y = 0; y < 192; y++)
-	{
-		for (int x = 0; x < 256; x++)
-		{
-			renderBuffer[(y * 256) + x] = 0x8000;	//todo: figure out alpha
-			depthBuffer[(y * 256) + x] = 0xFFFFFFFFFFFFFFFF;
-		}
-	}
+	//should use clear color/clear depth ideally, will hack in later
+	std::fill(renderBuffer, renderBuffer + (256 * 192), 0x8000);
+	std::fill(depthBuffer, depthBuffer + (256 * 192), 0xFFFFFFFFFFFFFFFF);	//revert this back to 16 bit at some point :)
+	std::fill(alphaBuffer, alphaBuffer + (256 * 192), 0);
 
 	for (int i = 0; i < m_polygonCount; i++)
 	{
