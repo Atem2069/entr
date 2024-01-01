@@ -12,6 +12,15 @@ struct GXFIFOCommand
 	uint32_t parameter;		//encodes parameters for command
 };
 
+//used for internal color ops like textures/vtx color, blending etc.
+struct ColorRGBA5
+{
+	uint16_t r;
+	uint16_t g;
+	uint16_t b;
+	uint16_t a;
+};
+
 struct Matrix
 {
 	//64 bit int representation might be better. might switch up in the future.
@@ -106,6 +115,7 @@ private:
 	void* m_callbackCtx;
 
 	uint16_t renderBuffer[256 * 192];
+	uint16_t alphaBuffer[256 * 192];	//i don't like this, but we want the render buffer to be in the same format as what the PPU expects. 
 	uint64_t depthBuffer[256 * 192];
 	bool wBuffer = false;
 	bool swapBuffersPending = false;
