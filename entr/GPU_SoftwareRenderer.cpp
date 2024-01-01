@@ -154,7 +154,7 @@ void GPU::rasterizePolygon(Poly p)
 	{
 		int64_t wl = {}, wr = {};
 		int32_t ul = {}, ur = {}, vl = {}, vr = {};
-		uint16_t lcol = {}, rcol = {};
+		ColorRGBA5 lcol = {}, rcol = {};
 
 		//interpolate linearly if w values equal
 		if (l1.v[3] == l2.v[3])
@@ -218,7 +218,7 @@ void GPU::rasterizePolygon(Poly p)
 
 		for (int x = std::max(xMin,0); x <= std::min(xMax,255); x++)
 		{
-			uint16_t col = {};
+			ColorRGBA5 col = {};
 			//is interpolating z fine? or should we interpolate 1/z?
 			int64_t z = linearInterpolate(x, zl, zr, xMin, xMax);
 			int64_t w = {}, u = {}, v = {};
@@ -239,19 +239,12 @@ void GPU::rasterizePolygon(Poly p)
 			}
 
 			int64_t depth = (wBuffer) ? w : z;
-			uint16_t texCol = decodeTexture(u, v, p.texParams);
+			ColorRGBA5 texCol = decodeTexture(u, v, p.texParams);
 
 			//should perhaps put this into 'decodeTexture'
 			//should also account for different modes, e.g. this assumes modulation
-			if (!(texCol >> 15))
+			/*if (!(texCol >> 15))
 			{
-				/*
-				*   R = ((Rt+1)*(Rv+1)-1)/64
-					G = ((Gt+1)*(Gv+1)-1)/64
-					B = ((Bt+1)*(Bv+1)-1)/64
-					A = ((At+1)*(Av+1)-1)/64
-
-				*/
 				uint32_t r1 = (texCol & 0x1F), g1 = (texCol >> 5) & 0x1F, b1 = (texCol >> 10) & 0x1F;
 				uint32_t r2 = (col & 0x1F), g2 = (col >> 5) & 0x1F, b2 = (col >> 10) & 0x1F;
 				uint32_t R = ((r1 + 1) * (r2 + 1) - 1) / 32;
@@ -261,15 +254,11 @@ void GPU::rasterizePolygon(Poly p)
 			}
 			//bad bad hack. need to do proper alpha blending
 			else
-				col = 0x8000;
+				col = 0x8000;*/
 
-			if (y >= 0 && y < 192 && x>=0 && x < 256 && !(col>>15))
+			if (y >= 0 && y < 192 && x>=0 && x < 256)
 			{
-				if (depth < depthBuffer[(y * 256) + x])
-				{
-					depthBuffer[(y * 256) + x] = depth;
-					renderBuffer[(y * 256) + x] = col & 0x7FFF;	
-				}
+				plotPixel(x, y, depth, col, texCol);
 			}
 		}
 
@@ -303,7 +292,46 @@ void GPU::rasterizePolygon(Poly p)
 	}
 }
 
-uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
+void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol)
+{
+	//should perhaps put this into 'decodeTexture'
+//should also account for different modes, e.g. this assumes modulation
+/*if (!(texCol >> 15))
+{
+	uint32_t r1 = (texCol & 0x1F), g1 = (texCol >> 5) & 0x1F, b1 = (texCol >> 10) & 0x1F;
+	uint32_t r2 = (col & 0x1F), g2 = (col >> 5) & 0x1F, b2 = (col >> 10) & 0x1F;
+	uint32_t R = ((r1 + 1) * (r2 + 1) - 1) / 32;
+	uint32_t G = ((g1 + 1) * (g2 + 1) - 1) / 32;
+	uint32_t B = ((b1 + 1) * (b2 + 1) - 1) / 32;
+	col = (R & 0x1F) | ((G & 0x1F) << 5) | ((B & 0x1F) << 10);
+}
+//bad bad hack. need to do proper alpha blending
+else
+	col = 0x8000;*/
+
+	ColorRGBA5 output = {};
+
+	if (texCol.a)
+	{
+		uint32_t R = (((uint32_t)texCol.r + 1) * ((uint32_t)polyCol.r + 1) - 1) / 32;
+		uint32_t G = (((uint32_t)texCol.g + 1) * ((uint32_t)polyCol.g + 1) - 1) / 32;
+		uint32_t B = (((uint32_t)texCol.b + 1) * ((uint32_t)polyCol.b + 1) - 1) / 32;
+		output.r = R & 0x1F;
+		output.g = G & 0x1F;
+		output.b = B & 0x1F;
+		output.a = 31;	//todo: this shit
+	}
+
+	uint16_t res = output.toUint();
+
+	if ((!(res >> 15)) && depth < depthBuffer[(y * 256) + x])
+	{
+		depthBuffer[(y * 256) + x] = depth;
+		renderBuffer[(y * 256) + x] = res;
+	}
+}
+
+ColorRGBA5 GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 {
 	//fixed point -> integer
 	u >>= 4; v >>= 4;
@@ -350,7 +378,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		uint32_t byte = gpuReadTex(params.VRAMOffs + offs);
 		uint32_t palIndex = byte & 0x1F;
 		if (!(byte & 0xE0))	//hacky, need proper alpha blending for these textures
-			return 0x8000;
+			return { 0,0,0,0 };
 		uint32_t palAddr = (palIndex * 2) + params.paletteBase;
 		col = gpuReadPal16(palAddr);
 		break;
@@ -363,7 +391,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		byte >>= (2 * (offs & 0b11));
 		byte &= 0b11;
 		if (params.col0Transparent && !byte)
-			return 0x8000;
+			return { 0,0,0,0 };
 		uint32_t palAddr = (byte * 2) + params.paletteBase;
 		col = gpuReadPal16(palAddr);
 		break;
@@ -377,7 +405,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 			byte >>= 4;
 		byte &= 0xF;
 		if (params.col0Transparent && !byte)
-			return 0x8000;
+			return { 0,0,0,0 };
 		uint32_t palAddr = (byte * 2) + params.paletteBase;
 		col = gpuReadPal16(palAddr);
 		break;
@@ -387,7 +415,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		uint32_t offs = (params.sizeX * v) + u;
 		uint32_t byte = gpuReadTex(params.VRAMOffs + offs);
 		if (params.col0Transparent && !byte)
-			return 0x8000;
+			return { 0,0,0,0 };
 		uint32_t palAddr = (byte * 2) + params.paletteBase;
 		col = gpuReadPal16(palAddr);
 		break;
@@ -419,14 +447,14 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		case 0:
 		{
 			if (byte == 3)
-				return 0x8000;
+				return { 0,0,0,0 };
 			col = gpuReadPal16(palAddr);
 			break;
 		}
 		case 1:
 		{
 			if (byte == 3)
-				return 0x8000;
+				return { 0,0,0,0 };
 			if (byte == 2)
 			{
 				uint16_t col0 = gpuReadPal16(params.paletteBase + palOffs);
@@ -477,7 +505,7 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 		uint32_t byte = gpuReadTex(params.VRAMOffs + offs);
 		uint8_t palIndex = byte & 0b111;
 		if (!(byte & 0xF8))	//hacky, need to handle alpha properly.
-			return 0x8000;
+			return { 0,0,0,0 };
 		uint32_t palAddr = (palIndex * 2) + params.paletteBase;
 		col = gpuReadPal16(palAddr);
 		break;
@@ -492,7 +520,12 @@ uint16_t GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
 	}
 	}
 
-	return col & 0x7FFF;
+	ColorRGBA5 out = {};
+	out.r = col & 0x1F;
+	out.g = (col >> 5) & 0x1F;
+	out.b = (col >> 10) & 0x1F;
+	out.a = 31;	//todo: handle alpha from translucent textures
+	return out;
 }
 
 void GPU::debug_drawLine(int x0, int y0, int x1, int y1)

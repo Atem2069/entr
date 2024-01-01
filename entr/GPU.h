@@ -19,6 +19,15 @@ struct ColorRGBA5
 	uint16_t g;
 	uint16_t b;
 	uint16_t a;
+
+	uint16_t toUint()
+	{
+		uint16_t res = 0;
+		res = (r & 0x1F) | ((g & 0x1F) << 5) | ((b & 0x1F) << 10);
+		if (!a)
+			res |= 0x8000;
+		return res;
+	}
 };
 
 struct Matrix
@@ -31,7 +40,7 @@ struct Vertex
 {
 	int64_t v[4];
 	int16_t texcoord[2];
-	uint16_t color;
+	ColorRGBA5 color;
 };
 
 struct TextureParameters
@@ -132,7 +141,7 @@ private:
 	std::queue<uint32_t> m_pendingParameters;
 	std::queue<GXFIFOCommand> GXFIFO;
 
-	uint32_t viewportX1=0, viewportX2=255, viewportY1=0, viewportY2=191;
+	uint32_t viewportX1 = 0, viewportX2 = 255, viewportY1 = 0, viewportY2 = 191;
 
 	//todo: handle 2 sets of poly/vtx ram, swapped w/ SwapBuffers call
 	Vertex m_vertexRAM[6144];
@@ -185,7 +194,7 @@ private:
 	Matrix m_identityMatrix = {};
 
 	Vertex m_lastVertex = {};
-	uint16_t m_lastColor = {};
+	ColorRGBA5 m_lastColor = {};
 	int64_t curTexcoords[2] = {};
 	PolyAttributes pendingAttributes = {}, curAttributes = {};
 	TextureParameters curTexParams = {};
@@ -227,7 +236,8 @@ private:
 	void render();
 	
 	void rasterizePolygon(Poly p);
-	uint16_t decodeTexture(int32_t u, int32_t v, TextureParameters params);
+	void plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol);
+	ColorRGBA5 decodeTexture(int32_t u, int32_t v, TextureParameters params);
 
 	void debug_drawLine(int x0, int y0, int x1, int y1);
 	void plotLow(int x0, int y0, int x1, int y1);
@@ -372,9 +382,9 @@ private:
 			return u2 + (((u1 - u2) * ((1<<shiftAmt) - factor)) >> shiftAmt);
 	}
 
-	uint16_t interpolateColor(int x, int y1, int y2, int x1, int x2)
+	ColorRGBA5 interpolateColor(int x, ColorRGBA5 y1, ColorRGBA5 y2, int x1, int x2)
 	{
-		uint16_t r1 = y1 & 0x1F;
+		/*uint16_t r1 = y1 & 0x1F;
 		uint16_t g1 = (y1 >> 5) & 0x1F;
 		uint16_t b1 = (y1 >> 10) & 0x1F;
 		uint16_t r2 = y2 & 0x1F;
@@ -384,12 +394,24 @@ private:
 		uint16_t r = linearInterpolate(x, r1, r2, x1, x2) & 0x1F;
 		uint16_t g = linearInterpolate(x, g1, g2, x1, x2) & 0x1F;
 		uint16_t b = linearInterpolate(x, b1, b2, x1, x2) & 0x1F;
-		return r | (g << 5) | (b << 10);
+		return r | (g << 5) | (b << 10);*/
+
+		uint64_t r = linearInterpolate(x, y1.r, y2.r, x1, x2) & 0x1F;
+		uint64_t g = linearInterpolate(x, y1.g, y2.g, x1, x2) & 0x1F;
+		uint64_t b = linearInterpolate(x, y1.b, y2.b, x1, x2) & 0x1F;
+		//todo: alpha?
+
+		ColorRGBA5 out = {};
+		out.r = r;
+		out.g = g;
+		out.b = b;
+		out.a = 31;
+		return out;
 	}
 
-	uint16_t interpolateColorPerspectiveCorrect(int64_t factor, int64_t shiftAmt, uint16_t col1, uint16_t col2)
+	ColorRGBA5 interpolateColorPerspectiveCorrect(int64_t factor, int64_t shiftAmt, ColorRGBA5 col1, ColorRGBA5 col2)
 	{
-		uint16_t r1 = col1 & 0x1F;
+		/*uint16_t r1 = col1 & 0x1F;
 		uint16_t g1 = (col1 >> 5) & 0x1F;
 		uint16_t b1 = (col1 >> 10) & 0x1F;
 
@@ -401,7 +423,19 @@ private:
 		uint16_t g = interpolatePerspectiveCorrect(factor, shiftAmt, g1, g2) & 0x1F;
 		uint16_t b = interpolatePerspectiveCorrect(factor, shiftAmt, b1, b2) & 0x1F;
 
-		return r | (g << 5) | (b << 10);
+		return r | (g << 5) | (b << 10);*/
+
+		uint64_t r = interpolatePerspectiveCorrect(factor, shiftAmt, col1.r, col2.r) & 0x1F;
+		uint64_t g = interpolatePerspectiveCorrect(factor, shiftAmt, col1.g, col2.g) & 0x1F;
+		uint64_t b = interpolatePerspectiveCorrect(factor, shiftAmt, col1.b, col2.b) & 0x1F;
+
+		ColorRGBA5 out = {};
+		out.r = r;
+		out.g = g;
+		out.b = b;
+		out.a = 31;
+		return out;
+
 	}
 
 	//read fns for tex/pal mem
