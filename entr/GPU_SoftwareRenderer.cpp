@@ -23,34 +23,12 @@ void GPU::render()
 	std::fill(depthBuffer, depthBuffer + (256 * 192), 0xFFFFFFFFFFFFFFFF);	//revert this back to 16 bit at some point :)
 	std::fill(alphaBuffer, alphaBuffer + (256 * 192), 0);
 
+	//todo: sort polys into opaque/translucent, then sort by y
+
 	for (int i = 0; i < m_polygonCount; i++)
 	{
 		Poly p = m_polygonRAM[i];
-		bool draw = true;
-		for (int j = 0; j < p.numVertices; j++)
-		{
-			Vertex cur = p.m_vertices[j];
-			if (cur.v[3] > 0)					//only transform if vtx w component is 0.
-			{
-				int64_t screenX = (((cur.v[0] + cur.v[3]) * ((viewportX2-viewportX1)+1)) / (cur.v[3] << 1)) + viewportX1;
-				int64_t screenY = (((-cur.v[1] + cur.v[3]) * ((viewportY2-viewportY1)+1)) / (cur.v[3] << 1)) + viewportY1;
-
-				uint64_t z = ((((uint64_t)cur.v[2] << 14) / (int64_t)cur.v[3]) + 0x3FFF) << 9;
-
-				Vertex v = {};
-				v.v[0] = screenX;
-				v.v[1] = screenY;
-				v.v[2] = z;
-				v.v[3] = cur.v[3];
-				v.color = cur.color;
-				v.texcoord[0] = cur.texcoord[0];
-				v.texcoord[1] = cur.texcoord[1];
-				p.m_vertices[j] = v;
-			}
-			else
-				draw = false;
-		}
-		if (!draw || (p.attribs.mode==3))
+		if (!p.drawable || (p.attribs.mode==3))
 			continue;
 		rasterizePolygon(p);
 		/*

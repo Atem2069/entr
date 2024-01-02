@@ -88,6 +88,7 @@ struct Poly
 	PolyAttributes attribs;
 	TextureParameters texParams;
 
+	bool drawable;			//flag to determine if poly should be drawn. if any vtxs have bad w (<0), then don't draw.
 };
 
 class GPU
