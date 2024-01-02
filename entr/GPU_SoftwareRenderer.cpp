@@ -19,10 +19,11 @@ void GPU::onVBlank()
 
 void GPU::render()
 {
-	//should use clear color/clear depth ideally, will hack in later
-	std::fill(renderBuffer, renderBuffer + (256 * 192), 0x8000);
+	uint16_t clearCol = clearColor | 0x8000;
+	uint16_t clearAlpha = (clearColor >> 16) & 0x1F;
+	std::fill(renderBuffer, renderBuffer + (256 * 192), clearCol);
 	std::fill(depthBuffer, depthBuffer + (256 * 192), 0xFFFFFFFFFFFFFFFF);	//revert this back to 16 bit at some point :)
-	std::fill(alphaBuffer, alphaBuffer + (256 * 192), 0);
+	std::fill(alphaBuffer, alphaBuffer + (256 * 192), clearAlpha);					//think 2d<->3d relies on alpha blending in ppu, so leave default alpha to 0 for now (otherwise gfx are broken)
 
 	//sort polygons into opaque/translucent, so translucent polygons are rendered last.
 	//todo: sort by y too.
