@@ -363,7 +363,8 @@ void GPU::cmd_setPolygonAttributes(uint32_t* params)
 	pendingAttributes.drawBack = (params[0] >> 6) & 0b1;
 	pendingAttributes.drawFront = (params[0] >> 7) & 0b1;
 	pendingAttributes.depthEqual = (params[0] >> 14) & 0b1;
-	//todo: rest of attribs, e.g. depth test, alpha...
+	pendingAttributes.alpha = (params[0] >> 16) & 0x1F;
+	//todo: rest of attribs
 }
 
 void GPU::cmd_setTexImageParameters(uint32_t* params)
@@ -427,7 +428,6 @@ void GPU::cmd_vtxColor(uint32_t* params)
 	m_lastColor.r = col & 0x1F;
 	m_lastColor.g = (col >> 5) & 0x1F;
 	m_lastColor.b = (col >> 10) & 0x1F;
-	m_lastColor.a = 31;						//todo: alpha from poly attributes
 }
 
 void GPU::cmd_materialColor0(uint32_t* params)
@@ -438,7 +438,6 @@ void GPU::cmd_materialColor0(uint32_t* params)
 		m_lastColor.r = col & 0x1F;
 		m_lastColor.g = (col >> 5) & 0x1F;
 		m_lastColor.b = (col >> 10) & 0x1F;
-		m_lastColor.a = 31;						//todo: alpha from poly attributes
 	}
 }
 
@@ -466,6 +465,7 @@ void GPU::submitVertex(Vertex vtx)
 		return;
 	Vertex clipPoint = multiplyVectorMatrix(vtx, m_clipMatrix);
 	clipPoint.color = m_lastColor;
+	clipPoint.color.a = curAttributes.alpha;
 
 	clipPoint.texcoord[0] = (int64_t)(curTexcoords[0]);
 	clipPoint.texcoord[1] = (int64_t)(curTexcoords[1]);
@@ -723,18 +723,6 @@ Vertex GPU::getIntersectingPoint(Vertex v0, Vertex v1, int64_t pa, int64_t pb)
 	v.texcoord[0] = ((d2 * v0.texcoord[0]) - (d1 * v1.texcoord[0])) / delta;
 	v.texcoord[1] = ((d2 * v0.texcoord[1]) - (d1 * v1.texcoord[1])) / delta;
 
-	/*int64_t r0 = (v0.color & 0x1F);
-	int64_t g0 = (v0.color >> 5) & 0x1F;
-	int64_t b0 = (v0.color >> 10) & 0x1F;
-
-	int64_t r1 = (v1.color & 0x1F);
-	int64_t g1 = (v1.color >> 5) & 0x1F;
-	int64_t b1 = (v1.color >> 10) & 0x1F;
-
-	int64_t r = ((d2 * r0) - (d1 * r1)) / delta;
-	int64_t g = ((d2 * g0) - (d1 * g1)) / delta;
-	int64_t b = ((d2 * b0) - (d1 * b1)) / delta;*/
-
 	int64_t r = ((d2 * v0.color.r) - (d1 * v1.color.r)) / delta;
 	int64_t g = ((d2 * v0.color.g) - (d1 * v1.color.g)) / delta;
 	int64_t b = ((d2 * v0.color.b) - (d1 * v1.color.b)) / delta;
@@ -742,7 +730,7 @@ Vertex GPU::getIntersectingPoint(Vertex v0, Vertex v1, int64_t pa, int64_t pb)
 	v.color.r = r & 0x1F;
 	v.color.g = g & 0x1F;
 	v.color.b = b & 0x1F;
-	v.color.a = 31;		//need to do alpha properly
+	v.color.a = v0.color.a;	//<--should be fine? alpha is same for all vtxs across polygon
 	return v;
 }
 

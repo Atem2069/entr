@@ -77,6 +77,7 @@ struct PolyAttributes
 	bool drawBack;
 	uint8_t mode;
 	bool depthEqual;
+	uint16_t alpha;
 };
 
 struct Poly
@@ -405,7 +406,7 @@ private:
 		out.r = r;
 		out.g = g;
 		out.b = b;
-		out.a = 31;
+		out.a = y1.a;
 		return out;
 	}
 
@@ -433,7 +434,7 @@ private:
 		out.r = r;
 		out.g = g;
 		out.b = b;
-		out.a = 31;
+		out.a = col1.a;
 		return out;
 
 	}
