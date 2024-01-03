@@ -36,9 +36,40 @@ struct Matrix
 	int32_t m[16];
 };
 
+struct Vector
+{
+	int64_t x;
+	int64_t y;
+	int64_t z;
+	int64_t w;
+
+	int64_t operator [] (int i) const
+	{
+		switch (i)
+		{
+		case 0: return x;
+		case 1: return y;
+		case 2: return z;
+		case 3: return w;
+		}
+		return 0;
+	}
+
+	int64_t& operator [] (int i)
+	{
+		switch (i)
+		{
+		case 0: return x;
+		case 1: return y;
+		case 2: return z;
+		case 3: return w;
+		}
+	}
+};
+
 struct Vertex
 {
-	int64_t v[4];
+	Vector v;
 	int16_t texcoord[2];
 	ColorRGBA5 color;
 };
