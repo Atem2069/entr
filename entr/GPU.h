@@ -232,6 +232,10 @@ private:
 	PolyAttributes pendingAttributes = {}, curAttributes = {};
 	TextureParameters curTexParams = {};
 
+	//light related stuff
+	ColorRGBA5 m_emissionColor = {}, m_ambientColor = {}, m_diffuseColor = {}, m_specularColor = {};
+	//todo: specular table, normals, ...
+
 	//gpu commands
 	void cmd_setMatrixMode(uint32_t* params);
 	void cmd_pushMatrix();
@@ -260,6 +264,7 @@ private:
 	void cmd_setPaletteBase(uint32_t* params);
 	void cmd_endVertexList();
 	void cmd_materialColor0(uint32_t* params);
+	void cmd_materialColor1(uint32_t* params);
 	void cmd_swapBuffers(uint32_t* params);
 	void cmd_setViewport(uint32_t* params);
 

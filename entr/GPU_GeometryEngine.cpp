@@ -432,13 +432,30 @@ void GPU::cmd_vtxColor(uint32_t* params)
 
 void GPU::cmd_materialColor0(uint32_t* params)
 {
+	m_diffuseColor.r = params[0] & 0x1F;
+	m_diffuseColor.g = (params[0] >> 5) & 0x1F;
+	m_diffuseColor.b = (params[0] >> 10) & 0x1F;
+
+	m_ambientColor.r = (params[0] >> 16) & 0x1F;
+	m_ambientColor.g = (params[0] >> 21) & 0x1F;
+	m_ambientColor.b = (params[0] >> 26) & 0x1F;
+
+	//bit 15: set diffuse color to regular vtx color
 	if ((params[0] >> 15) & 0b1)
 	{
-		uint16_t col = params[0] & 0x7FFF;
-		m_lastColor.r = col & 0x1F;
-		m_lastColor.g = (col >> 5) & 0x1F;
-		m_lastColor.b = (col >> 10) & 0x1F;
+		m_lastColor = m_diffuseColor;
 	}
+}
+
+void GPU::cmd_materialColor1(uint32_t* params)
+{
+	m_specularColor.r = params[0] & 0x1F;
+	m_specularColor.g = (params[0] >> 5) & 0x1F;
+	m_specularColor.b = (params[0] >> 10) & 0x1F;
+
+	m_emissionColor.r = (params[0] >> 16) & 0x1F;
+	m_emissionColor.g = (params[0] >> 21) & 0x1F;
+	m_emissionColor.b = (params[0] >> 26) & 0x1F;
 }
 
 void GPU::cmd_swapBuffers(uint32_t* params)
