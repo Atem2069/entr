@@ -28,7 +28,7 @@ void GPU::render()
 	//sort polygons into opaque/translucent, so translucent polygons are rendered last.
 	//todo: sort by y too.
 	//opaque polygons seem to always be sorted by y, and then translucent ones are sorted depending on SWAP_BUFFERS.0
-	std::sort(m_polygonRAM, m_polygonRAM + m_polygonCount, [](const Poly& a, const Poly& b)
+	std::stable_sort(m_polygonRAM, m_polygonRAM + m_polygonCount, [](const Poly& a, const Poly& b)
 		{return (b.attribs.alpha && b.attribs.alpha < 31) || b.texParams.format == 1 || b.texParams.format == 6; });
 
 	for (int i = 0; i < m_polygonCount; i++)
