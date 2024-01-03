@@ -104,6 +104,7 @@ enum TextureType
 
 struct PolyAttributes
 {
+	uint8_t lightFlags;
 	bool drawFront;
 	bool drawBack;
 	uint8_t mode;
@@ -234,7 +235,10 @@ private:
 
 	//light related stuff
 	ColorRGBA5 m_emissionColor = {}, m_ambientColor = {}, m_diffuseColor = {}, m_specularColor = {};
-	//todo: specular table, normals, ...
+	Vector m_lightVectors[4];
+	ColorRGBA5 m_lightColors[4];
+	Vector m_normal = {};
+	//todo: specular table,...
 
 	//gpu commands
 	void cmd_setMatrixMode(uint32_t* params);
@@ -265,6 +269,8 @@ private:
 	void cmd_endVertexList();
 	void cmd_materialColor0(uint32_t* params);
 	void cmd_materialColor1(uint32_t* params);
+	void cmd_setLightVector(uint32_t* params);
+	void cmd_setLightColor(uint32_t* params);
 	void cmd_swapBuffers(uint32_t* params);
 	void cmd_setViewport(uint32_t* params);
 

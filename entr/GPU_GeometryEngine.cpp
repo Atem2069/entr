@@ -359,6 +359,7 @@ void GPU::cmd_vertexDiff(uint32_t* params)
 void GPU::cmd_setPolygonAttributes(uint32_t* params)
 {
 	pendingAttributes = {};
+	pendingAttributes.lightFlags = params[0] & 0xF;
 	pendingAttributes.mode = (params[0] >> 4) & 0b11;
 	pendingAttributes.drawBack = (params[0] >> 6) & 0b1;
 	pendingAttributes.drawFront = (params[0] >> 7) & 0b1;
@@ -456,6 +457,34 @@ void GPU::cmd_materialColor1(uint32_t* params)
 	m_emissionColor.r = (params[0] >> 16) & 0x1F;
 	m_emissionColor.g = (params[0] >> 21) & 0x1F;
 	m_emissionColor.b = (params[0] >> 26) & 0x1F;
+}
+
+void GPU::cmd_setLightVector(uint32_t* params)
+{
+	uint8_t lightIdx = (params[0] >> 30) & 0b11;
+	int16_t x = params[0] & 0x3FF;
+	int16_t y = (params[0] >> 10) & 0x3FF;
+	int16_t z = (params[0] >> 20) & 0x3FF;
+	if ((x >> 9) & 0b1)
+		x |= 0xFC00;
+	if ((y >> 9) & 0b1)
+		y |= 0xFC00;
+	if ((z >> 9) & 0b1)
+		z |= 0xFC00;
+
+	m_lightVectors[lightIdx].x = x;
+	m_lightVectors[lightIdx].y = y;
+	m_lightVectors[lightIdx].z = z;
+}
+
+void GPU::cmd_setLightColor(uint32_t* params)
+{
+	uint8_t lightIdx = (params[0] >> 30) & 0b11;
+
+	m_lightColors[lightIdx].r = params[0] & 0x1F;
+	m_lightColors[lightIdx].g = (params[0] >> 5) & 0x1F;
+	m_lightColors[lightIdx].b = (params[0] >> 10) & 0x1F;
+	m_lightColors[lightIdx].a = 0x1F;
 }
 
 void GPU::cmd_swapBuffers(uint32_t* params)

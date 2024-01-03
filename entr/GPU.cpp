@@ -297,6 +297,8 @@ void GPU::processCommand()
 		case 0x2b: cmd_setPaletteBase(params); break;
 		case 0x30: cmd_materialColor0(params); break;
 		case 0x31: cmd_materialColor1(params); break;
+		case 0x32: cmd_setLightVector(params); break;
+		case 0x33: cmd_setLightColor(params); break;
 		case 0x40: cmd_beginVertexList(params); break;
 		case 0x41: cmd_endVertexList(); break;
 		case 0x50: cmd_swapBuffers(params); break;
