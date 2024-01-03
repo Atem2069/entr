@@ -283,18 +283,18 @@ private:
 
 	//should move this all to a new header.
 	
-	inline Vertex crossProduct(Vertex a, Vertex b)
+	inline Vector crossProduct(Vector a, Vector b)
 	{
-		Vertex c = {};
-		c.v[0] = (a.v[1] * b.v[2]) - (a.v[2] * b.v[1]);
-		c.v[1] = (a.v[2] * b.v[0]) - (a.v[0] * b.v[2]);
-		c.v[2] = (a.v[0] * b.v[1]) - (a.v[1] * b.v[0]);
+		Vector c = {};
+		c[0] = (a[1] * b[2]) - (a[2] * b[1]);
+		c[1] = (a[2] * b[0]) - (a[0] * b[2]);
+		c[2] = (a[0] * b[1]) - (a[1] * b[0]);
 		return c;
 	}
 	
-	inline int64_t dotProduct(Vertex a, Vertex b)
+	inline int64_t dotProduct(Vector a, Vector b)
 	{
-		return (a.v[0] * b.v[0]) + (a.v[1] * b.v[1]) + (a.v[2] * b.v[2]);
+		return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
 	}
 
 	//some matrix helper stuff 
@@ -350,16 +350,16 @@ private:
 		return res;
 	}
 
-	inline Vertex multiplyVectorMatrix(Vertex v, Matrix m)
+	inline Vector multiplyVectorMatrix(Vector v, Matrix m)
 	{
 		//could manually unroll this.
-		Vertex res = {};
+		Vector res = {};
 		for (int x = 0; x < 4; x++)
 		{
-			int64_t ay1 = v.v[0]; int64_t ay2 = v.v[1]; int64_t ay3 = v.v[2]; int64_t ay4 = v.v[3];
+			int64_t ay1 = v[0]; int64_t ay2 = v[1]; int64_t ay3 = v[2]; int64_t ay4 = v[3];
 			int64_t b1x = m.m[yxToIdx(0, x)]; int64_t b2x = m.m[yxToIdx(1, x)]; int64_t b3x = m.m[yxToIdx(2, x)]; int64_t b4x = m.m[yxToIdx(3, x)];
 			int64_t a = (ay1 * b1x); int64_t b = (ay2 * b2x); int64_t c = (ay3 * b3x); int64_t d = (ay4 * b4x);
-			res.v[x] = (a + b + c + d) >> 12;
+			res[x] = (a + b + c + d) >> 12;
 		}
 		return res;
 	}

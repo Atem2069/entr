@@ -405,14 +405,14 @@ void GPU::cmd_texcoord(uint32_t* params)
 		break;
 	case 1:
 	{
-		Vertex vec = {};
-		vec.v[0] = (u << 8);
-		vec.v[1] = (v << 8);
-		vec.v[2] = (1 << 8);
-		vec.v[3] = (1 << 8);
+		Vector vec = {};
+		vec[0] = (u << 8);
+		vec[1] = (v << 8);
+		vec[2] = (1 << 8);
+		vec[3] = (1 << 8);
 		vec = multiplyVectorMatrix(vec, m_textureMatrix);
-		curTexcoords[0] = vec.v[0] >> 8;
-		curTexcoords[1] = vec.v[1] >> 8;
+		curTexcoords[0] = vec[0] >> 8;
+		curTexcoords[1] = vec[1] >> 8;
 		break;
 	}
 	default:
@@ -463,7 +463,8 @@ void GPU::submitVertex(Vertex vtx)
 {
 	if(m_vertexCount >= 6144)
 		return;
-	Vertex clipPoint = multiplyVectorMatrix(vtx, m_clipMatrix);
+	Vertex clipPoint = {};
+	clipPoint.v = multiplyVectorMatrix(vtx.v, m_clipMatrix);
 	clipPoint.color = m_lastColor;
 	clipPoint.color.a = curAttributes.alpha;
 
@@ -759,22 +760,22 @@ bool GPU::getWindingOrder(Vertex v0, Vertex v1, Vertex v2)
 	//replace z component with vtx's w component. we're still in homogenous clip space so need w to define depth
 	v0.v[2] = v0.v[3]; v1.v[2] = v1.v[3]; v2.v[2] = v2.v[3];
 
-	Vertex a = {};
-	a.v[0] = v2.v[0] - v1.v[0]; a.v[1] = v2.v[1] - v1.v[1]; a.v[2] = v2.v[2] - v1.v[2];
-	Vertex b = {};
-	b.v[0] = v0.v[0] - v1.v[0]; b.v[1] = v0.v[1] - v1.v[1]; b.v[2] = v0.v[2] - v1.v[2];
+	Vector a = {};
+	a[0] = v2.v[0] - v1.v[0]; a[1] = v2.v[1] - v1.v[1]; a[2] = v2.v[2] - v1.v[2];
+	Vector b = {};
+	b[0] = v0.v[0] - v1.v[0]; b[1] = v0.v[1] - v1.v[1]; b[2] = v0.v[2] - v1.v[2];
 
-	Vertex cross = crossProduct(a, b);
+	Vector cross = crossProduct(a, b);
 
 	//normalize cross product until it fits into a 32 bit int.
 	//otherwise we can get a 64 bit int overflow when calculating dot product, which screws up winding order
-	while (cross.v[0] != (int32_t)cross.v[0] || cross.v[1] != (int32_t)cross.v[1] || cross.v[2] != (int32_t)cross.v[2])
+	while (cross[0] != (int32_t)cross[0] || cross[1] != (int32_t)cross[1] || cross[2] != (int32_t)cross[2])
 	{
-		cross.v[0] >>= 4;
-		cross.v[1] >>= 4;
-		cross.v[2] >>= 4;
+		cross[0] >>= 4;
+		cross[1] >>= 4;
+		cross[2] >>= 4;
 	}
 
-	int64_t dot = dotProduct(cross, v0);
+	int64_t dot = dotProduct(cross, v0.v);
 	return (dot < 0);
 }
