@@ -109,21 +109,17 @@ void GPU::rasterizePolygon(Poly p)
 	int xMin = l1.v[0]; int xMax = r1.v[0];
 	int y = smallY;
 
-	//THIS CODE IS HORRIBLE
-	//probs should doublecheck if this is okay, could cause some seams in rasterization?
-	if (y >= l2.v[1])	//reached end of left slope
-	{
-		l1 = l2;
-		l2Idx = (l2Idx + leftStep) % p.numVertices;
-		l2 = p.m_vertices[l2Idx];
-		xMin = l1.v[0];
-	}
+	//end of right span could be on same scanline as start (e.g. with unrotated quads)
 	if (y >= r2.v[1])
 	{
 		r1 = r2;
 		r2Idx = (r2Idx + rightStep) % p.numVertices;
 		r2 = p.m_vertices[r2Idx];
 		xMax = r1.v[0];
+		//there is probably a better/more accurate solution to this
+		//if end of right span is still on the same scanline, then xMax=end of span, to draw the most pixels possible
+		if (r2.v[1] == y)
+			xMax = r2.v[0];
 	}
 
 	//determine whether initial edges are x-major
