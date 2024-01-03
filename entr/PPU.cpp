@@ -1899,8 +1899,15 @@ uint32_t PPU::col16to32(uint16_t col)
 
 void PPU::captureLine()
 {
+	//hack (expand this to banks A/B):
+	//check if VRAM C/D are dst, and they're mapped as ARM7. if so, don't copy (or everything fucks up and the arm7 dies)
+	// fixes mkds :)
+	uint32_t writeBank = ((DISPCAPCNT >> 16) & 0b11);
+	if ((writeBank == 2 && m_mem->VRAM_C_ARM7) || (writeBank == 3 && m_mem->VRAM_D_ARM7))
+		return;
+
 	//todo: handle reading src image from vram, blending etc.
-	uint32_t writeAddr = ((DISPCAPCNT >> 16) & 0b11) * 0x20000;
+	uint32_t writeAddr = writeBank * 0x20000;
 	uint32_t writeOffs = ((DISPCAPCNT >> 18) & 0b11) * 0x8000;
 
 	uint8_t captureSize = (DISPCAPCNT >> 20) & 0b11;
@@ -1941,21 +1948,13 @@ void PPU::captureLine()
 	switch (mode)
 	{
 	case 0:
-		return;
 		memcpy(m_mem->VRAM + writeAddr, srcA, captureWidth * sizeof(uint16_t));
 		break;
 	case 1:
-		return;
 		memcpy(m_mem->VRAM + writeAddr, m_mem->VRAM + srcBAddr + (((VCOUNT * 256) << 1)&0x1FFFF), captureWidth * sizeof(uint16_t));
 		break;
 	case 2:
 	{
-		/*
-		Dest_Intensity = ((SrcA_Intensitity * SrcA_Alpha * EVA)
-			+ (SrcB_Intensitity * SrcB_Alpha * EVB)) / 16
-			Dest_Alpha = (SrcA_Alpha AND(EVA > 0)) OR(SrcB_Alpha AND EVB > 0))
-		*/
-
 		srcBAddr += ((VCOUNT * captureWidth) << 1) & 0x1FFFF;
 		uint32_t EVA = DISPCAPCNT & 0x1F;
 		uint32_t EVB = ((DISPCAPCNT >> 8) & 0x1F);
