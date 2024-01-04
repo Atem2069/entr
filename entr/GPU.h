@@ -256,6 +256,7 @@ private:
 	void cmd_multiplyByTrans(uint32_t* params);
 	void cmd_vtxColor(uint32_t* params);
 	void cmd_beginVertexList(uint32_t* params);
+	void cmd_normal(uint32_t* params);
 	void cmd_texcoord(uint32_t* params);
 	void cmd_vertex16Bit(uint32_t* params);
 	void cmd_vertex10Bit(uint32_t* params);
@@ -305,7 +306,7 @@ private:
 	
 	inline int64_t dotProduct(Vector a, Vector b)
 	{
-		return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
+		return ((a[0] * b[0]) >> 12) + ((a[1] * b[1]) >> 12) + ((a[2] * b[2] >> 12));
 	}
 
 	//some matrix helper stuff 

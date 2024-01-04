@@ -393,6 +393,59 @@ void GPU::cmd_endVertexList()
 	//this seems to be useless on real hardware.
 }
 
+void GPU::cmd_normal(uint32_t* params)
+{
+	int16_t x = params[0] & 0x3FF;
+	int16_t y = (params[0] >> 10) & 0x3FF;
+	int16_t z = (params[0] >> 20) & 0x3FF;
+	if ((x >> 9) & 0b1)
+		x |= 0xFC00;
+	if ((y >> 9) & 0b1)
+		y |= 0xFC00;
+	if ((z >> 9) & 0b1)
+		z |= 0xFC00;
+
+	x <<= 3;
+	y <<= 3;
+	z <<= 3;
+
+	m_normal.x = x;
+	m_normal.y = y;
+	m_normal.z = z;
+	m_normal.w = 0;
+
+	//todo: normal texcoord transformation
+
+	Matrix m = m_directionalMatrix;
+	m.m[3] = 0; m.m[7] = 0; m.m[11] = 0; m.m[15] = (1 << 12);
+
+	m_normal = multiplyVectorMatrix(m_normal, m);
+	ColorRGBA5 col = m_emissionColor;
+	for (int i = 0; i < 4; i++)
+	{
+		//if light disabled, don't consider.
+		if (!((curAttributes.lightFlags >> i) & 0b1))
+			continue;
+
+		int64_t diffuseLevel = std::max((int64_t)0, -(dotProduct(m_lightVectors[i], m_normal)));
+		//todo: specular stuff
+
+		col.r += (m_diffuseColor.r * m_lightColors[i].r * diffuseLevel) >> 17;
+		col.g += (m_diffuseColor.g * m_lightColors[i].g * diffuseLevel) >> 17;
+		col.b += (m_diffuseColor.b * m_lightColors[i].b * diffuseLevel) >> 17;
+
+		col.r += (m_ambientColor.r * m_lightColors[i].r) >> 5;
+		col.g += (m_ambientColor.g * m_lightColors[i].g) >> 5;
+		col.b += (m_ambientColor.b * m_lightColors[i].b) >> 5;
+
+		col.r = std::min((uint16_t)0x1F, col.r);
+		col.g = std::min((uint16_t)0x1F, col.g);
+		col.b = std::min((uint16_t)0x1F, col.b);
+	}
+
+	m_lastColor = col;
+}
+
 void GPU::cmd_texcoord(uint32_t* params)
 {
 	int32_t u = (int16_t)(params[0] & 0xFFFF);
@@ -472,9 +525,19 @@ void GPU::cmd_setLightVector(uint32_t* params)
 	if ((z >> 9) & 0b1)
 		z |= 0xFC00;
 
+	x <<= 3;
+	y <<= 3;
+	z <<= 3;
+
 	m_lightVectors[lightIdx].x = x;
 	m_lightVectors[lightIdx].y = y;
 	m_lightVectors[lightIdx].z = z;
+	m_lightVectors[lightIdx].w = 0;
+
+	Matrix m = m_directionalMatrix;
+	m.m[3] = 0; m.m[7] = 0; m.m[11] = 0; m.m[15] = (1 << 12);
+
+	m_lightVectors[lightIdx] = multiplyVectorMatrix(m_lightVectors[lightIdx], m);
 }
 
 void GPU::cmd_setLightColor(uint32_t* params)

@@ -285,6 +285,7 @@ void GPU::processCommand()
 		case 0x1B: cmd_multiplyByScale(params); break;
 		case 0x1C: cmd_multiplyByTrans(params); break;
 		case 0x20: cmd_vtxColor(params); break;
+		case 0x21: cmd_normal(params); break;
 		case 0x22: cmd_texcoord(params); break;
 		case 0x23: cmd_vertex16Bit(params); break;
 		case 0x24: cmd_vertex10Bit(params); break;
