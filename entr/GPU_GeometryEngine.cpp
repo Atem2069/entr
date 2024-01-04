@@ -414,7 +414,15 @@ void GPU::cmd_normal(uint32_t* params)
 	m_normal.z = z;
 	m_normal.w = 0;
 
-	//todo: normal texcoord transformation
+	if (curTexParams.transformationMode == 2)
+	{
+		Vector n = m_normal;
+		n.w = (1 << 12);
+		Matrix m = m_textureMatrix;
+		m.m[12] = submittedTexcoord[0] << 12; m.m[13] = submittedTexcoord[1] << 12;
+		Vector res = multiplyVectorMatrix(n, m);
+		curTexcoords[0] = res.x >> 12; curTexcoords[1] = res.y >> 12;
+	}
 
 	Matrix m = m_directionalMatrix;
 	m.m[3] = 0; m.m[7] = 0; m.m[11] = 0; m.m[15] = (1 << 12);
@@ -473,6 +481,9 @@ void GPU::cmd_texcoord(uint32_t* params)
 		curTexcoords[0] = u;
 		curTexcoords[1] = v;
 	}
+
+	submittedTexcoord[0] = curTexcoords[0];
+	submittedTexcoord[1] = curTexcoords[1];
 }
 
 void GPU::cmd_vtxColor(uint32_t* params)

@@ -230,6 +230,7 @@ private:
 	Vertex m_lastVertex = {};
 	ColorRGBA5 m_lastColor = {};
 	int64_t curTexcoords[2] = {};
+	int64_t submittedTexcoord[2] = {};
 	PolyAttributes pendingAttributes = {}, curAttributes = {};
 	TextureParameters curTexParams = {};
 
