@@ -2,29 +2,28 @@
 
 Flash::Flash(std::string fileName)
 {
-	if (fileName.length() > 0)
+
+	std::vector<uint8_t> fileData;
+	if (!readFile(fileData, fileName.c_str()))
 	{
-		writeback = true;
-		std::vector<uint8_t> temp = readFile(fileName.c_str());
-		std::copy(temp.begin(), temp.end(), m_data);
-		m_saveSize = temp.size();
+		m_saveSize = 256 * 1024;	//shouldn't be 256k automatically.
+		memset(m_data, 0xFF, 1048576);
 	}
 	else
 	{
-		for (int i = 0; i < 1048576; i++)
-			m_data[i] = 0xFF;
+		//todo: handle different EEPROM sizes
+		std::copy(fileData.begin(), fileData.begin() + std::min((size_t)1048576, fileData.size()), m_data);
+		m_saveSize = fileData.size();
 	}
+	m_fileName = fileName;
 }
 
 Flash::~Flash()
 {
-	if (writeback)
-	{
-		Logger::msg(LoggerSeverity::Info, "Saving flash data..");
-		std::ofstream fout("rom\\firmware.bin", std::ios::out | std::ios::binary);
-		fout.write((char*)&m_data[0], m_saveSize);
-		fout.close();
-	}
+	Logger::msg(LoggerSeverity::Info, "Saving flash data..");
+	std::ofstream fout(m_fileName, std::ios::out | std::ios::binary);
+	fout.write((char*)&m_data[0], std::min(m_saveSize, 1048576));
+	fout.close();
 }
 
 uint8_t Flash::sendCommand(uint8_t value)

@@ -1,4 +1,5 @@
 #include"Cartridge.h"
+#include <filesystem>
 
 Cartridge::Cartridge()
 {
@@ -12,17 +13,48 @@ void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptM
 	std::copy(cartData.begin(), cartData.end(), m_cartData);
 	m_interruptManager = interruptManager;
 	m_scheduler = scheduler;
-	switch (Config::NDS.saveType)		//should use some sort of database for savetypes at some point, use this as override
+
+	std::size_t extensionPos = Config::NDS.RomName.find_last_of(".");
+	std::string savePath = Config::NDS.RomName.substr(0, extensionPos) + ".sav";
+
+	//this is messy. all cartridge loading/saving stuff needs a good think-through
+	bool manualSaveType = true;
+	if (std::filesystem::exists(savePath))
 	{
-	case 0:
-		m_backup = new EEPROM;
-		break;
-	case 1:
-		m_backup = new Flash;
-		break;
-	default:
-		Logger::msg(LoggerSeverity::Error, std::format("Invalid savetype setting {}", Config::NDS.saveType));
-		break;
+		manualSaveType = false;
+		auto saveSize = std::filesystem::file_size(savePath);
+		saveSize /= 1024;
+
+		switch (saveSize)
+		{
+		case 8: case 32: case 64: case 128:
+			m_backup = new EEPROM(savePath);
+			break;
+		case 256: case 512: case 1024: case 8192:
+			m_backup = new Flash(savePath);
+			break;
+		default:
+			Logger::msg(LoggerSeverity::Warn, std::format("Can't infer backup memory from save size: {}K", saveSize));
+			manualSaveType = true;
+		}
+	}
+
+	if (manualSaveType)
+	{
+		Logger::msg(LoggerSeverity::Info, "No save exists for game. Using manual override..");
+		//should ideally use some sort of database if we can't determine savetype from existing sav file.
+		switch (Config::NDS.saveType)		
+		{
+		case 0:
+			m_backup = new EEPROM(savePath);
+			break;
+		case 1:
+			m_backup = new Flash(savePath);
+			break;
+		default:
+			Logger::msg(LoggerSeverity::Error, std::format("Invalid savetype setting {}", Config::NDS.saveType));
+			break;
+		}
 	}
 }
 

@@ -1,14 +1,30 @@
 #include"EEPROM.h"
 
-EEPROM::EEPROM()
+EEPROM::EEPROM(std::string filename)
 {
-	memset(m_data, 0xFF, 65536);
+	std::vector<uint8_t> fileData;
+	if (!readFile(fileData, filename.c_str()))
+	{
+		//no: savesize shouldn't be 65k automatically
+		m_saveSize = 65536;
+		memset(m_data, 0xFF, 65536);
+	}
+	else
+	{
+		//todo: handle different EEPROM sizes
+		std::copy(fileData.begin(), fileData.begin() + std::min((size_t)65536, fileData.size()), m_data);
+		m_saveSize = fileData.size();
+	}
 	m_addressLatch = 0;
+	m_fileName = filename;
 }
 
 EEPROM::~EEPROM()
 {
-
+	Logger::msg(LoggerSeverity::Info, "Saving EEPROM data..");
+	std::ofstream fout(m_fileName, std::ios::out | std::ios::binary);
+	fout.write((char*)&m_data[0], std::min(m_saveSize,65536));
+	fout.close();
 }
 
 uint8_t EEPROM::sendCommand(uint8_t value)

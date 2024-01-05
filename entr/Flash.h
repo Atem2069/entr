@@ -16,7 +16,7 @@ enum class FlashState
 class Flash : public SPIDevice
 {
 public:
-	Flash(std::string fileName="");
+	Flash(std::string fileName);
 	~Flash();
 
 	uint8_t sendCommand(uint8_t value);
@@ -24,11 +24,9 @@ public:
 
 private:
 	uint8_t m_data[1048576];
-	int m_saveSize = 0;
 	uint32_t m_readAddress = 0;
 	uint32_t addressProgress = 0;
 	uint8_t m_statusReg = 0;
-	bool writeback = false;	//hack
 
 	FlashState m_state = FlashState::AwaitCommand;
 	FlashState m_nextState = FlashState::AwaitCommand;
@@ -36,11 +34,16 @@ private:
 
 	void decodeCommand(uint8_t value);
 
+	std::string m_fileName;
+	int m_saveSize = {};
+
 	//don't like this. will move it out
-	std::vector<uint8_t> readFile(const char* name)
+	bool readFile(std::vector<uint8_t>& vec, const char* name)
 	{
 		// open the file:
 		std::ifstream file(name, std::ios::binary);
+		if (!file)
+			return false;
 
 		// Stop eating new lines in binary mode!!!
 		file.unsetf(std::ios::skipws);
@@ -53,7 +56,6 @@ private:
 		file.seekg(0, std::ios::beg);
 
 		// reserve capacity
-		std::vector<uint8_t> vec;
 		vec.reserve(fileSize);
 
 		// read the data:
@@ -63,6 +65,6 @@ private:
 
 		file.close();
 
-		return vec;
+		return true;
 	}
 };
