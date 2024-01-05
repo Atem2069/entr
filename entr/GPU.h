@@ -237,6 +237,7 @@ private:
 	//light related stuff
 	ColorRGBA5 m_emissionColor = {}, m_ambientColor = {}, m_diffuseColor = {}, m_specularColor = {};
 	Vector m_lightVectors[4];
+	Vector m_halfVectors[4];
 	ColorRGBA5 m_lightColors[4];
 	Vector m_normal = {};
 	//todo: specular table,...

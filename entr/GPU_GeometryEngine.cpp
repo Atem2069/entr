@@ -435,8 +435,18 @@ void GPU::cmd_normal(uint32_t* params)
 		if (!((curAttributes.lightFlags >> i) & 0b1))
 			continue;
 
+		Vector halfVector = m_halfVectors[i];
+		halfVector.x = -halfVector.x; halfVector.y = -halfVector.y; halfVector.z = -halfVector.z;
+
 		int64_t diffuseLevel = std::max((int64_t)0, -(dotProduct(m_lightVectors[i], m_normal)));
-		//todo: specular stuff
+		int64_t specularLevel = std::max((int64_t)0, (dotProduct(halfVector, m_normal)));
+		specularLevel = (specularLevel * specularLevel) >> 12;
+		
+		//todo: specular table, do games use it?
+
+		col.r += (m_specularColor.r * m_lightColors[i].r * specularLevel) >> 17;
+		col.g += (m_specularColor.g * m_lightColors[i].g * specularLevel) >> 17;
+		col.b += (m_specularColor.b * m_lightColors[i].b * specularLevel) >> 17;
 
 		col.r += (m_diffuseColor.r * m_lightColors[i].r * diffuseLevel) >> 17;
 		col.g += (m_diffuseColor.g * m_lightColors[i].g * diffuseLevel) >> 17;
@@ -549,6 +559,13 @@ void GPU::cmd_setLightVector(uint32_t* params)
 	m.m[3] = 0; m.m[7] = 0; m.m[11] = 0; m.m[15] = (1 << 12);
 
 	m_lightVectors[lightIdx] = multiplyVectorMatrix(m_lightVectors[lightIdx], m);
+
+	//half vector is (lightvector+lineofsight)/2
+	//but lineofsight is fixed (0,0,-1)
+	m_halfVectors[lightIdx].x = m_lightVectors[lightIdx].x >> 1;
+	m_halfVectors[lightIdx].y = m_lightVectors[lightIdx].y >> 1;
+	m_halfVectors[lightIdx].z = (m_lightVectors[lightIdx].z - (1 << 12)) >> 1;
+	m_halfVectors[lightIdx].w = 0;
 }
 
 void GPU::cmd_setLightColor(uint32_t* params)
