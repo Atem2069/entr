@@ -404,7 +404,7 @@ void Bus::NDS9_doDMATransfer(int channel)
 
 	int numWords = m_NDS9Channels[channel].internalWordCount;
 	if (numWords == 0)
-		numWords = 0x20000;
+		numWords = 0x200000;
 	
 	//numwords might be fixed to 112 if gxfifo is empty. CHECK
 

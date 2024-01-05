@@ -55,6 +55,7 @@ void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, C
 	}
 
 	m_ARM9PageTable[addressToPage(0xFFFF0000)] = m_mem->NDS9_BIOS;		//might have to keep these on slowmem, because they're not writeable.
+	m_ARM9PageTable[addressToPage(0xFFFF0000) + 1] = m_mem->NDS9_BIOS + 16384;
 	//m_ARM7PageTable[0] = m_mem->NDS7_BIOS;
 	
 }
@@ -75,9 +76,17 @@ void Bus::mapVRAMPages()
 		m_ARM9PageTable[addressToPage(0x06400000) + i] = m_mem->AObjPageTable[i & 15];
 		m_ARM9PageTable[addressToPage(0x06600000) + i] = m_mem->BObjPageTable[i & 7];
 	}
-	for (uint32_t i = 0; i < addressToPage(0x00800000); i++)
+
+	//lcdc mirrored every 1mb
+	for (uint32_t i = 0; i < 8; i++)
 	{
-		m_ARM9PageTable[addressToPage(0x06800000) + i] = m_mem->LCDCPageTable[i % 41];		//might not be right.
+		uint32_t pageOffset = i * 64;
+		for (uint32_t j = 0; j < 64; j++)
+			m_ARM9PageTable[addressToPage(0x06800000) + pageOffset + j] = nullptr;
+		for (uint32_t j = 0; j < 41; j++)
+		{
+			m_ARM9PageTable[addressToPage(0x06800000) + pageOffset + j] = m_mem->LCDCPageTable[j];
+		}
 	}
 
 	//somewhat messy.
@@ -392,6 +401,8 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 //Handle NDS7 IO
 uint8_t Bus::NDS7_readIO8(uint32_t address)
 {
+	if (address >= 0x04800000)
+		Logger::msg(LoggerSeverity::Info, std::format("wifi {:#x}", address));
 	switch (address)
 	{
 	case 0x04000004: case 0x04000005: case 0x04000006: case 0x04000007:
@@ -425,7 +436,7 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 	case 0x04000205:
 		return ((EXMEMCNT >> 8) & 0xFF);
 	case 0x04000240:
-		return (m_mem->VRAM_C_ARM7) | (m_mem->VRAM_D_ARM7 << 1);
+		return (m_mem->VRAM_C_ARM7 & 0b1) | ((m_mem->VRAM_D_ARM7 & 0b1) << 1);
 	case 0x04000241:
 		return WRAMCNT;
 	case 0x04000300:
@@ -441,6 +452,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 
 void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 {
+	if (address >= 0x04800000)
+		Logger::msg(LoggerSeverity::Info, std::format("wifi {:#x}", address));
 	switch (address)
 	{
 	case 0x04000004: case 0x04000005: case 0x04000006: case 0x04000007:
