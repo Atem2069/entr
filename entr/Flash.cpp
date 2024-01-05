@@ -1,12 +1,12 @@
 #include"Flash.h"
 
-Flash::Flash(std::string fileName)
+Flash::Flash(std::string fileName, int saveSizeOverride)
 {
 
 	std::vector<uint8_t> fileData;
 	if (!readFile(fileData, fileName.c_str()))
 	{
-		m_saveSize = 256 * 1024;	//shouldn't be 256k automatically.
+		m_saveSize = saveSizeOverride;
 		memset(m_data, 0xFF, 1048576);
 	}
 	else

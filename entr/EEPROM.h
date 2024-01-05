@@ -16,7 +16,7 @@ enum class EEPROMState
 class EEPROM : public SPIDevice				//<--todo: distinguish between small eeprom (9 bit addresses) and larger eeprom chips (up to 16 bit addresses)
 {
 public:
-	EEPROM(std::string filename);
+	EEPROM(std::string filename, int saveSizeOverride=0);
 	~EEPROM();
 
 	uint8_t sendCommand(uint8_t value);

@@ -1,12 +1,12 @@
 #include"EEPROM.h"
 
-EEPROM::EEPROM(std::string filename)
+EEPROM::EEPROM(std::string filename, int saveSizeOverride)
 {
 	std::vector<uint8_t> fileData;
 	if (!readFile(fileData, filename.c_str()))
 	{
 		//no: savesize shouldn't be 65k automatically
-		m_saveSize = 65536;
+		m_saveSize = saveSizeOverride;
 		memset(m_data, 0xFF, 65536);
 	}
 	else

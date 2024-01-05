@@ -46,10 +46,10 @@ void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptM
 		switch (Config::NDS.saveType)		
 		{
 		case 0:
-			m_backup = new EEPROM(savePath);
+			m_backup = new EEPROM(savePath, Config::NDS.saveSizeOverride);
 			break;
 		case 1:
-			m_backup = new Flash(savePath);
+			m_backup = new Flash(savePath, Config::NDS.saveSizeOverride);
 			break;
 		default:
 			Logger::msg(LoggerSeverity::Error, std::format("Invalid savetype setting {}", Config::NDS.saveType));

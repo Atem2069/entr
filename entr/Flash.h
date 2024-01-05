@@ -16,7 +16,7 @@ enum class FlashState
 class Flash : public SPIDevice
 {
 public:
-	Flash(std::string fileName);
+	Flash(std::string fileName, int saveSizeOverride=0);
 	~Flash();
 
 	uint8_t sendCommand(uint8_t value);
