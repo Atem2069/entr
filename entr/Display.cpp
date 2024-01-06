@@ -109,7 +109,7 @@ bool Display::getShouldClose()
 
 void Display::draw()
 {
-	std::string title = std::to_string(Config::NDS.fps);
+	std::string title = std::format("entr :: {:.2f}fps", Config::NDS.fps);
 	glfwSetWindowTitle(m_window, title.c_str());
 	glfwPollEvents();
 

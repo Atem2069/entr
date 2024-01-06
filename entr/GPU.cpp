@@ -231,7 +231,7 @@ void GPU::onProcessCommandEvent()
 	checkGXFIFOIRQs();
 
 	int i = 0;
-	while (!GXFIFO.empty() && i < 16)
+	while (!GXFIFO.empty() && i < 32)
 	{
 		processCommand();
 		i++;
