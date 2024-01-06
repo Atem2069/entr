@@ -15,7 +15,7 @@ void GPU::init(InterruptManager* interruptManager, Scheduler* scheduler)
 	m_interruptManager = interruptManager;
 	m_scheduler = scheduler;
 
-	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, 1);	//schedule event to handle GXFIFO commands
+	//m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, 1);	//schedule event to handle GXFIFO commands
 
 	//init identity matrix
 	m_identityMatrix.m[0] = (1<<12);
@@ -82,6 +82,20 @@ void GPU::write(uint32_t address, uint8_t value)
 	case 0x04000061:
 		DISP3DCNT &= 0xFF; DISP3DCNT |= (value << 8);
 		break;
+	case 0x04000304:
+	{
+		if (!GXFIFOEnabled && ((value >> 3) & 0b1))
+		{
+			GXFIFOEnabled = true;
+			m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
+		}
+		if (!((value >> 3) & 0b1))
+		{
+			GXFIFOEnabled = false;
+			m_scheduler->removeEvent(Event::GXFIFO);
+		}
+		break;
+	}
 	case 0x04000601:
 		GXSTAT &= 0xFFFFDFFF; GXSTAT |= (value & 0x20) << 8;		
 		if ((value >> 7) & 0b1)

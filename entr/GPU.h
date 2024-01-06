@@ -174,6 +174,7 @@ private:
 	std::queue<uint8_t> m_pendingCommands;
 	std::queue<uint32_t> m_pendingParameters;
 	std::queue<GXFIFOCommand> GXFIFO;
+	bool GXFIFOEnabled = {};
 
 	uint32_t viewportX1 = 0, viewportX2 = 255, viewportY1 = 0, viewportY2 = 191;
 

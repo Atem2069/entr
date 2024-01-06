@@ -610,7 +610,7 @@ uint8_t Bus::NDS9_readIO8(uint32_t address)
 void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 {
 	//horrible...
-	if (address==0x04000304 || address == 0x04000305 || (address >= 0x04000000 && address <= 0x04000058) || (address >= 0x04001000 && address <= 0x04001058))
+	if ((address >= 0x04000000 && address <= 0x04000058) || (address >= 0x04001000 && address <= 0x04001058))
 	{
 		m_ppu->writeIO(address, value);
 		return;
@@ -747,6 +747,11 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		break;
 	case 0x04000064: case 0x04000065: case 0x04000066: case 0x04000067:
 		m_ppu->writeIO(address, value);
+		break;
+		//hack for handling POWCNT affecting both ppu/gpu. pretty awful IMO
+	case 0x04000304: case 0x04000305:
+		m_ppu->writeIO(address, value);
+		m_gpu->write(address, value);
 		break;
 	}
 }
