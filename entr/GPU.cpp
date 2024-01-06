@@ -58,6 +58,12 @@ uint8_t GPU::read(uint32_t address)
 	//lmao
 	if (address >= 0x04000640 && address <= 0x0400067f)
 	{
+		//hacky: keep GXFIFO up-to-date so correct clip mtx is read
+		if (address == 0x04000640)
+		{
+			while (!GXFIFO.empty())
+				processCommand();
+		}
 		int mtxIdx = (address & 0x3C) >> 2;
 		uint32_t m = m_clipMatrix.m[mtxIdx];
 		return (m >> ((address & 0b11)*8)) & 0xFF;
@@ -216,6 +222,8 @@ void GPU::onProcessCommandEvent()
 		processCommand();
 		i++;
 	}
+	if (GXFIFO.empty())
+		GXSTAT &= ~(1 << 27);
 
 	if (swapBuffersPending)
 		return;
