@@ -269,7 +269,7 @@ void GPU::processCommand()
 {
 	//not a fan of this function as a whole, must admit. 
 	GXSTAT &= ~(1 << 27);
-	if (GXFIFO.empty())
+	if (GXFIFO.empty() || swapBuffersPending)
 		return;
 
 	uint32_t params[32];	//I think the max param count is 32 params?
