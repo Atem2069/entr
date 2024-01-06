@@ -241,6 +241,8 @@ void PPU::VBlank()
 				EngineB_RenderBase = 256 * 192;
 			}
 		}
+
+		m_frameCallback(m_dsctx);
 	}
 	else
 	{

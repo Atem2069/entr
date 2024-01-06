@@ -130,6 +130,12 @@ public:
 		m_gpuctx = gpuctx;
 	}
 
+	void registerFrameCallback(callbackFn frameCallback, void* dsctx)
+	{
+		m_frameCallback = frameCallback;
+		m_dsctx = dsctx;
+	}
+
 	void updateDisplayOutput();
 
 	void registerMemory(NDSMem* mem);
@@ -163,6 +169,9 @@ private:
 
 	callbackFn m_swapBuffersCallback;
 	void* m_gpuctx = nullptr;
+
+	callbackFn m_frameCallback;
+	void* m_dsctx = nullptr;
 
 	BackgroundLayer m_engineABgLayers[4] = {};
 	BackgroundLayer m_engineBBgLayers[4] = {};

@@ -17,7 +17,7 @@ void NDS::run()
 	{
 		ARM9.run(16);	//ARM9 runs twice the no. cycles as the ARM7, as it runs at twice the clock speed
 		ARM7.run(8);
-		m_scheduler.addCycles(16);
+		m_scheduler.addCycles(8);
 		m_scheduler.tick();	//<--should probably remove this 'tick' logic, remnant from agbe
 
 		//if (m_bus.ARM7_halt && ARM9.getHalted())
@@ -27,13 +27,19 @@ void NDS::run()
 
 void NDS::frameEventHandler()
 {
-	auto curTime = std::chrono::high_resolution_clock::now();
-	double timeDiff = std::chrono::duration<double, std::milli>(curTime - m_lastTime).count();
-	Config::NDS.fps = 1.0 / (timeDiff / 1000);
-	//handle video sync at some point..
 	m_ppu.updateDisplayOutput();
-	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, m_scheduler.getEventTime()+560190);
 	m_input.tick();
+
+	auto curTime = std::chrono::high_resolution_clock::now();
+	double timeDiff = std::chrono::duration<double, std::milli>(curTime - m_lastTime).count();	
+	static constexpr double target = ((560190.0 / 33554432.0) * 1000.0);
+
+	while (timeDiff < target)
+	{
+		curTime = std::chrono::high_resolution_clock::now();
+		timeDiff = std::chrono::duration<double, std::milli>(curTime - m_lastTime).count();
+	}
+	Config::NDS.fps = 1.0 / (timeDiff / 1000);
 	m_lastTime = curTime;
 }
 
@@ -133,14 +139,13 @@ bool NDS::initialise()
 	m_gpu.init(&m_interruptManager, &m_scheduler);
 	ARM9.init(ARM9Entry, &m_bus, &m_interruptManager, &m_scheduler);
 	ARM7.init(ARM7Entry, &m_bus, &m_interruptManager, &m_scheduler);
-	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
+	m_ppu.registerFrameCallback((callbackFn)&NDS::onEvent, (void*)this);
 	return true;
 }
 
 void NDS::m_destroy()
 {
 	m_scheduler.invalidateAll();
-	m_scheduler.addEvent(Event::Frame, &NDS::onEvent, (void*)this, 560190);
 }
 
 bool NDS::readFile(std::vector<uint8_t>& vec, const char* name)
