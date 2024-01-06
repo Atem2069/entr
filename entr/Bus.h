@@ -11,6 +11,7 @@
 #include"Cartridge.h"
 #include"SPI.h"
 #include"RTC.h"
+#include"WifiStub.h"
 
 #include<format>
 
@@ -147,6 +148,7 @@ private:
 	Cartridge* m_cartridge;
 	SPI m_spi;
 	RTC m_rtc;
+	WifiStub m_wifi;
 
 	DMAChannel m_NDS7Channels[4] = {};
 	DMAChannel m_NDS9Channels[4] = {};

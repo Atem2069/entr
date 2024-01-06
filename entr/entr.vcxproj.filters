@@ -272,5 +272,8 @@
     <ClInclude Include="GPU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WifiStub.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

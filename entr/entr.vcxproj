@@ -218,6 +218,7 @@
     <ClInclude Include="SPIDevice.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Touchscreen.h" />
+    <ClInclude Include="WifiStub.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

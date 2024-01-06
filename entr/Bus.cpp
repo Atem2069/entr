@@ -402,7 +402,7 @@ void Bus::NDS9_write32(uint32_t address, uint32_t value)
 uint8_t Bus::NDS7_readIO8(uint32_t address)
 {
 	if (address >= 0x04800000)
-		Logger::msg(LoggerSeverity::Info, std::format("wifi {:#x}", address));
+		return m_wifi.read(address);
 	switch (address)
 	{
 	case 0x04000004: case 0x04000005: case 0x04000006: case 0x04000007:
@@ -453,7 +453,10 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 {
 	if (address >= 0x04800000)
-		Logger::msg(LoggerSeverity::Info, std::format("wifi {:#x}", address));
+	{
+		m_wifi.write(address,value);
+		return;
+	}
 	switch (address)
 	{
 	case 0x04000004: case 0x04000005: case 0x04000006: case 0x04000007:

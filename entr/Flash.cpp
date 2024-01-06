@@ -11,7 +11,7 @@ Flash::Flash(std::string fileName, int saveSizeOverride)
 	}
 	else
 	{
-		//todo: handle different EEPROM sizes
+		//todo: handle different flash sizes
 		std::copy(fileData.begin(), fileData.begin() + std::min((size_t)1048576, fileData.size()), m_data);
 		m_saveSize = fileData.size();
 	}
@@ -21,9 +21,15 @@ Flash::Flash(std::string fileName, int saveSizeOverride)
 Flash::~Flash()
 {
 	Logger::msg(LoggerSeverity::Info, "Saving flash data..");
-	std::ofstream fout(m_fileName, std::ios::out | std::ios::binary);
-	fout.write((char*)&m_data[0], std::min(m_saveSize, 1048576));
-	fout.close();
+	//hack hack hack hack hack
+	//some weird shit's going on with flash and it keeps fucking up firmware
+	//so we don't let it be written :)
+	if (m_fileName != "rom\\firmware.bin")
+	{
+		std::ofstream fout(m_fileName, std::ios::out | std::ios::binary);
+		fout.write((char*)&m_data[0], std::min(m_saveSize, 1048576));
+		fout.close();
+	}
 }
 
 uint8_t Flash::sendCommand(uint8_t value)
