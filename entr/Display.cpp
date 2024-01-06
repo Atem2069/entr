@@ -90,8 +90,9 @@ Display::Display(int scaleFactor)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	glfwSwapInterval(1);
+	//glfwSwapInterval(1);
 
+	m_lastTime = glfwGetTime();
 
 	GuiRenderer::init(m_window);
 }
@@ -124,6 +125,14 @@ void Display::draw()
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	GuiRenderer::render();
+
+	//high quality professional code :)
+	//need to redo whole ui and frontend<->emuthread interaction at some point, this is absolutely awful
+	while (glfwGetTime() < m_lastTime + 1.0 / 600.0)
+	{
+
+	}
+	m_lastTime += 1.0 / 600.0;
 
 	glfwSwapBuffers(m_window);
 }

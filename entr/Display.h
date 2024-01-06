@@ -50,4 +50,5 @@ private:
 
 	GLuint m_VBO = 0, m_VAO = 0, m_program = 0;
 	GLuint m_texHandle = 0;
+	double m_lastTime = 0;
 };
