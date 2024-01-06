@@ -82,7 +82,6 @@ consteval std::array<ARM7TDMI::instructionFn, 1024> ARM7TDMI::genThumbTable()
 
 void ARM7TDMI::run(int cycles)
 {
-	uint64_t cyclesBefore = m_scheduler->getCurrentTimestamp();
 	for (int i = 0; i < cycles; i++)
 	{
 		if (m_bus->ARM7_halt)
@@ -126,10 +125,7 @@ void ARM7TDMI::run(int cycles)
 		}
 
 		dispatchInterrupt();
-
-		m_scheduler->addCycles(2);
 	}
-	m_scheduler->setTimestamp(cyclesBefore);
 }
 
 void ARM7TDMI::fetch()

@@ -81,7 +81,6 @@ consteval std::array<ARM946E::instructionFn, 1024> ARM946E::genThumbTable()
 
 void ARM946E::run(int cycles)
 {
-	uint64_t cyclesBefore = m_scheduler->getCurrentTimestamp();
 	for (int i = 0; i < cycles; i++)
 	{
 		if (m_halted)
@@ -112,9 +111,7 @@ void ARM946E::run(int cycles)
 		//R[15] += incrLUT[(m_inThumbMode&0b1) + ((m_pipelineFlushed&0b1)<<1)];
 		dispatchInterrupt();
 		m_pipelineFlushed = false;
-		m_scheduler->addCycles(1);
 	}
-	m_scheduler->setTimestamp(cyclesBefore);
 }
 
 void ARM946E::fetch()
