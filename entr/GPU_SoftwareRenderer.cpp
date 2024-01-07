@@ -222,7 +222,7 @@ void GPU::rasterizePolygon(Poly p)
 			int64_t depth = (wBuffer) ? w : z;
 			ColorRGBA5 texCol = decodeTexture(u, v, p.texParams);
 
-			plotPixel(x, y, depth, col, texCol);
+			plotPixel(x, y, depth, col, texCol, p.attribs);
 		}
 
 		//advance next scanline
@@ -255,20 +255,44 @@ void GPU::rasterizePolygon(Poly p)
 	}
 }
 
-void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol)
+void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes attributes)
 {
 	ColorRGBA5 output = {};
-
-	if (texCol.a)
+	switch (attributes.mode)
 	{
-		uint32_t R = (((uint32_t)texCol.r + 1) * ((uint32_t)polyCol.r + 1) - 1) / 32;
-		uint32_t G = (((uint32_t)texCol.g + 1) * ((uint32_t)polyCol.g + 1) - 1) / 32;
-		uint32_t B = (((uint32_t)texCol.b + 1) * ((uint32_t)polyCol.b + 1) - 1) / 32;
-		uint32_t A = (((uint32_t)texCol.a + 1) * ((uint32_t)polyCol.a + 1) - 1) / 32;
-		output.r = R & 0x1F;
-		output.g = G & 0x1F;
-		output.b = B & 0x1F;
-		output.a = A & 0x1F;
+	case 1:
+	{
+		if (!texCol.a)
+			output = polyCol;
+		else if (texCol.a == 31)
+			output = texCol;
+		else
+		{
+			uint32_t R = (texCol.r * texCol.a + polyCol.r * (31 - texCol.a)) / 32;
+			uint32_t G = (texCol.g * texCol.a + polyCol.g * (31 - texCol.a)) / 32;
+			uint32_t B = (texCol.b * texCol.a + polyCol.b * (31 - texCol.a)) / 32;
+			output.r = R & 0x1F;
+			output.g = G & 0x1F;
+			output.b = B & 0x1F;
+			output.a = polyCol.a;
+		}
+		break;
+	}
+	//defaults to modulation. todo: implement highlight/toon
+	default:
+	{
+		if (texCol.a)
+		{
+			uint32_t R = (((uint32_t)texCol.r + 1) * ((uint32_t)polyCol.r + 1) - 1) / 32;
+			uint32_t G = (((uint32_t)texCol.g + 1) * ((uint32_t)polyCol.g + 1) - 1) / 32;
+			uint32_t B = (((uint32_t)texCol.b + 1) * ((uint32_t)polyCol.b + 1) - 1) / 32;
+			uint32_t A = (((uint32_t)texCol.a + 1) * ((uint32_t)polyCol.a + 1) - 1) / 32;
+			output.r = R & 0x1F;
+			output.g = G & 0x1F;
+			output.b = B & 0x1F;
+			output.a = A & 0x1F;
+		}
+	}
 	}
 
 	uint16_t curCol = renderBuffer[(y * 256) + x];
