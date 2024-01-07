@@ -8,6 +8,7 @@ struct SystemConfig
 	std::string RomName;
 	bool shouldReset;
 	bool directBoot;
+	bool disableFrameSync;
 	int saveType;
 	int saveSizeOverride;
 	double fps;
