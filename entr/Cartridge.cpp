@@ -232,6 +232,7 @@ uint32_t Cartridge::readGamecard()
 		bytesTransferred += 4;
 		if (bytesTransferred == transferLength)
 			endTransfer();
+		ROMCTRL &= ~(1 << 23);
 	}
 	return result;
 }
@@ -239,7 +240,6 @@ uint32_t Cartridge::readGamecard()
 void Cartridge::startTransfer()
 {
 	transferInProgress = true;
-	ROMCTRL |= (1 << 23);
 	bytesTransferred = 0;
 	uint8_t transferBlockSize = ((ROMCTRL >> 24) & 0b111);
 	if (transferBlockSize == 7)
@@ -260,7 +260,7 @@ void Cartridge::startTransfer()
 		break;
 	}
 
-	onTransferEvent();
+	m_scheduler->addEvent(Event::Gamecard, (callbackFn)&Cartridge::transferEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
 }
 
 void Cartridge::decodeUnencryptedCmd()
@@ -448,6 +448,8 @@ void Cartridge::onTransferEvent()
 {
 	if (!transferInProgress)
 		return;
+
+	ROMCTRL |= (1 << 23);
 
 	switch (NDS7HasAccess)
 	{
