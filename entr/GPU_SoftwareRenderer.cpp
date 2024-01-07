@@ -129,7 +129,7 @@ void GPU::rasterizePolygon(Poly p)
 	
 	//clamp ymin,ymax so we don't draw insane polys
 	//we probably have clipping bugs so this is necessary
-	largeY = std::min(largeY, 192);
+	largeY = std::min(largeY, 191);
 	y = std::max(0, y);
 	while (y <= largeY)
 	{
@@ -222,10 +222,7 @@ void GPU::rasterizePolygon(Poly p)
 			int64_t depth = (wBuffer) ? w : z;
 			ColorRGBA5 texCol = decodeTexture(u, v, p.texParams);
 
-			if (y >= 0 && y < 192 && x>=0 && x < 256)
-			{
-				plotPixel(x, y, depth, col, texCol);
-			}
+			plotPixel(x, y, depth, col, texCol);
 		}
 
 		//advance next scanline
