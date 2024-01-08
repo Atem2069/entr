@@ -15,10 +15,11 @@ void NDS::run()
 	m_lastTime = std::chrono::high_resolution_clock::now();
 	while (!m_shouldStop)
 	{
+		uint64_t cycles = std::min((uint64_t)32, m_scheduler.getCyclesToNextEvent());
 		//these cycle counts are kind of completely bs, but they work
-		ARM9.run(32);	
-		ARM7.run(16);
-		m_scheduler.addCycles(32);
+		ARM9.run(cycles<<1);	
+		ARM7.run(cycles);
+		m_scheduler.addCycles(cycles);
 		m_scheduler.tick();	//<--should probably remove this 'tick' logic, remnant from agbe
 
 		//if (m_bus.ARM7_halt && ARM9.getHalted())

@@ -241,7 +241,7 @@ void GPU::onProcessCommandEvent()
 
 	if (swapBuffersPending)
 		return;
-	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
+	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getEventTime() + 16);
 
 	//trigger gxfifo dma if less than half full
 	if (GXFIFO.size() <= 128)

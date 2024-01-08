@@ -878,8 +878,8 @@ Vertex GPU::getIntersectingPoint(Vertex v0, Vertex v1, int64_t pa, int64_t pb)
 	v.v[1] = ((d2 * v0.v[1]) - (d1 * v1.v[1])) / delta;
 	v.v[2] = ((d2 * v0.v[2]) - (d1 * v1.v[2])) / delta;
 	v.v[3] = ((d2 * v0.v[3]) - (d1 * v1.v[3])) / delta;
-	v.texcoord[0] = ((d2 * v0.texcoord[0]) - (d1 * v1.texcoord[0])) / delta;
-	v.texcoord[1] = ((d2 * v0.texcoord[1]) - (d1 * v1.texcoord[1])) / delta;
+	v.texcoord[0] = (int16_t)(((d2 * v0.texcoord[0]) - (d1 * v1.texcoord[0])) / delta);
+	v.texcoord[1] = (int16_t)(((d2 * v0.texcoord[1]) - (d1 * v1.texcoord[1])) / delta);
 
 	int64_t r = ((d2 * v0.color.r) - (d1 * v1.color.r)) / delta;
 	int64_t g = ((d2 * v0.color.g) - (d1 * v1.color.g)) / delta;

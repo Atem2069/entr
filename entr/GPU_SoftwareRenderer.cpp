@@ -32,7 +32,7 @@ void GPU::render()
 		|| ((b.texParams.format == 1 || b.texParams.format == 6) && b.attribs.mode == 0); };
 	std::stable_sort(m_polygonRAM, m_polygonRAM + m_polygonCount, translucencyCriteria);
 
-	for (int i = 0; i < m_polygonCount; i++)
+	for (uint32_t i = 0; i < m_polygonCount; i++)
 	{
 		Poly p = m_polygonRAM[i];
 		if (!p.drawable || (p.attribs.mode==3))
@@ -134,7 +134,7 @@ void GPU::rasterizePolygon(Poly p)
 	while (y <= largeY)
 	{
 		int64_t wl = {}, wr = {};
-		int32_t ul = {}, ur = {}, vl = {}, vr = {};
+		int64_t ul = {}, ur = {}, vl = {}, vr = {};
 		ColorRGBA5 lcol = {}, rcol = {};
 
 		//interpolate linearly if w values equal
@@ -220,7 +220,7 @@ void GPU::rasterizePolygon(Poly p)
 			}
 
 			int64_t depth = (wBuffer) ? w : z;
-			ColorRGBA5 texCol = decodeTexture(u, v, p.texParams);
+			ColorRGBA5 texCol = decodeTexture((int32_t)u, (int32_t)v, p.texParams);
 
 			plotPixel(x, y, depth, col, texCol, p.attribs);
 		}

@@ -247,6 +247,9 @@ void Cartridge::startTransfer()
 	else
 		transferLength = 0x100 << transferBlockSize;
 
+	//this is hacky asf:
+	uint64_t cycles = 1;
+
 	switch (m_encryptionState)
 	{
 	case CartEncryptionState::Unencrypted:
@@ -256,11 +259,12 @@ void Cartridge::startTransfer()
 		decodeKEY1Cmd();
 		break;
 	case CartEncryptionState::KEY2:
+		cycles = 0x200;
 		decodeKEY2Cmd();
 		break;
 	}
 
-	m_scheduler->addEvent(Event::Gamecard, (callbackFn)&Cartridge::transferEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
+	m_scheduler->addEvent(Event::Gamecard, (callbackFn)&Cartridge::transferEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + cycles);
 }
 
 void Cartridge::decodeUnencryptedCmd()
