@@ -55,10 +55,12 @@ void GPU::render(int yMin, int yMax)
 				smallY = p.m_vertices[x].v[1];
 		}
 
-		if (smallY > yMax || largeY < yMin)
+		//skip render if poly is completely out of thread's 'render area'
+		bool skipRender = (smallY < yMin&& largeY < yMin) || (smallY > yMax && largeY > yMax);
+		if (skipRender)
 			continue;
 
-		rasterizePolygon(p);
+		rasterizePolygon(p, yMin, yMax);
 		/*
 		for (int i = 0; i < p.numVertices; i++)
 		{
@@ -70,7 +72,7 @@ void GPU::render(int yMin, int yMax)
 	}
 }
 
-void GPU::rasterizePolygon(Poly p)
+void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 {
 
 	//find top and bottom points
@@ -150,7 +152,7 @@ void GPU::rasterizePolygon(Poly p)
 	
 	//clamp ymin,ymax so we don't draw insane polys
 	//we probably have clipping bugs so this is necessary
-	largeY = std::min(largeY, 191);
+	largeY = std::min(largeY, yMax);
 	y = std::max(0, y);
 	while (y <= largeY)
 	{
@@ -243,7 +245,9 @@ void GPU::rasterizePolygon(Poly p)
 			int64_t depth = (wBuffer) ? w : z;
 			ColorRGBA5 texCol = decodeTexture((int32_t)u, (int32_t)v, p.texParams);
 
-			plotPixel(x, y, depth, col, texCol, p.attribs);
+			//this sort of wastes time. could just walk edges until we reach yMin and then start rendering
+			if(y>=yMin)	
+				plotPixel(x, y, depth, col, texCol, p.attribs);
 		}
 
 		//advance next scanline
