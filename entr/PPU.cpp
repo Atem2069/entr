@@ -176,7 +176,13 @@ void PPU::HBlank()
 		return;
 	}
 	else
+	{
 		m_state = PPUState::HDraw;
+		if ((VCOUNT % 48) == 0)
+		{
+			GPU::syncEvent(m_gpuctx, VCOUNT / 48);
+		}
+	}
 
 	m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 1607);
 }
@@ -195,7 +201,7 @@ void PPU::VBlank()
 	VCOUNT++;
 	if (VCOUNT == 262)
 	{
-		m_swapBuffersCallback(m_gpuctx);
+		GPU::syncEvent(m_gpuctx, 0);
 		setVBlankFlag(false);
 		VCOUNT = 0;
 		checkVCOUNTInterrupt();

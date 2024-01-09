@@ -159,6 +159,7 @@ public:
 
 	static void GXFIFOEventHandler(void* context);
 	static void VBlankEventHandler(void* context);
+	static void syncEvent(void* context, int scanline);
 
 	static uint16_t output[256 * 192];
 private:
@@ -180,6 +181,7 @@ private:
 
 	void onProcessCommandEvent();
 	void onVBlank();
+	void onSync(int threadId);
 
 	void checkGXFIFOIRQs();
 	void processCommand();

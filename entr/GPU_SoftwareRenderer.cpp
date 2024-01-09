@@ -4,18 +4,7 @@
 void GPU::onVBlank()
 {
 	if (!swapBuffersPending)
-	{
-		if (renderInProgress)
-		{
-			renderInProgress = false;
-			for (int i = 0; i < 4; i++)
-			{
-				while (m_workerThreads[i].rendering) {};
-			}
-			memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
-		}
 		return;
-	}
 
 	swapBuffersPending = false;
 
