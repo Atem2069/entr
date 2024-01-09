@@ -4,7 +4,18 @@
 void GPU::onVBlank()
 {
 	if (!swapBuffersPending)
+	{
+		if (renderInProgress)
+		{
+			renderInProgress = false;
+			for (int i = 0; i < 4; i++)
+			{
+				while (m_workerThreads[i].rendering) {};
+			}
+			memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
+		}
 		return;
+	}
 
 	swapBuffersPending = false;
 
@@ -19,7 +30,10 @@ void GPU::onVBlank()
 	//opaque polygons seem to always be sorted by y, and then translucent ones are sorted depending on SWAP_BUFFERS.0
 	auto translucencyCriteria = [](const Poly& a, const Poly& b) {return (b.attribs.alpha && b.attribs.alpha < 31)
 		|| ((b.texParams.format == 1 || b.texParams.format == 6) && b.attribs.mode == 0); };
-	std::stable_sort(m_polygonRAM, m_polygonRAM + m_polygonCount, translucencyCriteria);
+	std::stable_sort(m_polygonRAM[bufIdx], m_polygonRAM[bufIdx] + m_polygonCount, translucencyCriteria);
+
+	bufIdx = !bufIdx;
+	m_renderPolygonCount = m_polygonCount;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -27,13 +41,7 @@ void GPU::onVBlank()
 		m_workerThreads[i].cv.notify_one();
 	}
 
-	for (int i = 0; i < 4; i++)
-	{
-		while (m_workerThreads[i].rendering) {};
-	}
-
-	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
-
+	renderInProgress = true;
 
 	m_vertexCount = 0;
 	m_polygonCount = 0;
@@ -43,9 +51,9 @@ void GPU::onVBlank()
 
 void GPU::render(int yMin, int yMax)
 {
-	for (uint32_t i = 0; i < m_polygonCount; i++)
+	for (uint32_t i = 0; i < m_renderPolygonCount; i++)
 	{
-		Poly p = m_polygonRAM[i];
+		Poly p = m_polygonRAM[!bufIdx][i];
 		if (!p.drawable || (p.attribs.mode==3))
 			continue;
 

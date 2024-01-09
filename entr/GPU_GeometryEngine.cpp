@@ -633,7 +633,7 @@ void GPU::submitPolygon()
 			p.m_vertices[0] = m_vertexRAM[m_vertexCount - 3];
 			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 2];
 			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
-			m_polygonRAM[m_polygonCount++] = p;
+			m_polygonRAM[bufIdx][m_polygonCount++] = p;
 			submitted = true;
 		}
 		break;
@@ -645,7 +645,7 @@ void GPU::submitPolygon()
 			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
 			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 2];
 			p.m_vertices[3] = m_vertexRAM[m_vertexCount - 1];
-			m_polygonRAM[m_polygonCount++] = p;
+			m_polygonRAM[bufIdx][m_polygonCount++] = p;
 			submitted = true;
 		}
 		break;
@@ -664,7 +664,7 @@ void GPU::submitPolygon()
 				p.m_vertices[0] = m_vertexRAM[m_vertexCount - 2];
 				p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
 			}
-			m_polygonRAM[m_polygonCount++] = p;
+			m_polygonRAM[bufIdx][m_polygonCount++] = p;
 			submitted = true;
 		}
 		break;
@@ -676,7 +676,7 @@ void GPU::submitPolygon()
 			p.m_vertices[1] = m_vertexRAM[m_vertexCount - 3];
 			p.m_vertices[2] = m_vertexRAM[m_vertexCount - 1];
 			p.m_vertices[3] = m_vertexRAM[m_vertexCount - 2];
-			m_polygonRAM[m_polygonCount++] = p;
+			m_polygonRAM[bufIdx][m_polygonCount++] = p;
 			submitted = true;
 		}
 		break;
@@ -686,10 +686,10 @@ void GPU::submitPolygon()
 	if (submitted)
 	{
 		//determine winding order of poly
-		m_polygonRAM[m_polygonCount-1].cw = getWindingOrder(p.m_vertices[0], p.m_vertices[1], p.m_vertices[2]);
+		m_polygonRAM[bufIdx][m_polygonCount-1].cw = getWindingOrder(p.m_vertices[0], p.m_vertices[1], p.m_vertices[2]);
 		bool clip = false;
 		Poly clippedPoly = clipPolygon(p,clip);
-		clippedPoly.cw = m_polygonRAM[m_polygonCount-1].cw;	//clipping won't affect winding order
+		clippedPoly.cw = m_polygonRAM[bufIdx][m_polygonCount-1].cw;	//clipping won't affect winding order
 		bool cull = (!clippedPoly.attribs.drawBack && clippedPoly.cw) || (!clippedPoly.attribs.drawFront && !clippedPoly.cw);
 		if ((clippedPoly.numVertices == 0) || cull)
 		{
@@ -726,7 +726,7 @@ void GPU::submitPolygon()
 
 		else if (clip)
 		{
-			m_polygonRAM[m_polygonCount - 1] = clippedPoly;
+			m_polygonRAM[bufIdx][m_polygonCount - 1] = clippedPoly;
 			//hack for winding order:
 			Vertex v1 = m_vertexRAM[m_vertexCount - 3];
 			Vertex v2 = m_vertexRAM[m_vertexCount - 2];
@@ -778,9 +778,9 @@ void GPU::submitPolygon()
 		}
 
 		//transform poly coordinates from clip space to screenspace
-		for (int i = 0; i < m_polygonRAM[m_polygonCount - 1].numVertices; i++)
+		for (int i = 0; i < m_polygonRAM[bufIdx][m_polygonCount - 1].numVertices; i++)
 		{
-			Vertex cur = m_polygonRAM[m_polygonCount - 1].m_vertices[i];
+			Vertex cur = m_polygonRAM[bufIdx][m_polygonCount - 1].m_vertices[i];
 			if (cur.v[3] <= 0)			//bad w coord. skip this poly
 				return;
 
@@ -793,9 +793,9 @@ void GPU::submitPolygon()
 			cur.v[1] = screenY;
 			cur.v[2] = z;
 			
-			m_polygonRAM[m_polygonCount - 1].m_vertices[i] = cur;
+			m_polygonRAM[bufIdx][m_polygonCount - 1].m_vertices[i] = cur;
 		}
-		m_polygonRAM[m_polygonCount - 1].drawable = true;	//all vtxs were transformed - mark as drawable
+		m_polygonRAM[bufIdx][m_polygonCount - 1].drawable = true;	//all vtxs were transformed - mark as drawable
 	}
 }
 

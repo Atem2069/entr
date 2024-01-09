@@ -163,6 +163,7 @@ public:
 	static uint16_t output[256 * 192];
 private:
 	bool emuRunning;
+	bool renderInProgress = false;
 	GPUWorkerThread m_workerThreads[4] = {};
 	void renderWorker(int threadIdx);
 	NDSMem* m_mem;
@@ -192,8 +193,10 @@ private:
 
 	//todo: handle 2 sets of poly/vtx ram, swapped w/ SwapBuffers call
 	Vertex m_vertexRAM[6144];
-	Poly m_polygonRAM[2048];
+	bool bufIdx = 0;
+	Poly m_polygonRAM[2][2048];
 	uint32_t m_vertexCount = 0, m_polygonCount = 0;
+	uint32_t m_renderPolygonCount = 0;
 	uint32_t m_runningVtxCount = 0;	//reset at BEGIN_VTXS command
 
 	uint8_t m_primitiveType = 0;

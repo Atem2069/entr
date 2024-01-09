@@ -195,6 +195,7 @@ void PPU::VBlank()
 	VCOUNT++;
 	if (VCOUNT == 262)
 	{
+		m_swapBuffersCallback(m_gpuctx);
 		setVBlankFlag(false);
 		VCOUNT = 0;
 		checkVCOUNTInterrupt();
