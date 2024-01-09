@@ -37,6 +37,12 @@ uint8_t Flash::sendCommand(uint8_t value)
 	switch (m_state)
 	{
 	case FlashState::AwaitCommand:
+		//hack for IR: 08 returns chipid or whatever, 0 is for 'normal' carts.
+		//could make this more robust in the future, but should work in majority of cases
+		if (value == 0x08)
+			return 0xAA;
+		if (value == 0)
+			return 0;
 		decodeCommand(value);
 		return 0;
 	case FlashState::WriteAddress:
