@@ -123,6 +123,15 @@ struct Poly
 	bool drawable;			//flag to determine if poly should be drawn. if any vtxs have bad w (<0), then don't draw.
 };
 
+struct GPUWorkerThread
+{
+	std::thread m_thread;
+	std::condition_variable cv;
+	std::mutex threadMutex;
+	volatile bool rendering;
+	int yMin, yMax;
+};
+
 class GPU
 {
 public:
@@ -153,6 +162,9 @@ public:
 
 	static uint16_t output[256 * 192];
 private:
+	bool emuRunning;
+	GPUWorkerThread m_workerThreads[4] = {};
+	void renderWorker(int threadIdx);
 	NDSMem* m_mem;
 	callbackFn m_callback;
 	void* m_callbackCtx;
@@ -281,7 +293,7 @@ private:
 	void submitVertex(Vertex vtx);
 	void submitPolygon();
 
-	void render();
+	void render(int yMin, int yMax);
 	
 	void rasterizePolygon(Poly p);
 	void plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes attributes);

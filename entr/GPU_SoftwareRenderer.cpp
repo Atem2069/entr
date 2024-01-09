@@ -7,18 +7,7 @@ void GPU::onVBlank()
 		return;
 
 	swapBuffersPending = false;
-	render();
 
-	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
-
-	m_vertexCount = 0;
-	m_polygonCount = 0;
-	m_runningVtxCount = 0;
-	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
-}
-
-void GPU::render()
-{
 	uint16_t clearCol = clearColor | 0x8000;
 	uint16_t clearAlpha = (clearColor >> 16) & 0x1F;
 	std::fill(renderBuffer, renderBuffer + (256 * 192), clearCol);
@@ -32,11 +21,46 @@ void GPU::render()
 		|| ((b.texParams.format == 1 || b.texParams.format == 6) && b.attribs.mode == 0); };
 	std::stable_sort(m_polygonRAM, m_polygonRAM + m_polygonCount, translucencyCriteria);
 
+	for (int i = 0; i < 4; i++)
+	{
+		m_workerThreads[i].rendering = true;
+		m_workerThreads[i].cv.notify_one();
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		while (m_workerThreads[i].rendering) {};
+	}
+
+	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
+
+
+	m_vertexCount = 0;
+	m_polygonCount = 0;
+	m_runningVtxCount = 0;
+	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
+}
+
+void GPU::render(int yMin, int yMax)
+{
 	for (uint32_t i = 0; i < m_polygonCount; i++)
 	{
 		Poly p = m_polygonRAM[i];
 		if (!p.drawable || (p.attribs.mode==3))
 			continue;
+
+		int smallY = 9999, largeY = -1;
+		for (int x = 0; x < p.numVertices; x++)
+		{
+			if (p.m_vertices[x].v[1] > largeY)
+				largeY = p.m_vertices[x].v[1];
+			if (p.m_vertices[x].v[1] < smallY)
+				smallY = p.m_vertices[x].v[1];
+		}
+
+		if (smallY > yMax || largeY < yMin)
+			continue;
+
 		rasterizePolygon(p);
 		/*
 		for (int i = 0; i < p.numVertices; i++)
