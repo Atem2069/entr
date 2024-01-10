@@ -110,6 +110,9 @@ struct Window
 	bool blendable;
 };
 
+//stub to pass gpu ctx to ppu
+class GPU;
+
 class PPU
 {
 public:
@@ -124,10 +127,9 @@ public:
 		callbackContext = ctx;
 	}
 
-	void registerGPUCallback(callbackFn SwapBuffersCallback, void* gpuctx)
+	void registerGPUInstance(GPU* gpuctx)
 	{
-		m_swapBuffersCallback = SwapBuffersCallback;
-		m_gpuctx = gpuctx;
+		m_gpuInstance = gpuctx;
 	}
 
 	void registerFrameCallback(callbackFn frameCallback, void* dsctx)
@@ -167,8 +169,7 @@ private:
 	callbackFn NDS9_VBlankDMACallback;
 	void* callbackContext = nullptr;
 
-	callbackFn m_swapBuffersCallback;
-	void* m_gpuctx = nullptr;
+	GPU* m_gpuInstance;
 
 	callbackFn m_frameCallback;
 	void* m_dsctx = nullptr;

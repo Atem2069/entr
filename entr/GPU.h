@@ -4,6 +4,7 @@
 #include"InterruptManager.h"
 #include"Scheduler.h"
 #include"NDSMem.h"
+#include"Config.h"
 #include<queue>
 
 struct GXFIFOCommand
@@ -123,6 +124,15 @@ struct Poly
 	bool drawable;			//flag to determine if poly should be drawn. if any vtxs have bad w (<0), then don't draw.
 };
 
+struct GPUWorkerThread
+{
+	std::thread m_thread;
+	std::condition_variable cv;
+	std::mutex threadMutex;
+	volatile bool rendering;
+	int yMin, yMax;
+};
+
 class GPU
 {
 public:
@@ -149,10 +159,20 @@ public:
 	void writeCmdPort(uint32_t address, uint32_t value);
 
 	static void GXFIFOEventHandler(void* context);
-	static void VBlankEventHandler(void* context);
+
+	void onVBlank();
+	void onSync(int threadId);
 
 	static uint16_t output[256 * 192];
+	static int numThreads;
+	static int linesPerThread;
 private:
+	void createWorkerThreads();
+	void destroyWorkerThreads();
+	bool emuRunning;
+	bool renderInProgress = false;
+	GPUWorkerThread* m_workerThreads = {};
+	void renderWorker(int threadIdx);
 	NDSMem* m_mem;
 	callbackFn m_callback;
 	void* m_callbackCtx;
@@ -166,7 +186,6 @@ private:
 	Scheduler* m_scheduler;
 
 	void onProcessCommandEvent();
-	void onVBlank();
 
 	void checkGXFIFOIRQs();
 	void processCommand();
@@ -180,8 +199,10 @@ private:
 
 	//todo: handle 2 sets of poly/vtx ram, swapped w/ SwapBuffers call
 	Vertex m_vertexRAM[6144];
-	Poly m_polygonRAM[2048];
+	bool bufIdx = 0;
+	Poly m_polygonRAM[2][2048];
 	uint32_t m_vertexCount = 0, m_polygonCount = 0;
+	uint32_t m_renderPolygonCount = 0;
 	uint32_t m_runningVtxCount = 0;	//reset at BEGIN_VTXS command
 
 	uint8_t m_primitiveType = 0;
@@ -281,9 +302,9 @@ private:
 	void submitVertex(Vertex vtx);
 	void submitPolygon();
 
-	void render();
+	void render(int yMin, int yMax);
 	
-	void rasterizePolygon(Poly p);
+	void rasterizePolygon(Poly p, int yMin, int yMax);
 	void plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes attributes);
 	ColorRGBA5 decodeTexture(int32_t u, int32_t v, TextureParameters params);
 

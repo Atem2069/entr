@@ -15,6 +15,7 @@ void emuWorkerThread();
 int main()
 {
 	Config::NDS.shouldReset = false;
+	Config::NDS.numGPUThreads = 4;
 	Logger::msg(LoggerSeverity::Info, "Hello world!");
 
 	Display m_display(2);

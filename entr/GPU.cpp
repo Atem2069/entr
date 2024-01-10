@@ -2,12 +2,38 @@
 
 GPU::GPU()
 {
-
+	createWorkerThreads();
 }
 
 GPU::~GPU()
 {
+	destroyWorkerThreads();
+}
 
+void GPU::createWorkerThreads()
+{
+	emuRunning = true;
+	m_workerThreads = new GPUWorkerThread[numThreads];
+	for (int i = 0; i < numThreads; i++)
+	{
+		m_workerThreads[i].rendering = false;
+		m_workerThreads[i].yMin = i * linesPerThread;
+		m_workerThreads[i].yMax = m_workerThreads[i].yMin + (linesPerThread - 1);
+		m_workerThreads[i].m_thread = std::thread(&GPU::renderWorker, this, i);
+	}
+}
+
+void GPU::destroyWorkerThreads()
+{
+	emuRunning = false;
+	for (int i = 0; i < numThreads; i++)
+	{
+		Logger::msg(LoggerSeverity::Info, std::format("Stopping thread {}", i));
+		m_workerThreads[i].rendering = true;
+		m_workerThreads[i].cv.notify_one();
+		m_workerThreads[i].m_thread.join();
+	}
+	delete[] m_workerThreads;
 }
 
 void GPU::init(InterruptManager* interruptManager, Scheduler* scheduler)
@@ -339,10 +365,22 @@ void GPU::GXFIFOEventHandler(void* context)
 	thisPtr->onProcessCommandEvent();
 }
 
-void GPU::VBlankEventHandler(void* context)
+void GPU::renderWorker(int threadIdx)
 {
-	GPU* thisPtr = (GPU*)context;
-	thisPtr->onVBlank();
+	Logger::msg(LoggerSeverity::Info, std::format("Render thread {} started", threadIdx));
+	while (emuRunning)
+	{
+		std::unique_lock<std::mutex> lock(m_workerThreads[threadIdx].threadMutex);
+		m_workerThreads[threadIdx].cv.wait(lock, [this, threadIdx] { return m_workerThreads[threadIdx].rendering; });
+		if (!emuRunning)
+			return;
+
+		render(m_workerThreads[threadIdx].yMin, m_workerThreads[threadIdx].yMax);
+
+		m_workerThreads[threadIdx].rendering = false;
+	}
 }
 
 uint16_t GPU::output[256 * 192] = {};
+int GPU::numThreads = 4;
+int GPU::linesPerThread = 48;

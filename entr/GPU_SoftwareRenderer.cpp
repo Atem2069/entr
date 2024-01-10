@@ -7,18 +7,7 @@ void GPU::onVBlank()
 		return;
 
 	swapBuffersPending = false;
-	render();
 
-	memcpy(output, renderBuffer, 256 * 192 * sizeof(uint16_t));
-
-	m_vertexCount = 0;
-	m_polygonCount = 0;
-	m_runningVtxCount = 0;
-	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
-}
-
-void GPU::render()
-{
 	uint16_t clearCol = clearColor | 0x8000;
 	uint16_t clearAlpha = (clearColor >> 16) & 0x1F;
 	std::fill(renderBuffer, renderBuffer + (256 * 192), clearCol);
@@ -30,14 +19,73 @@ void GPU::render()
 	//opaque polygons seem to always be sorted by y, and then translucent ones are sorted depending on SWAP_BUFFERS.0
 	auto translucencyCriteria = [](const Poly& a, const Poly& b) {return (b.attribs.alpha && b.attribs.alpha < 31)
 		|| ((b.texParams.format == 1 || b.texParams.format == 6) && b.attribs.mode == 0); };
-	std::stable_sort(m_polygonRAM, m_polygonRAM + m_polygonCount, translucencyCriteria);
+	std::stable_sort(m_polygonRAM[bufIdx], m_polygonRAM[bufIdx] + m_polygonCount, translucencyCriteria);
 
-	for (uint32_t i = 0; i < m_polygonCount; i++)
+	bufIdx = !bufIdx;
+	m_renderPolygonCount = m_polygonCount;
+
+	if (Config::NDS.numGPUThreads != numThreads)
 	{
-		Poly p = m_polygonRAM[i];
+		destroyWorkerThreads();
+
+		numThreads = Config::NDS.numGPUThreads;
+		linesPerThread = 192 / numThreads;
+
+		createWorkerThreads();
+	}
+
+
+	for (int i = 0; i < numThreads; i++)
+	{
+		m_workerThreads[i].rendering = true;
+		m_workerThreads[i].cv.notify_one();
+	}
+
+	renderInProgress = true;
+
+	m_vertexCount = 0;
+	m_polygonCount = 0;
+	m_runningVtxCount = 0;
+	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
+}
+
+void GPU::onSync(int threadId)
+{
+	if (!renderInProgress || threadId >= numThreads)
+		return;
+
+	while (m_workerThreads[threadId].rendering) {}
+
+	uint32_t start = (threadId * linesPerThread) * 256;
+	memcpy(&output[start], &renderBuffer[start], 256 * linesPerThread * sizeof(uint16_t));
+
+	if (threadId == (numThreads - 1))
+		renderInProgress = false;
+}
+
+void GPU::render(int yMin, int yMax)
+{
+	for (uint32_t i = 0; i < m_renderPolygonCount; i++)
+	{
+		Poly p = m_polygonRAM[!bufIdx][i];
 		if (!p.drawable || (p.attribs.mode==3))
 			continue;
-		rasterizePolygon(p);
+
+		int smallY = 9999, largeY = -1;
+		for (int x = 0; x < p.numVertices; x++)
+		{
+			if (p.m_vertices[x].v[1] > largeY)
+				largeY = p.m_vertices[x].v[1];
+			if (p.m_vertices[x].v[1] < smallY)
+				smallY = p.m_vertices[x].v[1];
+		}
+
+		//skip render if poly is completely out of thread's 'render area'
+		bool skipRender = (smallY < yMin&& largeY < yMin) || (smallY > yMax && largeY > yMax);
+		if (skipRender)
+			continue;
+
+		rasterizePolygon(p, yMin, yMax);
 		/*
 		for (int i = 0; i < p.numVertices; i++)
 		{
@@ -49,7 +97,7 @@ void GPU::render()
 	}
 }
 
-void GPU::rasterizePolygon(Poly p)
+void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 {
 
 	//find top and bottom points
@@ -129,7 +177,7 @@ void GPU::rasterizePolygon(Poly p)
 	
 	//clamp ymin,ymax so we don't draw insane polys
 	//we probably have clipping bugs so this is necessary
-	largeY = std::min(largeY, 191);
+	largeY = std::min(largeY, yMax);
 	y = std::max(0, y);
 	while (y <= largeY)
 	{
@@ -222,7 +270,9 @@ void GPU::rasterizePolygon(Poly p)
 			int64_t depth = (wBuffer) ? w : z;
 			ColorRGBA5 texCol = decodeTexture((int32_t)u, (int32_t)v, p.texParams);
 
-			plotPixel(x, y, depth, col, texCol, p.attribs);
+			//this sort of wastes time. could just walk edges until we reach yMin and then start rendering
+			if(y>=yMin)	
+				plotPixel(x, y, depth, col, texCol, p.attribs);
 		}
 
 		//advance next scanline
