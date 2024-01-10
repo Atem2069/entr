@@ -84,6 +84,7 @@ void GuiRenderer::render()
 		if (ImGui::RadioButton("Flash 512K", Config::NDS.saveType == 1 && Config::NDS.saveSizeOverride==512*1024)) { Config::NDS.saveType = 1; Config::NDS.saveSizeOverride = 512*1024;}
 		if (ImGui::RadioButton("Flash 1024K", Config::NDS.saveType == 1 && Config::NDS.saveSizeOverride==1024*1024)) { Config::NDS.saveType = 1; Config::NDS.saveSizeOverride = 1024*1024;}
 		if (ImGui::RadioButton("Flash 8192K", Config::NDS.saveType == 1 && Config::NDS.saveSizeOverride==8192*1024)) { Config::NDS.saveType = 1; Config::NDS.saveSizeOverride = 8192*1024;}
+		ImGui::SliderInt("GPU Threads", &Config::NDS.numGPUThreads, 1, 16);
 		ImGui::End();
 	}
 

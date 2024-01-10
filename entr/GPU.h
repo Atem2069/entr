@@ -4,6 +4,7 @@
 #include"InterruptManager.h"
 #include"Scheduler.h"
 #include"NDSMem.h"
+#include"Config.h"
 #include<queue>
 
 struct GXFIFOCommand
@@ -162,10 +163,14 @@ public:
 	static void syncEvent(void* context, int scanline);
 
 	static uint16_t output[256 * 192];
+	static int numThreads;
+	static int linesPerThread;
 private:
+	void createWorkerThreads();
+	void destroyWorkerThreads();
 	bool emuRunning;
 	bool renderInProgress = false;
-	GPUWorkerThread m_workerThreads[4] = {};
+	GPUWorkerThread* m_workerThreads = {};
 	void renderWorker(int threadIdx);
 	NDSMem* m_mem;
 	callbackFn m_callback;

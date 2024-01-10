@@ -11,6 +11,7 @@ struct SystemConfig
 	bool disableFrameSync;
 	int saveType;
 	int saveSizeOverride;
+	int numGPUThreads;
 	double fps;
 };
 

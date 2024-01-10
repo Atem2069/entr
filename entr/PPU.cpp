@@ -178,9 +178,9 @@ void PPU::HBlank()
 	else
 	{
 		m_state = PPUState::HDraw;
-		if ((VCOUNT % 48) == 0)
+		if ((VCOUNT % GPU::linesPerThread) == 0)
 		{
-			GPU::syncEvent(m_gpuctx, VCOUNT / 48);
+			GPU::syncEvent(m_gpuctx, VCOUNT / GPU::linesPerThread);
 		}
 	}
 

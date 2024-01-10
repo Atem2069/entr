@@ -24,7 +24,18 @@ void GPU::onVBlank()
 	bufIdx = !bufIdx;
 	m_renderPolygonCount = m_polygonCount;
 
-	for (int i = 0; i < 4; i++)
+	if (Config::NDS.numGPUThreads != numThreads)
+	{
+		destroyWorkerThreads();
+
+		numThreads = Config::NDS.numGPUThreads;
+		linesPerThread = 192 / numThreads;
+
+		createWorkerThreads();
+	}
+
+
+	for (int i = 0; i < numThreads; i++)
 	{
 		m_workerThreads[i].rendering = true;
 		m_workerThreads[i].cv.notify_one();

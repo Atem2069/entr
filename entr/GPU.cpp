@@ -2,26 +2,38 @@
 
 GPU::GPU()
 {
-	for (int i = 0; i < 4; i++)
-	{
-		m_workerThreads[i].rendering = false;
-		m_workerThreads[i].yMin = i * 48;
-		m_workerThreads[i].yMax = m_workerThreads[i].yMin + 47;
-		m_workerThreads[i].m_thread = std::thread(&GPU::renderWorker, this, i);
-	}
-	emuRunning = true;
+	createWorkerThreads();
 }
 
 GPU::~GPU()
 {
+	destroyWorkerThreads();
+}
+
+void GPU::createWorkerThreads()
+{
+	emuRunning = true;
+	m_workerThreads = new GPUWorkerThread[numThreads];
+	for (int i = 0; i < numThreads; i++)
+	{
+		m_workerThreads[i].rendering = false;
+		m_workerThreads[i].yMin = i * linesPerThread;
+		m_workerThreads[i].yMax = m_workerThreads[i].yMin + (linesPerThread - 1);
+		m_workerThreads[i].m_thread = std::thread(&GPU::renderWorker, this, i);
+	}
+}
+
+void GPU::destroyWorkerThreads()
+{
 	emuRunning = false;
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < numThreads; i++)
 	{
 		Logger::msg(LoggerSeverity::Info, std::format("Stopping thread {}", i));
 		m_workerThreads[i].rendering = true;
 		m_workerThreads[i].cv.notify_one();
 		m_workerThreads[i].m_thread.join();
 	}
+	delete[] m_workerThreads;
 }
 
 void GPU::init(InterruptManager* interruptManager, Scheduler* scheduler)
@@ -349,15 +361,15 @@ void GPU::processCommand()
 
 void GPU::onSync(int threadId)
 {
-	if (!renderInProgress || threadId>3)
+	if (!renderInProgress || threadId>=numThreads)
 		return;
 
 	while (m_workerThreads[threadId].rendering) {}
 
-	uint32_t start = (threadId * 48)*256;
-	memcpy(&output[start], &renderBuffer[start], 256 * 48 * sizeof(uint16_t));
+	uint32_t start = (threadId * linesPerThread)*256;
+	memcpy(&output[start], &renderBuffer[start], 256 * linesPerThread * sizeof(uint16_t));
 
-	if (threadId == 3)
+	if (threadId == (numThreads-1))
 		renderInProgress = false;
 }
 
@@ -396,3 +408,5 @@ void GPU::renderWorker(int threadIdx)
 }
 
 uint16_t GPU::output[256 * 192] = {};
+int GPU::numThreads = 4;
+int GPU::linesPerThread = 48;
