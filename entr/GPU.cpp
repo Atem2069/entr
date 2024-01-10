@@ -359,36 +359,10 @@ void GPU::processCommand()
 	GXSTAT |= (1 << 27);
 }
 
-void GPU::onSync(int threadId)
-{
-	if (!renderInProgress || threadId>=numThreads)
-		return;
-
-	while (m_workerThreads[threadId].rendering) {}
-
-	uint32_t start = (threadId * linesPerThread)*256;
-	memcpy(&output[start], &renderBuffer[start], 256 * linesPerThread * sizeof(uint16_t));
-
-	if (threadId == (numThreads-1))
-		renderInProgress = false;
-}
-
 void GPU::GXFIFOEventHandler(void* context)
 {
 	GPU* thisPtr = (GPU*)context;
 	thisPtr->onProcessCommandEvent();
-}
-
-void GPU::VBlankEventHandler(void* context)
-{
-	GPU* thisPtr = (GPU*)context;
-	thisPtr->onVBlank();
-}
-
-void GPU::syncEvent(void* context, int threadId)
-{
-	GPU* thisPtr = (GPU*)context;
-	thisPtr->onSync(threadId);
 }
 
 void GPU::renderWorker(int threadIdx)

@@ -49,6 +49,20 @@ void GPU::onVBlank()
 	m_scheduler->addEvent(Event::GXFIFO, (callbackFn)&GPU::GXFIFOEventHandler, (void*)this, m_scheduler->getCurrentTimestamp() + 1);
 }
 
+void GPU::onSync(int threadId)
+{
+	if (!renderInProgress || threadId >= numThreads)
+		return;
+
+	while (m_workerThreads[threadId].rendering) {}
+
+	uint32_t start = (threadId * linesPerThread) * 256;
+	memcpy(&output[start], &renderBuffer[start], 256 * linesPerThread * sizeof(uint16_t));
+
+	if (threadId == (numThreads - 1))
+		renderInProgress = false;
+}
+
 void GPU::render(int yMin, int yMax)
 {
 	for (uint32_t i = 0; i < m_renderPolygonCount; i++)

@@ -159,8 +159,9 @@ public:
 	void writeCmdPort(uint32_t address, uint32_t value);
 
 	static void GXFIFOEventHandler(void* context);
-	static void VBlankEventHandler(void* context);
-	static void syncEvent(void* context, int scanline);
+
+	void onVBlank();
+	void onSync(int threadId);
 
 	static uint16_t output[256 * 192];
 	static int numThreads;
@@ -185,8 +186,6 @@ private:
 	Scheduler* m_scheduler;
 
 	void onProcessCommandEvent();
-	void onVBlank();
-	void onSync(int threadId);
 
 	void checkGXFIFOIRQs();
 	void processCommand();

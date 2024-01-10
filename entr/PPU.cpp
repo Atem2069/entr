@@ -1,4 +1,5 @@
 #include"PPU.h"
+#include"GPU.h"
 
 PPU::PPU()
 {
@@ -170,7 +171,7 @@ void PPU::HBlank()
 
 		NDS9_VBlankDMACallback(callbackContext);
 
-		m_swapBuffersCallback(m_gpuctx);
+		m_gpuInstance->onVBlank();
 
 		m_scheduler->addEvent(Event::PPU, &PPU::onSchedulerEvent, (void*)this, m_scheduler->getEventTime() + 1607);
 		return;
@@ -180,7 +181,7 @@ void PPU::HBlank()
 		m_state = PPUState::HDraw;
 		if ((VCOUNT % GPU::linesPerThread) == 0)
 		{
-			GPU::syncEvent(m_gpuctx, VCOUNT / GPU::linesPerThread);
+			m_gpuInstance->onSync(VCOUNT / GPU::linesPerThread);
 		}
 	}
 
@@ -201,7 +202,7 @@ void PPU::VBlank()
 	VCOUNT++;
 	if (VCOUNT == 262)
 	{
-		GPU::syncEvent(m_gpuctx, 0);
+		m_gpuInstance->onSync(0);
 		setVBlankFlag(false);
 		VCOUNT = 0;
 		checkVCOUNTInterrupt();
