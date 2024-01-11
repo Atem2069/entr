@@ -16,7 +16,7 @@ void NDS::run()
 	while (!m_shouldStop)
 	{
 		uint64_t cycles = std::min((uint64_t)32, m_scheduler.getCyclesToNextEvent());
-		//these cycle counts are kind of completely bs, but they work
+
 		ARM9.run(cycles<<1);	
 		ARM7.run(cycles);
 		m_scheduler.addCycles(cycles);
@@ -31,6 +31,7 @@ void NDS::frameEventHandler()
 {
 	m_ppu.updateDisplayOutput();
 	m_input.tick();
+	Touchscreen::pressed = Input::extInputState.penDown;
 
 	auto curTime = std::chrono::high_resolution_clock::now();
 	double timeDiff = std::chrono::duration<double, std::milli>(curTime - m_lastTime).count();	

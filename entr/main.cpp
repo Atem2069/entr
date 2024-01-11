@@ -60,12 +60,10 @@ int main()
 		{
 			Touchscreen::screenX = x/2;
 			Touchscreen::screenY = (y/2)-192;
-			Touchscreen::pressed = true;
 			Input::extInputState.penDown = true;
 		}
 		else
 		{
-			Touchscreen::pressed = false;
 			Input::extInputState.penDown = false;
 		}
 	}
