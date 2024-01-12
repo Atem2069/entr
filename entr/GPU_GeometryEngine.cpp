@@ -425,7 +425,6 @@ void GPU::cmd_normal(uint32_t* params)
 	}
 
 	Matrix m = m_directionalMatrix;
-	m.m[3] = 0; m.m[7] = 0; m.m[11] = 0; m.m[15] = (1 << 12);
 
 	m_normal = multiplyVectorMatrix(m_normal, m);
 	ColorRGBA5 col = m_emissionColor;
@@ -442,7 +441,8 @@ void GPU::cmd_normal(uint32_t* params)
 		specularLevel = std::min(specularLevel, (int64_t)(1 << 12));
 		specularLevel = (specularLevel * specularLevel) >> 12;
 		
-		//todo: specular table, do games use it?
+		if (shininessEnable)
+			specularLevel = (uint64_t)(shininessTable[specularLevel >> 5]) << 4;	//expand from 1.8 to 1.12, same format 'regular' specular level uses
 
 		col.r += (m_specularColor.r * m_lightColors[i].r * specularLevel) >> 17;
 		col.g += (m_specularColor.g * m_lightColors[i].g * specularLevel) >> 17;
@@ -528,9 +528,22 @@ void GPU::cmd_materialColor1(uint32_t* params)
 	m_specularColor.g = (params[0] >> 5) & 0x1F;
 	m_specularColor.b = (params[0] >> 10) & 0x1F;
 
+	shininessEnable = (params[0] >> 15) & 0b1;
+
 	m_emissionColor.r = (params[0] >> 16) & 0x1F;
 	m_emissionColor.g = (params[0] >> 21) & 0x1F;
 	m_emissionColor.b = (params[0] >> 26) & 0x1F;
+}
+
+void GPU::cmd_shininess(uint32_t* params)
+{
+	for (int i = 0; i < 32; i++)
+	{
+		shininessTable[(i << 2)] = (params[i]) & 0xFF;
+		shininessTable[(i << 2) + 1] = (params[i] >> 8) & 0xFF;
+		shininessTable[(i << 2) + 2] = (params[i] >> 16) & 0xFF;
+		shininessTable[(i << 2) + 3] = (params[i] >> 24) & 0xFF;
+	}
 }
 
 void GPU::cmd_setLightVector(uint32_t* params)
