@@ -435,11 +435,11 @@ void GPU::cmd_normal(uint32_t* params)
 		if (!((curAttributes.lightFlags >> i) & 0b1))
 			continue;
 
-		Vector halfVector = m_halfVectors[i];
-		halfVector.x = -halfVector.x; halfVector.y = -halfVector.y; halfVector.z = -halfVector.z;
-
 		int64_t diffuseLevel = std::max((int64_t)0, -(dotProduct(m_lightVectors[i], m_normal)));
-		int64_t specularLevel = std::max((int64_t)0, (dotProduct(halfVector, m_normal)));
+		diffuseLevel = std::min(diffuseLevel, (int64_t)(1 << 12));
+
+		int64_t specularLevel = std::max((int64_t)0, -(dotProduct(m_halfVectors[i], m_normal)));
+		specularLevel = std::min(specularLevel, (int64_t)(1 << 12));
 		specularLevel = (specularLevel * specularLevel) >> 12;
 		
 		//todo: specular table, do games use it?
