@@ -19,24 +19,48 @@ int main()
 	Logger::msg(LoggerSeverity::Info, "Hello world!");
 
 	Display m_display(2);
-	m_nds = std::make_shared<NDS>();
 	std::thread m_workerThread;
-	if(m_nds->initialise())								//not a huge fan of this, could simplify/cleanup
-		m_workerThread = std::thread(&emuWorkerThread);
 
 	while (!m_display.getShouldClose())
 	{
-		if (Config::NDS.shouldReset)
+		switch (Config::state)
 		{
-			Config::NDS.shouldReset = false;
-			m_nds->notifyDetach();
-			if(m_workerThread.joinable())
-				m_workerThread.join();
-			m_nds.reset();
+		case SystemState::PowerOn:
+		{
 			m_nds = std::make_shared<NDS>();
-			if(m_nds->initialise())
+			if (m_nds->initialise())
+			{
 				m_workerThread = std::thread(&emuWorkerThread);
+				Config::state = SystemState::Running;
+				Logger::msg(LoggerSeverity::Info, "PowerOn->Running");
+			}
+			else
+			{
+				m_nds.reset();
+				Config::state = SystemState::Off;
+				Logger::msg(LoggerSeverity::Error, "Couldn't initialize new NDS instance.");
+			}
+			break;
 		}
+		case SystemState::Shutdown:
+		{
+			m_nds->notifyDetach();
+			m_workerThread.join();
+			m_nds.reset();
+			Config::state = SystemState::Off;
+			Logger::msg(LoggerSeverity::Info, "Shut down NDS instance.");
+			break;
+		}
+		case SystemState::Reset:
+		{
+			m_nds->notifyDetach();
+			m_workerThread.join();
+			m_nds.reset();
+			Logger::msg(LoggerSeverity::Info, "Reset NDS instance.");
+			Config::state = SystemState::PowerOn;
+		}
+		}
+
 		void* data = PPU::m_safeDisplayBuffer;
 		if (data != nullptr)
 			m_display.update(data);

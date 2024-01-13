@@ -66,7 +66,11 @@ void GuiRenderer::render()
 		{
 			std::string filename = szFile;
 			Config::NDS.RomName = filename;
-			Config::NDS.shouldReset = true;
+			switch (Config::state)
+			{
+			case SystemState::Off: Config::state = SystemState::PowerOn; break;
+			case SystemState::Running: Config::state = SystemState::Reset; break;
+			}
 		}
 
 		m_openFileDialog = false;

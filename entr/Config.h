@@ -15,7 +15,17 @@ struct SystemConfig
 	double fps;
 };
 
+enum class SystemState
+{
+	Off,
+	Running,
+	PowerOn,
+	Shutdown,
+	Reset
+};
+
 struct Config
 {
 	static SystemConfig NDS;
+	static SystemState state;
 };
