@@ -49,6 +49,7 @@ int main()
 			m_nds.reset();
 			Config::state = SystemState::Off;
 			Logger::msg(LoggerSeverity::Info, "Shut down NDS instance.");
+			memset(PPU::m_safeDisplayBuffer, 0, 256 * 384 * sizeof(uint32_t));
 			break;
 		}
 		case SystemState::Reset:
@@ -92,10 +93,11 @@ int main()
 		}
 	}
 
-	m_nds->notifyDetach();
-
-	if(m_workerThread.joinable())
+	if (Config::state == SystemState::Running)
+	{
+		m_nds->notifyDetach();
 		m_workerThread.join();
+	}
 	return 0;
 }
 

@@ -56,8 +56,8 @@ uint8_t PowerManager::writeRegister(uint8_t val)
 		m_controlReg = val;
 		if ((val >> 6) & 0b1)
 		{
-			Logger::msg(LoggerSeverity::Warn, "Unhandled system shutdown");
-			//should actually shutdown here.. not sure of best approach that isn't hacky.
+			Logger::msg(LoggerSeverity::Info, "System shutdown requested.");
+			Config::state = SystemState::Shutdown;
 		}
 		break;
 	}
