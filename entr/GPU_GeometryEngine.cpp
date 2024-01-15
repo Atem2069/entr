@@ -790,7 +790,9 @@ void GPU::submitPolygon()
 			}
 		}
 
-		//transform poly coordinates from clip space to screenspace
+		int smallX = 1000, largeX = -1, smallY = 1000, largeY = -1;
+
+		//transform poly coordinates from clip space to screenspace, calculate poly bounds
 		for (int i = 0; i < m_polygonRAM[bufIdx][m_polygonCount - 1].numVertices; i++)
 		{
 			Vertex cur = m_polygonRAM[bufIdx][m_polygonCount - 1].m_vertices[i];
@@ -807,7 +809,26 @@ void GPU::submitPolygon()
 			cur.v[2] = z;
 			
 			m_polygonRAM[bufIdx][m_polygonCount - 1].m_vertices[i] = cur;
+
+			if (cur.v[1] <= smallY)
+			{
+				if (cur.v[1] == smallY && cur.v[0] > smallX)
+					continue;
+				smallX = cur.v[0];
+				smallY = cur.v[1];
+				m_polygonRAM[bufIdx][m_polygonCount - 1].topVtxIdx = i;
+			}
+			if (cur.v[1] >= largeY)
+			{
+				if (cur.v[1] == largeY && cur.v[0] < largeX)
+					continue;
+				largeX = cur.v[0];
+				largeY = cur.v[1];
+			}
+
 		}
+		m_polygonRAM[bufIdx][m_polygonCount - 1].yTop = smallY;
+		m_polygonRAM[bufIdx][m_polygonCount - 1].yBottom = largeY;
 		m_polygonRAM[bufIdx][m_polygonCount - 1].drawable = true;	//all vtxs were transformed - mark as drawable
 	}
 }

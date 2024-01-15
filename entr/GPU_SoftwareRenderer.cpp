@@ -71,17 +71,8 @@ void GPU::render(int yMin, int yMax)
 		if (!p.drawable || (p.attribs.mode==3))
 			continue;
 
-		int smallY = 9999, largeY = -1;
-		for (int x = 0; x < p.numVertices; x++)
-		{
-			if (p.m_vertices[x].v[1] > largeY)
-				largeY = p.m_vertices[x].v[1];
-			if (p.m_vertices[x].v[1] < smallY)
-				smallY = p.m_vertices[x].v[1];
-		}
-
 		//skip render if poly is completely out of thread's 'render area'
-		bool skipRender = (smallY < yMin&& largeY < yMin) || (smallY > yMax && largeY > yMax);
+		bool skipRender = (p.yTop < yMin&& p.yBottom < yMin) || (p.yTop > yMax && p.yBottom > yMax);
 		if (skipRender)
 			continue;
 
@@ -108,32 +99,8 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 	//if we reached end of any slope, find new slope
 	//otherwise: interpolate x for each slope
 	
-	int smallY = 0x7FFFFFFF;
-	int smallX = 0x7FFFFFFF;
-	int topVtxIdx = 0;
-	int largeY = 0xFFFFFFFF;
-	int largeX = 0xFFFFFFFF;
-	int bottomVtxIdx = 0;
-
-	for (int i = 0; i < p.numVertices; i++)
-	{
-		if (p.m_vertices[i].v[1] <= smallY)
-		{
-			if (p.m_vertices[i].v[1] == smallY && p.m_vertices[i].v[0] > smallX)
-				continue;
-			smallX = p.m_vertices[i].v[0];
-			smallY = p.m_vertices[i].v[1];
-			topVtxIdx = i;
-		}
-		if (p.m_vertices[i].v[1] >= largeY)
-		{
-			if (p.m_vertices[i].v[1] == largeY && (int)p.m_vertices[i].v[0] < largeX)
-				continue;
-			largeY = p.m_vertices[i].v[1];
-			largeX = p.m_vertices[i].v[0];
-			bottomVtxIdx = i;
-		}
-	}
+	int smallY = p.yTop, largeY = p.yBottom;
+	int topVtxIdx = p.topVtxIdx;
 
 	Vertex l1 = {}, l2 = {};
 	Vertex r1 = {}, r2 = {};
