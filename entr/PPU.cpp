@@ -504,7 +504,7 @@ template<Engine engine> void PPU::composeLayers()
 	for (int i = 0; i < 256; i++)
 	{
 		Window pointAttribs = getPointAttributes<engine>(i, VCOUNT);
-
+		bool doBlendOp = (m_regs->BLDCNT >> 5) & 0b1;
 		//offset into framebuffer to render into.
 		//each engine is assigned a screen (top/bottom) to render to - the framebuffer consists of both screens (bottom screen rendered directly below top)
 		uint32_t renderBase = (engine == Engine::A) ? EngineA_RenderBase : EngineB_RenderBase;
@@ -526,16 +526,45 @@ template<Engine engine> void PPU::composeLayers()
 				uint16_t colAtLayer = m_backgroundLayers[j].lineBuffer[i];
 				if ((!(colAtLayer >> 15)) && m_backgroundLayers[j].priority <= bestPriority)
 				{
+					doBlendOp = (m_regs->BLDCNT >> j) & 0b1;
 					bestPriority = m_backgroundLayers[j].priority;
 					finalCol = colAtLayer;
 				}
 			}
 		}
 
-		//check if sprites can really be drawn, lol
 		uint16_t spritePixel = spriteLineBuffer[i];
 		if ((!(spritePixel >> 15)) && spriteAttributeBuffer[i].priority <= bestPriority && pointAttribs.objDrawable)
+		{
+			doBlendOp = (m_regs->BLDCNT >> 4) & 0b1;
 			finalCol = spritePixel;
+		}
+
+		//todo: support alpha blending mode
+		uint8_t blendMode = (m_regs->BLDCNT >> 6) & 0b11;
+		if (doBlendOp && pointAttribs.blendable)
+		{
+			//could speed this up with vector intrinsics
+			uint8_t R = finalCol & 0x1F, G = (finalCol >> 5) & 0x1F, B = (finalCol >> 10) & 0x1F;
+			switch (blendMode)
+			{
+			case 2:
+			{
+				R += ((31 - R) * m_regs->BLDY) >> 4;
+				G += ((31 - G) * m_regs->BLDY) >> 4;
+				B += ((31 - B) * m_regs->BLDY) >> 4;
+				break;
+			}
+			case 3:
+			{
+				R -= (R * m_regs->BLDY) >> 4;
+				G -= (G * m_regs->BLDY) >> 4;
+				B -= (B * m_regs->BLDY) >> 4;
+				break;
+			}
+			}
+			finalCol = (R & 0x1F) | ((G & 0x1F) << 5) | ((B & 0x1F) << 10);
+		}
 
 		if constexpr (engine == Engine::A)
 		{
@@ -1426,6 +1455,10 @@ uint8_t PPU::readIO(uint32_t address)
 		return m_engineARegisters.WINOUT & 0x3F;
 	case 0x0400004B:
 		return (m_engineARegisters.WINOUT >> 8) & 0x3F;
+	case 0x04000050:
+		return m_engineARegisters.BLDCNT & 0xFF;
+	case 0x04000051:
+		return (m_engineARegisters.BLDCNT >> 8) & 0xFF;
 	case 0x04000064:
 		return DISPCAPCNT & 0xFF;
 	case 0x04000065:
@@ -1466,6 +1499,10 @@ uint8_t PPU::readIO(uint32_t address)
 		return m_engineBRegisters.WINOUT & 0x3F;
 	case 0x0400104B:
 		return (m_engineBRegisters.WINOUT >> 8) & 0x3F;
+	case 0x04001050:
+		return m_engineBRegisters.BLDCNT & 0xFF;
+	case 0x04001051:
+		return (m_engineBRegisters.BLDCNT >> 8) & 0xFF;
 	}
 	//Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO read! addr={:#x}", address));
 	return 0;
@@ -1800,6 +1837,15 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 			m_windows[2].layerDrawable[i] = (m_registers->WINOUT >> (8 + i)) & 0b1;
 		m_windows[2].objDrawable = (m_registers->WINOUT >> 12) & 0b1;
 		m_windows[2].blendable = (m_registers->WINOUT >> 13) & 0b1;
+		break;
+	case 0x04000050:
+		m_registers->BLDCNT &= 0xFF00; m_registers->BLDCNT |= value;
+		break;
+	case 0x04000051:
+		m_registers->BLDCNT &= 0xFF; m_registers->BLDCNT |= (value << 8);
+		break;
+	case 0x04000054:
+		m_registers->BLDY = std::min(16,value & 0x1F);
 		break;
 	case 0x04000064:
 		DISPCAPCNT &= 0xFFFFFF00; DISPCAPCNT |= value;
