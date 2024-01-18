@@ -181,7 +181,7 @@ private:
 
 	uint16_t renderBuffer[256 * 192];
 	uint16_t alphaBuffer[256 * 192];	//i don't like this, but we want the render buffer to be in the same format as what the PPU expects. 
-	uint64_t depthBuffer[256 * 192];
+	uint32_t depthBuffer[256 * 192];
 	bool wBuffer = false;
 	bool swapBuffersPending = false;
 	InterruptManager* m_interruptManager;

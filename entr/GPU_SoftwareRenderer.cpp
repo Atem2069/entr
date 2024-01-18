@@ -62,7 +62,7 @@ void GPU::render(int yMin, int yMax)
 	uint16_t clearCol = clearColor | 0x8000;
 	uint16_t clearAlpha = (clearColor >> 16) & 0x1F;
 	std::fill(renderBuffer+(256*yMin), renderBuffer + (256 * (yMax+1)), clearCol);
-	std::fill(depthBuffer+(256*yMin), depthBuffer + (256 * (yMax+1)), 0xFFFFFFFFFFFFFFFF);	//revert this back to 16 bit at some point :)
+	std::fill(depthBuffer+(256*yMin), depthBuffer + (256 * (yMax+1)), 0x00FFFFFF);	
 	std::fill(alphaBuffer+(256*yMin), alphaBuffer + (256 * (yMax+1)), clearAlpha);					//think 2d<->3d relies on alpha blending in ppu, so leave default alpha to 0 for now (otherwise gfx are broken)
 
 	for (uint32_t i = 0; i < m_renderPolygonCount; i++)
