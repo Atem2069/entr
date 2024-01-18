@@ -802,8 +802,8 @@ void GPU::submitPolygon()
 			int64_t screenX = (((cur.v[0] + cur.v[3]) * ((viewportX2 - viewportX1) + 1)) / (cur.v[3] << 1)) + viewportX1;
 			int64_t screenY = (((-cur.v[1] + cur.v[3]) * ((viewportY2 - viewportY1) + 1)) / (cur.v[3] << 1)) + viewportY1;
 
-			uint64_t z = ((((uint64_t)cur.v[2] << 14) / (int64_t)cur.v[3]) + 0x3FFF) << 9;
-
+			int64_t z = (((cur.v[2] << 14) / cur.v[3]) + 0x3FFF) << 9;
+			z = std::max((int64_t)0, std::min(z, (int64_t)0xFFFFFF));
 			cur.v[0] = screenX;
 			cur.v[1] = screenY;
 			cur.v[2] = z;
