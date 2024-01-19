@@ -1072,7 +1072,10 @@ template<Engine engine> void PPU::renderSprites()
 
 		OAMEntry* curSpriteEntry = (OAMEntry*)(m_mem->OAM + m_OAMBase + spriteBase);
 		if (curSpriteEntry->objMode == 3)
+		{
+			renderBitmapSprite<engine>(curSpriteEntry);
 			continue;
+		}
 		if (curSpriteEntry->rotateScale)	
 		{
 			renderAffineSprite<engine>(curSpriteEntry);
@@ -1330,6 +1333,99 @@ template<Engine engine> void PPU::renderAffineSprite(OAMEntry* curSpriteEntry)
 			m_spriteLineBuffer[plotCoord] = col;
 		}
 	}
+
+}
+
+template<Engine engine> void PPU::renderBitmapSprite(OAMEntry* curSpriteEntry)
+{
+	PPURegisters* m_registers = &m_engineARegisters;
+	SpriteAttribute* m_spriteAttrBuffer = m_engineASpriteAttribBuffer;
+	uint16_t* m_spriteLineBuffer = m_engineASpriteLineBuffer;
+	if constexpr (engine == Engine::B)
+	{
+		m_spriteAttrBuffer = m_engineBSpriteAttribBuffer;
+		m_spriteLineBuffer = m_engineBSpriteLineBuffer;
+		m_registers = &m_engineBRegisters;
+	}
+
+	int spriteTop = curSpriteEntry->yCoord;
+	if (spriteTop >= 192)
+		spriteTop -= 256;
+	int spriteLeft = curSpriteEntry->xCoord;
+	if (spriteLeft >= 256)
+		spriteLeft -= 512;
+
+	//need to find out dimensions first to figure out whether to ignore this object
+	int spriteBoundsLookupId = (curSpriteEntry->shape << 2) | curSpriteEntry->size;
+	static constexpr int spriteXBoundsLUT[12] = { 8,16,32,64,16,32,32,64,8,8,16,32 };
+	static constexpr int spriteYBoundsLUT[12] = { 8,16,32,64,8,8,16,32,16,32,32,64 };
+	//static constexpr int xPitchLUT[12] = { 1,2,4,8,2,4,4,8,1,1,2,4 };
+
+	int width = spriteXBoundsLUT[spriteBoundsLookupId], height = spriteYBoundsLUT[spriteBoundsLookupId];
+	int spriteBottom = spriteTop + height, spriteRighgt = spriteLeft + width;
+
+	//past sprite, don't consider
+	if (VCOUNT >= spriteBottom || VCOUNT < spriteTop)
+		return;
+
+	bool oneDimensional = (m_registers->DISPCNT >> 6) & 0b1;
+	uint16_t color = 0x8000;
+	if (oneDimensional)
+	{
+		//todo: looks simple enough at least
+		Logger::msg(LoggerSeverity::Warn, "Unimpl 1d bitmap sprite");
+		return;
+	}
+	else
+	{
+		uint32_t tileNo = curSpriteEntry->charName;
+		uint32_t dimension = ((m_registers->DISPCNT >> 5) & 0b1);
+		//kind of weird. DISPCNT.5 controls 2d dimension (128x128 vs 256x256), so if 256x256 maskX is 0x1F
+		uint32_t maskX = 0xF | (dimension << 4);
+		uint32_t vramBase = ((tileNo & maskX) * 0x10) + ((tileNo & ~maskX) * 0x80);
+		for (int x = 0; x < width; x++)
+		{
+			int plotCoord = x + spriteLeft;
+			if (plotCoord > 255 || plotCoord < 0)
+				continue;
+			uint32_t vramAddr = vramBase + ((((VCOUNT - spriteTop) * (128 << dimension)) + x) * 2);
+			uint8_t colLow = ppuReadObj<engine>(vramAddr);
+			uint8_t colHigh = ppuReadObj<engine>(vramAddr + 1);
+			uint16_t color = (colHigh << 8) | colLow;
+			color &= 0x7FFF;
+
+			//todo: obj window
+			uint8_t priorityAtPixel = m_spriteAttrBuffer[plotCoord].priority;
+			if ((curSpriteEntry->priority >= priorityAtPixel))
+				continue;
+			m_spriteAttrBuffer[plotCoord].priority = curSpriteEntry->priority & 0b11111;
+			m_spriteLineBuffer[plotCoord] = color;
+		}
+	}
+
+
+
+	/*
+	* 		if (isObjWindow)
+		{
+			if (!(col >> 15))
+				m_spriteAttrBuffer[plotCoord].objWindow = 1;
+			continue;
+		}
+
+		uint8_t priorityAtPixel = m_spriteAttrBuffer[plotCoord].priority;
+		bool renderedPixelTransparent = m_spriteLineBuffer[plotCoord] >> 15;
+		bool currentPixelTransparent = col >> 15;
+		if ((curSpriteEntry->priority >= priorityAtPixel) && (!renderedPixelTransparent || currentPixelTransparent))	//same as for normal, only stop if we're transparent (and lower priority)
+			continue;																						//...or last pixel isn't transparent
+		if (!currentPixelTransparent)
+		{
+			m_spriteAttrBuffer[plotCoord].priority = curSpriteEntry->priority & 0b11111;
+			m_spriteAttrBuffer[plotCoord].transparent = (curSpriteEntry->objMode == 1);
+			m_spriteAttrBuffer[plotCoord].mosaic = curSpriteEntry->mosaic;
+			m_spriteLineBuffer[plotCoord] = col;
+		}
+	*/
 
 }
 
