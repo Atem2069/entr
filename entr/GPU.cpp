@@ -154,6 +154,21 @@ void GPU::write(uint32_t address, uint8_t value)
 		break;
 	}
 
+	if (address >= 0x04000380 && address <= 0x040003bf)
+	{
+		int tableIdx = (address & 63) >> 1;
+		int offs = address & 0b1;
+		if (!(offs & 0b1))
+		{
+			m_toonTable[tableIdx] &= 0xFF00;
+			m_toonTable[tableIdx] |= value;
+		}
+		else
+		{
+			m_toonTable[tableIdx] &= 0xFF;
+			m_toonTable[tableIdx] |= (value << 8);
+		}
+	}
 }
 
 void GPU::writeGXFIFO(uint32_t value)

@@ -213,6 +213,7 @@ private:
 	uint32_t GXSTAT = {};
 	uint16_t clearDepth = {};
 	uint32_t clearColor = {};
+	uint16_t m_toonTable[32];
 
 	static constexpr uint8_t m_cmdParameterLUT[256] =
 	{
