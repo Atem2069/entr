@@ -21,6 +21,8 @@ struct ColorRGBA5
 	uint16_t b;
 	uint16_t a;
 
+	void fromUint(uint16_t c) { r = (c & 0x1F); g = ((c >> 5) & 0x1F); b = ((c >> 10) & 0x1F); }
+
 	uint16_t toUint()
 	{
 		uint16_t res = 0;
