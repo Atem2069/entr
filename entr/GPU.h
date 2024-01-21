@@ -312,7 +312,7 @@ private:
 	void render(int yMin, int yMax);
 	
 	void rasterizePolygon(Poly p, int yMin, int yMax);
-	void plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes attributes);
+	void plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes& attributes, bool noTexture);
 	ColorRGBA5 decodeTexture(int32_t u, int32_t v, TextureParameters params);
 
 	void debug_drawLine(int x0, int y0, int x1, int y1);

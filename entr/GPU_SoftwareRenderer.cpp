@@ -235,11 +235,13 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 			}
 
 			int64_t depth = (wBuffer) ? w : z;
-			ColorRGBA5 texCol = decodeTexture((int32_t)u, (int32_t)v, p.texParams);
+			ColorRGBA5 texCol = {};
+			if(p.texParams.format)
+				texCol = decodeTexture((int32_t)u, (int32_t)v, p.texParams);
 
 			//this sort of wastes time. could just walk edges until we reach yMin and then start rendering
 			if(y>=yMin)	
-				plotPixel(x, y, depth, col, texCol, p.attribs);
+				plotPixel(x, y, depth, col, texCol, p.attribs, p.texParams.format==0);
 		}
 
 		//advance next scanline
@@ -272,74 +274,99 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 	}
 }
 
-void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes attributes)
+void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes& attributes, bool noTexture)
 {
+	ColorRGBA5 toonCol = {};
+	toonCol.fromUint(m_toonTable[polyCol.r]);
 	ColorRGBA5 output = {};
-	switch (attributes.mode)
+	if (noTexture)
 	{
-	case 0:
-	{
-		if (texCol.a)
+		output = polyCol;
+		//toon/highlight blending with no texture
+		if (attributes.mode == 2)
 		{
-			uint32_t R = (((uint32_t)texCol.r + 1) * ((uint32_t)polyCol.r + 1) - 1) / 32;
-			uint32_t G = (((uint32_t)texCol.g + 1) * ((uint32_t)polyCol.g + 1) - 1) / 32;
-			uint32_t B = (((uint32_t)texCol.b + 1) * ((uint32_t)polyCol.b + 1) - 1) / 32;
-			uint32_t A = (((uint32_t)texCol.a + 1) * ((uint32_t)polyCol.a + 1) - 1) / 32;
+			//highlight
+			if ((DISP3DCNT >> 1) & 0b1)
+			{
+				output.r = std::min(polyCol.r + toonCol.r, 31);
+				output.g = std::min(polyCol.g + toonCol.g, 31);
+				output.b = std::min(polyCol.b + toonCol.b, 31);
+				output.a = polyCol.a;
+			}
+			//toon
+			else
+			{
+				output = toonCol;
+				output.a = polyCol.a;
+			}
+		}
+	}
+	else
+	{
+		switch (attributes.mode)
+		{
+		case 0:
+		{
+			if (texCol.a)
+			{
+				uint32_t R = (((uint32_t)texCol.r + 1) * ((uint32_t)polyCol.r + 1) - 1) / 32;
+				uint32_t G = (((uint32_t)texCol.g + 1) * ((uint32_t)polyCol.g + 1) - 1) / 32;
+				uint32_t B = (((uint32_t)texCol.b + 1) * ((uint32_t)polyCol.b + 1) - 1) / 32;
+				uint32_t A = (((uint32_t)texCol.a + 1) * ((uint32_t)polyCol.a + 1) - 1) / 32;
+				output.r = R & 0x1F;
+				output.g = G & 0x1F;
+				output.b = B & 0x1F;
+				output.a = A & 0x1F;
+			}
+			break;
+		}
+		case 1:
+		{
+			if (!texCol.a)
+				output = polyCol;
+			else if (texCol.a == 31)
+				output = texCol;
+			else
+			{
+				uint32_t R = (texCol.r * texCol.a + polyCol.r * (31 - texCol.a)) / 32;
+				uint32_t G = (texCol.g * texCol.a + polyCol.g * (31 - texCol.a)) / 32;
+				uint32_t B = (texCol.b * texCol.a + polyCol.b * (31 - texCol.a)) / 32;
+				output.r = R & 0x1F;
+				output.g = G & 0x1F;
+				output.b = B & 0x1F;
+				output.a = polyCol.a;
+			}
+			break;
+		}
+		case 2:
+		{
+			uint32_t R = {}, G = {}, B = {}, A = {};
+			//highlight
+			if ((DISP3DCNT >> 1) & 0b1)
+			{
+				if (texCol.a)
+				{
+					R = std::min((((texCol.r + 1) * (polyCol.r + 1) - 1) / 32) + toonCol.r, 31);
+					G = std::min((((texCol.g + 1) * (polyCol.g + 1) - 1) / 32) + toonCol.g, 31);
+					B = std::min((((texCol.b + 1) * (polyCol.b + 1) - 1) / 32) + toonCol.b, 31);
+					A = ((texCol.a + 1) * (polyCol.a + 1) - 1) / 32;
+				}
+			}
+			//toon
+			else
+			{
+				R = ((texCol.r + 1) * (toonCol.r + 1) - 1) / 32;
+				G = ((texCol.g + 1) * (toonCol.g + 1) - 1) / 32;
+				B = ((texCol.b + 1) * (toonCol.b + 1) - 1) / 32;
+				A = ((texCol.a + 1) * (polyCol.a + 1) - 1) / 32;
+			}
 			output.r = R & 0x1F;
 			output.g = G & 0x1F;
 			output.b = B & 0x1F;
 			output.a = A & 0x1F;
+			break;
 		}
-		break;
-	}
-	case 1:
-	{
-		if (!texCol.a)
-			output = polyCol;
-		else if (texCol.a == 31)
-			output = texCol;
-		else
-		{
-			uint32_t R = (texCol.r * texCol.a + polyCol.r * (31 - texCol.a)) / 32;
-			uint32_t G = (texCol.g * texCol.a + polyCol.g * (31 - texCol.a)) / 32;
-			uint32_t B = (texCol.b * texCol.a + polyCol.b * (31 - texCol.a)) / 32;
-			output.r = R & 0x1F;
-			output.g = G & 0x1F;
-			output.b = B & 0x1F;
-			output.a = polyCol.a;
 		}
-		break;
-	}
-	case 2:
-	{
-		ColorRGBA5 toonCol = {};
-		toonCol.fromUint(m_toonTable[polyCol.r]);
-		uint32_t R = {}, G = {}, B = {}, A = {};
-		//highlight
-		if ((DISP3DCNT >> 1) & 0b1)
-		{
-			if (texCol.a)
-			{
-				R = std::min((((texCol.r + 1) * (polyCol.r + 1) - 1) / 32) + toonCol.r, 31);
-				G = std::min((((texCol.g + 1) * (polyCol.g + 1) - 1) / 32) + toonCol.g, 31);
-				B = std::min((((texCol.b + 1) * (polyCol.b + 1) - 1) / 32) + toonCol.b, 31);
-				A = ((texCol.a + 1) * (polyCol.a + 1) - 1) / 32;
-			}
-		}
-		//toon
-		else
-		{
-			R = ((texCol.r + 1) * (toonCol.r + 1) - 1) / 32;
-			G = ((texCol.g + 1) * (toonCol.g + 1) - 1) / 32;
-			B = ((texCol.b + 1) * (toonCol.b + 1) - 1) / 32;
-			A = ((texCol.a + 1) * (polyCol.a + 1) - 1) / 32;
-		}
-		output.r = R & 0x1F;
-		output.g = G & 0x1F;
-		output.b = B & 0x1F;
-		output.a = A & 0x1F;
-		break;
-	}
 	}
 
 	uint16_t curCol = renderBuffer[(y * 256) + x];
