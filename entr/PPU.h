@@ -223,7 +223,7 @@ private:
 			ptr = mapABgAddress(address);
 		else
 			ptr = mapBBgAddress(address);
-		if (ptr < m_mem->VRAM)
+		if (!ptr)
 			return 0;
 		return *ptr;
 	}
@@ -235,7 +235,7 @@ private:
 			ptr = mapAObjAddress(address);
 		else
 			ptr = mapBObjAddress(address);
-		if (ptr < m_mem->VRAM)
+		if (!ptr)
 			return 0;
 		return *ptr;
 	}

@@ -286,7 +286,7 @@ uint8_t* PPU::mapLCDCAddress(uint32_t address)
 	//return m_mem->LCDCPageTable[page] + offset;
 	uint8_t* pagePtr = m_mem->LCDCPageTable[page];
 	if (!pagePtr)
-		return m_mem->VRAM;
+		return nullptr;
 	return pagePtr + offset;
 }
 
@@ -297,7 +297,7 @@ uint8_t* PPU::mapABgAddress(uint32_t address)
 	uint32_t offset = address & 0x3FFF;
 	uint8_t* pagePtr = m_mem->ABGPageTable[page];
 	if (!pagePtr)
-		return m_mem->VRAM;
+		return nullptr;
 	return pagePtr + offset;
 }
 
@@ -308,7 +308,7 @@ uint8_t* PPU::mapAObjAddress(uint32_t address)
 	uint32_t offset = address & 0x3FFF;
 	uint8_t* pagePtr = m_mem->AObjPageTable[page];
 	if (!pagePtr)
-		return m_mem->VRAM;
+		return nullptr;
 	return pagePtr + offset;
 
 }
@@ -320,7 +320,7 @@ uint8_t* PPU::mapBBgAddress(uint32_t address)
 	uint32_t offset = address & 0x3FFF;
 	uint8_t* pagePtr = m_mem->BBGPageTable[page];
 	if (!pagePtr)
-		return m_mem->VRAM;
+		return nullptr;
 	return pagePtr + offset;
 }
 
@@ -331,7 +331,7 @@ uint8_t* PPU::mapBObjAddress(uint32_t address)
 	uint32_t offset = address & 0x3FFF;
 	uint8_t* pagePtr = m_mem->BObjPageTable[page];
 	if (!pagePtr)
-		return m_mem->VRAM;
+		return nullptr;
 	return pagePtr + offset;
 }
 
@@ -342,6 +342,6 @@ uint8_t* PPU::mapARM7Address(uint32_t address)
 	uint32_t offset = address & 0x1FFFF;
 	uint8_t* pagePtr = m_mem->ARM7VRAMPageTable[page];
 	if (!pagePtr)
-		return m_mem->VRAM;
+		return nullptr;
 	return pagePtr + offset;
 }
