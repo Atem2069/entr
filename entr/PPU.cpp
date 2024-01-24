@@ -568,7 +568,9 @@ template<Engine engine> void PPU::composeLayers()
 
 		if constexpr (engine == Engine::A)
 		{
-			captureBuffer[i] = finalCol;
+			//kinda hacky..
+			//set bit 15 (opaque bit) for captured pixels. so when rendered back (e.g. as a bitmap) they won't just get skipped
+			captureBuffer[i] = finalCol | 0x8000;
 			uint8_t displayMode = (m_engineARegisters.DISPCNT >> 16) & 0b11;
 			if (displayMode == 2)
 				continue;
@@ -1392,41 +1394,17 @@ template<Engine engine> void PPU::renderBitmapSprite(OAMEntry* curSpriteEntry)
 			uint8_t colLow = ppuReadObj<engine>(vramAddr);
 			uint8_t colHigh = ppuReadObj<engine>(vramAddr + 1);
 			uint16_t color = (colHigh << 8) | colLow;
-			color &= 0x7FFF;
 
-			//todo: obj window
 			uint8_t priorityAtPixel = m_spriteAttrBuffer[plotCoord].priority;
 			if ((curSpriteEntry->priority >= priorityAtPixel))
 				continue;
-			m_spriteAttrBuffer[plotCoord].priority = curSpriteEntry->priority & 0b11111;
-			m_spriteLineBuffer[plotCoord] = color;
+			if ((color >> 15))
+			{
+				m_spriteAttrBuffer[plotCoord].priority = curSpriteEntry->priority & 0b11111;
+				m_spriteLineBuffer[plotCoord] = color & 0x7FFF;
+			}
 		}
 	}
-
-
-
-	/*
-	* 		if (isObjWindow)
-		{
-			if (!(col >> 15))
-				m_spriteAttrBuffer[plotCoord].objWindow = 1;
-			continue;
-		}
-
-		uint8_t priorityAtPixel = m_spriteAttrBuffer[plotCoord].priority;
-		bool renderedPixelTransparent = m_spriteLineBuffer[plotCoord] >> 15;
-		bool currentPixelTransparent = col >> 15;
-		if ((curSpriteEntry->priority >= priorityAtPixel) && (!renderedPixelTransparent || currentPixelTransparent))	//same as for normal, only stop if we're transparent (and lower priority)
-			continue;																						//...or last pixel isn't transparent
-		if (!currentPixelTransparent)
-		{
-			m_spriteAttrBuffer[plotCoord].priority = curSpriteEntry->priority & 0b11111;
-			m_spriteAttrBuffer[plotCoord].transparent = (curSpriteEntry->objMode == 1);
-			m_spriteAttrBuffer[plotCoord].mosaic = curSpriteEntry->mosaic;
-			m_spriteLineBuffer[plotCoord] = col;
-		}
-	*/
-
 }
 
 template<Engine engine>uint16_t PPU::extractColorFromTile(uint32_t tileBase, uint32_t xOffset, bool hiColor, uint32_t palette)
