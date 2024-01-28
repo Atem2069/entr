@@ -49,6 +49,8 @@ struct PPURegisters
 	uint16_t BG3PD = 1;
 	uint16_t BLDCNT;
 	uint8_t BLDY;
+
+	uint16_t MASTER_BRIGHT;
 };
 
 enum class Engine

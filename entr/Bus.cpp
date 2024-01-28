@@ -745,7 +745,8 @@ void Bus::NDS9_writeIO8(uint32_t address, uint8_t value)
 		NDS9_POSTFLG = 1;
 		NDS9_POSTFLG |= (value & 0b10);
 		break;
-	case 0x04000064: case 0x04000065: case 0x04000066: case 0x04000067:
+	//so hacky. need to generate proper tables for ppu/gpu
+	case 0x04000064: case 0x04000065: case 0x04000066: case 0x04000067: case 0x0400006C: case 0x0400006D: case 0x0400106C: case 0x0400106D:
 		m_ppu->writeIO(address, value);
 		break;
 		//hack for handling POWCNT affecting both ppu/gpu. pretty awful IMO

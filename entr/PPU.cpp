@@ -576,6 +576,33 @@ template<Engine engine> void PPU::composeLayers()
 				continue;
 		}
 
+		//MASTER_BRIGHT
+		//blending/master_bright use 18-bit color iirc. could move over at some point 
+		//todo: optimise this with simd intrinsics somehow?
+		switch ((m_regs->MASTER_BRIGHT >> 14) & 0b11)
+		{
+		case 1:
+		{
+			uint8_t R = finalCol & 0x1F, G = (finalCol >> 5) & 0x1F, B = (finalCol >> 10) & 0x1F;
+			uint32_t factor = m_regs->MASTER_BRIGHT & 0x1F;
+			R += ((31 - R) * factor) >> 4;
+			G += ((31 - G) * factor) >> 4;
+			B += ((31 - B) * factor) >> 4;
+			finalCol = (R & 0x1F) | ((G & 0x1F) << 5) | ((B & 0x1F) << 10);
+			break;
+		}
+		case 2:
+		{
+			uint8_t R = finalCol & 0x1F, G = (finalCol >> 5) & 0x1F, B = (finalCol >> 10) & 0x1F;
+			uint32_t factor = m_regs->MASTER_BRIGHT & 0x1F;
+			R -= (R * factor) >> 4;
+			G -= (G * factor) >> 4;
+			B -= (B * factor) >> 4;
+			finalCol = (R & 0x1F) | ((G & 0x1F) << 5) | ((B & 0x1F) << 10);
+			break;
+		}
+		}
+
 		//bad hack
 		m_renderBuffer[pageIdx][renderBase + (256 * VCOUNT) + i] = col16to32(finalCol);
 	}
@@ -1937,6 +1964,13 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		{
 			m_capturePending = true;
 		}
+		break;
+	case 0x0400006C:
+		value = std::min(16, value&0x1F);
+		m_registers->MASTER_BRIGHT &= 0xFF00; m_registers->MASTER_BRIGHT |= value;
+		break;
+	case 0x0400006D:
+		m_registers->MASTER_BRIGHT &= 0xFF; m_registers->MASTER_BRIGHT |= (value << 8);
 		break;
 	}
 }
