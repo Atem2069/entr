@@ -137,6 +137,13 @@ struct GPUWorkerThread
 	int yMin, yMax;
 };
 
+struct RenderAttribute
+{
+	uint32_t depth;
+	uint16_t alpha;
+	uint8_t polyIDStencil;
+};
+
 class GPU
 {
 public:
@@ -182,8 +189,9 @@ private:
 	void* m_callbackCtx;
 
 	uint16_t renderBuffer[256 * 192];
-	uint16_t alphaBuffer[256 * 192];	//i don't like this, but we want the render buffer to be in the same format as what the PPU expects. 
-	uint32_t depthBuffer[256 * 192];
+	RenderAttribute attributeBuffer[256 * 192];
+	//uint16_t alphaBuffer[256 * 192];	//i don't like this, but we want the render buffer to be in the same format as what the PPU expects. 
+	//uint32_t depthBuffer[256 * 192];
 	bool wBuffer = false;
 	bool swapBuffersPending = false;
 	InterruptManager* m_interruptManager;

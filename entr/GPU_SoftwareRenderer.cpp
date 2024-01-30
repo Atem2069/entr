@@ -61,9 +61,11 @@ void GPU::render(int yMin, int yMax)
 {
 	uint16_t clearCol = clearColor | 0x8000;
 	uint16_t clearAlpha = (clearColor >> 16) & 0x1F;
+	RenderAttribute clearAttr = { 0x00FFFFFF,clearAlpha,0 };
 	std::fill(renderBuffer+(256*yMin), renderBuffer + (256 * (yMax+1)), clearCol);
-	std::fill(depthBuffer+(256*yMin), depthBuffer + (256 * (yMax+1)), 0x00FFFFFF);	
-	std::fill(alphaBuffer+(256*yMin), alphaBuffer + (256 * (yMax+1)), clearAlpha);					//think 2d<->3d relies on alpha blending in ppu, so leave default alpha to 0 for now (otherwise gfx are broken)
+	std::fill(attributeBuffer + (256 * yMin), attributeBuffer + (256 * (yMax + 1)), clearAttr);
+	//std::fill(depthBuffer+(256*yMin), depthBuffer + (256 * (yMax+1)), 0x00FFFFFF);	
+	//std::fill(alphaBuffer+(256*yMin), alphaBuffer + (256 * (yMax+1)), clearAlpha);					//think 2d<->3d relies on alpha blending in ppu, so leave default alpha to 0 for now (otherwise gfx are broken)
 
 	for (uint32_t i = 0; i < m_renderPolygonCount; i++)
 	{
@@ -369,8 +371,9 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 		}
 	}
 
+	RenderAttribute pixelAttribs = attributeBuffer[(y * 256) + x];
 	uint16_t curCol = renderBuffer[(y * 256) + x];
-	uint16_t curAlpha = alphaBuffer[(y * 256) + x];
+	uint16_t curAlpha = pixelAttribs.alpha;
 	ColorRGBA5 fbCol = { curCol & 0x1F, (curCol >> 5) & 0x1F, (curCol >> 10) & 0x1F, curAlpha&0x1F };
 
 	if (output.a != 31 && output.a && fbCol.a)
@@ -382,11 +385,13 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 	}
 
 	uint16_t res = output.toUint();
-	if ((!(res >> 15)) && depth < depthBuffer[(y * 256) + x])
+	if ((!(res >> 15)) && depth < pixelAttribs.depth)
 	{
-		depthBuffer[(y * 256) + x] = depth;
 		renderBuffer[(y * 256) + x] = res;
-		alphaBuffer[(y * 256) + x] = output.a;
+
+		pixelAttribs.alpha = output.a;
+		pixelAttribs.depth = depth;
+		attributeBuffer[(y * 256) + x] = pixelAttribs;
 	}
 }
 
