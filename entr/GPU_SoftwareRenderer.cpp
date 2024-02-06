@@ -376,7 +376,7 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 	uint16_t curAlpha = pixelAttribs.alpha;
 	ColorRGBA5 fbCol = { curCol & 0x1F, (curCol >> 5) & 0x1F, (curCol >> 10) & 0x1F, curAlpha&0x1F };
 
-	if (output.a != 31 && output.a && fbCol.a)
+	if (((DISP3DCNT>>3)&0b1) && (output.a != 31 && output.a && fbCol.a))
 	{
 		output.r = ((output.r * (output.a + 1) + fbCol.r * (31 - output.a)) / 32) & 0x1F;
 		output.g = ((output.g * (output.a + 1) + fbCol.g * (31 - output.a)) / 32) & 0x1F;
