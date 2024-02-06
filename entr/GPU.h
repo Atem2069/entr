@@ -113,6 +113,7 @@ struct PolyAttributes
 	uint8_t mode;
 	bool depthEqual;
 	uint16_t alpha;
+	uint8_t polyID;
 };
 
 struct Poly

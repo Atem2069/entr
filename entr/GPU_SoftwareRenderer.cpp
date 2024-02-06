@@ -391,6 +391,8 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 
 		pixelAttribs.alpha = output.a;
 		pixelAttribs.depth = depth;
+		pixelAttribs.polyIDStencil &= 0x80;
+		pixelAttribs.polyIDStencil |= attributes.polyID & 0x7F;
 		attributeBuffer[(y * 256) + x] = pixelAttribs;
 	}
 }
