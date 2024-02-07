@@ -144,15 +144,51 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 	bool lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
 	bool rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
 	
-	//clamp ymin,ymax so we don't draw insane polys
-	//we probably have clipping bugs so this is necessary
-	largeY = std::min(largeY, yMax);
+	largeY = std::min(largeY, yMax+1);
 	y = std::max(0, y);
-	while (y <= largeY)
+	//hacky, draw 1-line polys.
+	if (y == largeY)
+		largeY++;
+	while (y < largeY)
 	{
 		int64_t wl = {}, wr = {};
 		int64_t ul = {}, ur = {}, vl = {}, vr = {};
 		ColorRGBA5 lcol = {}, rcol = {};
+
+		//wtf, evil. fix up
+		//x-major interp has some bugs
+		{
+			int64_t dy = std::max((int64_t)1, l2.v[1] - l1.v[1]);
+			int64_t DX = (((int64_t)1 << 36) / (dy << 18)) * (l2.v[0] - l1.v[0]);
+			if(!lEdgeXMajor)
+				xMin = (((y - l1.v[1]) * DX) >> 18) + l1.v[0];
+			else
+			{
+				/*
+				* ///    Xstart = (Y - Y0) * DX + X0 + 0.5
+				  ///    Xend = Xstart[discarding 9 LSBs] + DX - 1.0
+				*/
+
+				//left edge is filled if the slope is negative or not x-major
+				int64_t Xstart = ((y - l1.v[1]) * DX) + (l1.v[0] << 18) + (1 << 17);
+				int64_t Xend = ((Xstart >> 9) << 9) + DX - (1 << 18);
+				xMin = std::min(Xstart, Xend) >> 18;
+			}
+		}
+
+		{
+			int64_t dy = std::max((int64_t)1, r2.v[1] - r1.v[1]);
+			int64_t DX = (((int64_t)1 << 36) / (dy << 18)) * (r2.v[0] - r1.v[0]);
+			if (!rEdgeXMajor)
+				xMax = (((y - r1.v[1]) * DX) >> 18) + r1.v[0];
+			else
+			{
+				//right edge filled if positive and x-major, or vertical
+				int64_t Xstart = ((y - r1.v[1]) * DX) + (r1.v[0] << 18) + (1 << 17);
+				int64_t Xend = ((Xstart >> 9) << 9) + DX - (1 << 18);
+				xMax = std::max(Xstart, Xend) >> 18;
+			}
+		}
 
 		//interpolate linearly if w values equal
 		if (l1.v[3] == l2.v[3])
@@ -249,19 +285,15 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		//advance next scanline
 		y++;
 
-		//this is in dire need of a cleanup
-		//todo: proper x-major interpolation for poly edges
 		if (y >= l2.v[1])	//reached end of left slope
 		{
 			l1 = l2;
 			l2Idx = (l2Idx + leftStep) % p.numVertices;
 			l2 = p.m_vertices[l2Idx];
 			xMin = l1.v[0];
-			
+
 			lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
-		}
-		else
-			xMin = linearInterpolate(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1]);
+		}					//reached end of right slope
 		if (y >= r2.v[1])
 		{
 			r1 = r2;
@@ -271,8 +303,6 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 
 			rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
 		}
-		else
-			xMax = linearInterpolate(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1]);
 	}
 }
 
