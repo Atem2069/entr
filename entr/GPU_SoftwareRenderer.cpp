@@ -247,7 +247,12 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		//advance next scanline
 		y++;
 
-		if (y >= l2.v[1])	//reached end of left slope
+
+		//pick new edge to walk, or interpolate along edges
+		//todo: handle edge fill rules properly.
+		//right now, we assume right edge is always filled, and left edge isn't
+		//which isn't correct at all obviously :)
+		if (y >= l2.v[1])
 		{
 			l1 = l2;
 			l2Idx = (l2Idx + leftStep) % p.numVertices;
@@ -258,18 +263,9 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		}					
 		else
 		{
-			int64_t dy = std::max((int64_t)1, (l2.v[1] - l1.v[1]));
-			int64_t DX = ((1 << 18) / dy) * (l2.v[0] - l1.v[0]);
-			int64_t ycoord = std::min((int64_t)y, l2.v[1]);
-			if (!lEdgeXMajor)
-				xMin = (((ycoord - l1.v[1]) * DX) >> 18) + l1.v[0];
-			else
-			{
-				//left edge is filled if the slope is negative or not x-major
-				int64_t Xstart = ((ycoord - l1.v[1]) * DX) + (l1.v[0] << 18) + (1 << 17);
-				int64_t Xend = ((Xstart >> 9) << 9) + DX - (1 << 18);
-				xMin = std::min(Xstart, Xend) >> 18;
-			}
+			int64_t edgeStart = 0, edgeEnd = 0;
+			interpolateEdge(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1], edgeStart, edgeEnd);
+			xMin = edgeEnd;
 		}
 
 		if (y >= r2.v[1])
@@ -283,18 +279,9 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		}
 		else
 		{
-			int64_t dy = std::max((int64_t)1, (r2.v[1] - r1.v[1]));
-			int64_t DX = ((1 << 18) / dy) * (r2.v[0] - r1.v[0]);
-			int64_t ycoord = std::min((int64_t)y, r2.v[1]);
-			if (!rEdgeXMajor)
-				xMax = (((ycoord - r1.v[1]) * DX) >> 18) + r1.v[0];
-			else
-			{
-				//right edge filled if positive and x-major, or vertical
-				int64_t Xstart = ((ycoord - r1.v[1]) * DX) + (r1.v[0] << 18) + (1 << 17);
-				int64_t Xend = ((Xstart >> 9) << 9) + DX - (1 << 18);
-				xMax = std::max(Xstart, Xend) >> 18;
-			}
+			int64_t edgeStart = 0, edgeEnd = 0;
+			interpolateEdge(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1], edgeStart, edgeEnd);
+			xMax = edgeEnd;
 		}
 	}
 }

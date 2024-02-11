@@ -429,6 +429,40 @@ private:
 		return quotient;
 	}
 
+	inline void interpolateEdge(int64_t y, int64_t x1, int64_t x2, int64_t y1, int64_t y2, int64_t& spanStart, int64_t& spanEnd)
+	{
+		/*
+		* 			int64_t dy = std::max((int64_t)1, (l2.v[1] - l1.v[1]));
+			int64_t DX = ((1 << 18) / dy) * (l2.v[0] - l1.v[0]);
+			int64_t ycoord = std::min((int64_t)y, l2.v[1]);
+			if (!lEdgeXMajor)
+				xMin = (((ycoord - l1.v[1]) * DX) >> 18) + l1.v[0];
+			else
+			{
+				//left edge is filled if the slope is negative or not x-major
+				int64_t Xstart = ((ycoord - l1.v[1]) * DX) + (l1.v[0] << 18) + (1 << 17);
+				int64_t Xend = ((Xstart >> 9) << 9) + DX - (1 << 18);
+				xMin = std::max(Xstart, Xend) >> 18;	//hacky: not filling in x-major spans. need to revisit later
+			}
+		*/
+
+		bool xMajor = std::abs(x2 - x1) > (y2 - y1);
+		int64_t dy = std::max((int64_t)1, (y2 - y1));
+		int64_t DX = ((1 << 18) / dy) * (x2 - x1);
+		if (!xMajor)
+		{
+			spanStart = (((y - y1) * DX) >> 18) + x1;
+			spanEnd = spanStart;
+		}
+		else
+		{
+			int64_t Xstart = ((y - y1) * DX) + (x1 << 18) + (1 << 17);
+			int64_t Xend = ((Xstart >> 9) << 9) + DX - (1 << 18);
+			spanStart = std::min(Xstart, Xend) >> 18;
+			spanEnd = std::max(Xstart, Xend) >> 18;
+		}
+	}
+
 	//interpolation
 	int64_t linearInterpolate(int64_t x, int64_t y1, int64_t y2, int64_t x1, int64_t x2)
 	{
