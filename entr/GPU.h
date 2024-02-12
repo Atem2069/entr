@@ -319,8 +319,18 @@ private:
 	void submitPolygon();
 
 	void render(int yMin, int yMax);
+
+	struct EdgeAttribs
+	{
+		int64_t wl = {}, wr = {};
+		int64_t zl = {}, zr = {};
+		int64_t ul = {}, ur = {};
+		int64_t vl = {}, vr = {};
+		ColorRGBA5 lcol = {}, rcol = {};
+	};
 	
 	void rasterizePolygon(Poly p, int yMin, int yMax);
+	void renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, EdgeAttribs& edgeAttribs);
 	void plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes& attributes, bool noTexture);
 	ColorRGBA5 decodeTexture(int32_t u, int32_t v, TextureParameters params);
 
@@ -432,22 +442,49 @@ private:
 	inline void interpolateEdge(int64_t y, int64_t x1, int64_t x2, int64_t y1, int64_t y2, int64_t& spanStart, int64_t& spanEnd)
 	{
 		//todo: don't unnecessarily calculate xMajor and DX. we can do that once when we first meet the edge.
-		//could handle negative x-major slopes with 'proper' solution? but.. should be fine
-
 		bool xMajor = std::abs(x2 - x1) > (y2 - y1);
+		bool positive = (x2 >= x1);
 		int64_t dy = std::max((int64_t)1, (y2 - y1));
-		int64_t DX = ((1 << 18) / dy) * (x2 - x1);
-		if (!xMajor)
+
+		if (positive)
 		{
-			spanStart = (((y - y1) * DX) >> 18) + x1;
-			spanEnd = spanStart;
+			int64_t DX = ((1 << 18) / dy) * (x2 - x1);
+			if (!xMajor)
+			{
+				int64_t Xstart = ((y - y1) * DX) + (x1 << 18);
+				if ((x2 - x1) == (y2 - y1))
+					Xstart += (1 << 17);
+				spanStart = (Xstart >> 18);
+				spanEnd = spanStart;
+			}
+			else
+			{
+				int64_t Xstart = ((y - y1) * DX) + (x1 << 18) + (1 << 17);
+				int64_t Xend = ((Xstart >> 9) << 9) + DX - (1 << 18);
+				spanStart = std::min(Xstart, Xend) >> 18;
+				spanEnd = std::max(Xstart, Xend) >> 18;
+			}
 		}
+
 		else
 		{
-			int64_t Xstart = ((y - y1) * DX) + (x1 << 18) + (1 << 17);
-			int64_t Xend = ((Xstart >> 9) << 9) + DX - (1 << 18);
-			spanStart = std::min(Xstart, Xend) >> 18;
-			spanEnd = std::max(Xstart, Xend) >> 18;
+			int64_t m_x0 = (x1 << 18) - 1;
+			std::swap(x1, x2);
+			int64_t DX = ((1 << 18) / dy) * (x2 - x1);
+			if (!xMajor)
+			{
+				int64_t Xstart = ((x2 << 18) - 1) - ((y - y1) * DX);
+				spanStart = Xstart >> 18;
+				spanEnd = spanStart;
+			}
+			else
+			{
+				uint64_t mask = (0xFFFFFFFFFFFFFFFF << 9);
+				int64_t Xstart = ((x2 << 18) - 1) - ((y - y1) * DX) - (1 << 17);
+				int64_t Xend = Xstart + (~mask - (Xstart & ~mask)) - DX + (1 << 18);
+				spanStart = (Xend >> 18);
+				spanEnd = (Xstart >> 18);
+			}
 		}
 	}
 
