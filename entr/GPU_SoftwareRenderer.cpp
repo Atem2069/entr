@@ -144,6 +144,8 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 	bool lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
 	bool rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
 	
+	int leftOffset = 0, rightOffset = 0;
+
 	largeY = std::min(largeY, yMax);
 	y = std::max(0, y);
 	while (y <= largeY)
@@ -212,7 +214,10 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		int64_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
 		int64_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 
-		for (int x = std::max(xMin,0); x <= std::min(xMax,255); x++)
+		//using leftOffset/rightOffset is hacky.
+		//in the future, this will be removed. instead, edges should be marked with an 'edge' flag in the pixel attributes
+		//bc edges *can* always be rendered, e.g. when edge marking or anti aliasing are enabled.
+		for (int x = std::max(xMin,0)+leftOffset; x <= std::min(xMax,255)-rightOffset; x++)
 		{
 			ColorRGBA5 col = {};
 			//is interpolating z fine? or should we interpolate 1/z?
@@ -260,12 +265,14 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 			xMin = l1.v[0];
 
 			lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
+			leftOffset = 0;
 		}					
 		else
 		{
 			int64_t edgeStart = 0, edgeEnd = 0;
 			interpolateEdge(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1], edgeStart, edgeEnd);
-			xMin = edgeEnd;
+			xMin = edgeStart;
+			leftOffset = (edgeEnd - edgeStart);
 		}
 
 		if (y >= r2.v[1])
@@ -276,6 +283,7 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 			xMax = r1.v[0];
 
 			rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
+			rightOffset = 0;
 		}
 		else
 		{
