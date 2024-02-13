@@ -446,6 +446,7 @@ private:
 		bool positive = (x2 >= x1);
 		int64_t dy = std::max((int64_t)1, (y2 - y1));
 
+		//todo: clean this all up, this is pretty bad
 		if (positive)
 		{
 			int64_t DX = ((1 << 18) / dy) * (x2 - x1);
@@ -495,7 +496,6 @@ private:
 		{
 			return y1;
 		}
-		//r1.v[0] + ((y - r1.v[1]) * (r2.v[0] - r1.v[0])) / (r2.v[1] - r1.v[1]);
 		return y1 + ((x - x1) * (y2 - y1)) / (x2-x1);
 	}
 
@@ -520,26 +520,11 @@ private:
 
 	int64_t interpolatePerspectiveCorrect(int64_t factor, int64_t shiftAmt, int64_t u1, int64_t u2)
 	{
-		//if (u1 <= u2)
-		//	return u1 + (((u2 - u1) * factor) >> shiftAmt);
-		//else
-			return u2 + (((u1 - u2) * ((1<<shiftAmt) - factor)) >> shiftAmt);
+		return u2 + (((u1 - u2) * ((1<<shiftAmt) - factor)) >> shiftAmt);
 	}
 
 	ColorRGBA5 interpolateColor(int x, ColorRGBA5 y1, ColorRGBA5 y2, int x1, int x2)
 	{
-		/*uint16_t r1 = y1 & 0x1F;
-		uint16_t g1 = (y1 >> 5) & 0x1F;
-		uint16_t b1 = (y1 >> 10) & 0x1F;
-		uint16_t r2 = y2 & 0x1F;
-		uint16_t g2 = (y2 >> 5) & 0x1F;
-		uint16_t b2 = (y2 >> 10) & 0x1F;
-		
-		uint16_t r = linearInterpolate(x, r1, r2, x1, x2) & 0x1F;
-		uint16_t g = linearInterpolate(x, g1, g2, x1, x2) & 0x1F;
-		uint16_t b = linearInterpolate(x, b1, b2, x1, x2) & 0x1F;
-		return r | (g << 5) | (b << 10);*/
-
 		uint64_t r = linearInterpolate(x, y1.r, y2.r, x1, x2) & 0x1F;
 		uint64_t g = linearInterpolate(x, y1.g, y2.g, x1, x2) & 0x1F;
 		uint64_t b = linearInterpolate(x, y1.b, y2.b, x1, x2) & 0x1F;
@@ -555,20 +540,6 @@ private:
 
 	ColorRGBA5 interpolateColorPerspectiveCorrect(int64_t factor, int64_t shiftAmt, ColorRGBA5 col1, ColorRGBA5 col2)
 	{
-		/*uint16_t r1 = col1 & 0x1F;
-		uint16_t g1 = (col1 >> 5) & 0x1F;
-		uint16_t b1 = (col1 >> 10) & 0x1F;
-
-		uint16_t r2 = col2 & 0x1F;
-		uint16_t g2 = (col2 >> 5) & 0x1F;
-		uint16_t b2 = (col2 >> 10) & 0x1F;
-
-		uint16_t r = interpolatePerspectiveCorrect(factor, shiftAmt, r1, r2) & 0x1F;
-		uint16_t g = interpolatePerspectiveCorrect(factor, shiftAmt, g1, g2) & 0x1F;
-		uint16_t b = interpolatePerspectiveCorrect(factor, shiftAmt, b1, b2) & 0x1F;
-
-		return r | (g << 5) | (b << 10);*/
-
 		uint64_t r = interpolatePerspectiveCorrect(factor, shiftAmt, col1.r, col2.r) & 0x1F;
 		uint64_t g = interpolatePerspectiveCorrect(factor, shiftAmt, col1.g, col2.g) & 0x1F;
 		uint64_t b = interpolatePerspectiveCorrect(factor, shiftAmt, col1.b, col2.b) & 0x1F;

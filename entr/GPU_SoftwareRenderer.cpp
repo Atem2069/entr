@@ -92,15 +92,6 @@ void GPU::render(int yMin, int yMax)
 
 void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 {
-
-	//find top and bottom points
-	//while scanline count < bottom
-	//left slope = top->top+1        (initially)
-	//right slope = top->top-1       (initially)
-	//xspan = xr-xl, draw scanline
-	//if we reached end of any slope, find new slope
-	//otherwise: interpolate x for each slope
-	
 	int smallY = p.yTop, largeY = p.yBottom;
 	int topVtxIdx = p.topVtxIdx;
 
@@ -124,16 +115,6 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 	r1 = p.m_vertices[topVtxIdx];
 	r2 = p.m_vertices[r2Idx];
 
-	int y = smallY;
-
-	//end of right span could be on same scanline as start (e.g. with unrotated quads)
-	/*if (y >= r2.v[1])
-	{
-		r1 = r2;
-		r2Idx = (r2Idx + rightStep) % p.numVertices;
-		r2 = p.m_vertices[r2Idx];
-	}*/
-
 	int64_t lEdgeMin = {}, lEdgeMax = {};
 	int64_t rEdgeMin = {}, rEdgeMax = {};
 
@@ -141,34 +122,24 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 	bool lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
 	bool rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
 	
-	int leftOffset = 0, rightOffset = 0;
-
+	int y = smallY;
 	largeY = std::min(largeY, yMax+1);
 	y = std::max(0, y);
 
-	//allow one-pixel tall polys to render
+	//hacky: allow one-pixel tall polys to render
 	if (p.yTop == p.yBottom)
 		largeY++;
 	while (y < largeY)
 	{
-
-		//pick new edge to walk, or interpolate along edges
-		//todo: handle edge fill rules properly.
-		//right now, we assume right edge is always filled, and left edge isn't
-		//which isn't correct at all obviously :)
 		if (y >= l2.v[1])
 		{
 			l1 = l2;
 			l2Idx = (l2Idx + leftStep) % p.numVertices;
 			l2 = p.m_vertices[l2Idx];
 			lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
-			leftOffset = 0;
 			lEdgeMin = lEdgeMax = l1.v[0];
 		}
-		//else
-		{
-			interpolateEdge(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1], lEdgeMin, lEdgeMax);
-		}
+		interpolateEdge(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1], lEdgeMin, lEdgeMax);
 
 		if (y >= r2.v[1])
 		{
@@ -176,13 +147,9 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 			r2Idx = (r2Idx + rightStep) % p.numVertices;
 			r2 = p.m_vertices[r2Idx];
 			rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
-			rightOffset = 0;
 			rEdgeMin = rEdgeMax = r1.v[0];
 		}
-		//else
-		{
-			interpolateEdge(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1], rEdgeMin, rEdgeMax);
-		}
+		interpolateEdge(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1], rEdgeMin, rEdgeMax);
 
 		EdgeAttribs edgeAttribs = {};
 
@@ -246,6 +213,8 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		edgeAttribs.zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
 		edgeAttribs.zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 
+		//there are still some slightly buggy edges, but this should be fairly accurate (for opaque polygons)
+		//todo: translucent/antialiased/edgemarked polys (different fill rules)
 		if (!lEdgeXMajor || (l1.v[0] > l2.v[0]))
 		{
 			renderSpan(p, lEdgeMin, lEdgeMax, y, yMin, true, false, lEdgeMin, rEdgeMax, edgeAttribs);
@@ -265,7 +234,7 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 	}
 }
 
-//woah this is a messy function cool
+//woah this is a messy function call
 void GPU::renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool lEdge, bool rEdge, int spanMin, int spanMax, EdgeAttribs& e)
 {
 	for (int x = std::max(xMin, 0); x <= std::min(xMax, 255); x++)
@@ -289,23 +258,6 @@ void GPU::renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool lEdge, b
 			v = interpolatePerspectiveCorrect(factor, 8, e.vl, e.vr);
 			col = interpolateColorPerspectiveCorrect(factor, 8, e.lcol, e.rcol);
 		}
-
-		/*if (lEdge)
-		{
-			z = e.zl;
-			w = e.wl;
-			u = e.ul;
-			v = e.vl;
-			col = e.lcol;
-		}
-		if (rEdge)
-		{
-			z = e.zr;
-			w = e.wr;
-			u = e.ur;
-			v = e.vr;
-			col = e.rcol;
-		}*/
 
 		int64_t depth = (wBuffer) ? w : z;
 		ColorRGBA5 texCol = {};
