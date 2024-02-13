@@ -446,24 +446,21 @@ private:
 		bool positive = (x2 >= x1);
 		int64_t dy = std::max((int64_t)1, (y2 - y1));
 
-		//todo: clean this all up, this is pretty bad
 		if (positive)
 		{
 			int64_t DX = ((1 << 18) / dy) * (x2 - x1);
+			int64_t Xstart = ((y - y1) * DX) + (x1 << 18);
+			if (xMajor || ((x2 - x1) == (y2 - y1)))
+				Xstart += (1 << 17);
+			spanStart = Xstart >> 18;
 			if (!xMajor)
 			{
-				int64_t Xstart = ((y - y1) * DX) + (x1 << 18);
-				if ((x2 - x1) == (y2 - y1))
-					Xstart += (1 << 17);
-				spanStart = (Xstart >> 18);
 				spanEnd = spanStart;
 			}
 			else
 			{
-				int64_t Xstart = ((y - y1) * DX) + (x1 << 18) + (1 << 17);
 				int64_t Xend = ((Xstart >> 9) << 9) + DX - (1 << 18);
-				spanStart = std::min(Xstart, Xend) >> 18;
-				spanEnd = std::max(Xstart, Xend) >> 18;
+				spanEnd = Xend >> 18;
 			}
 		}
 
@@ -472,16 +469,15 @@ private:
 			int64_t m_x0 = (x1 << 18) - 1;
 			std::swap(x1, x2);
 			int64_t DX = ((1 << 18) / dy) * (x2 - x1);
+			int64_t Xstart = ((x2 << 18) - 1) - ((y - y1) * DX);
 			if (!xMajor)
 			{
-				int64_t Xstart = ((x2 << 18) - 1) - ((y - y1) * DX);
-				spanStart = Xstart >> 18;
-				spanEnd = spanStart;
+				spanStart = spanEnd = Xstart >> 18;
 			}
 			else
 			{
-				uint64_t mask = (0xFFFFFFFFFFFFFFFF << 9);
-				int64_t Xstart = ((x2 << 18) - 1) - ((y - y1) * DX) - (1 << 17);
+				Xstart -= (1 << 17);
+				static constexpr uint64_t mask = (0xFFFFFFFFFFFFFFFF << 9);
 				int64_t Xend = Xstart + (~mask - (Xstart & ~mask)) - DX + (1 << 18);
 				spanStart = (Xend >> 18);
 				spanEnd = (Xstart >> 18);
