@@ -322,15 +322,12 @@ private:
 
 	struct EdgeAttribs
 	{
-		int64_t wl = {}, wr = {};
-		int64_t zl = {}, zr = {};
-		int64_t ul = {}, ur = {};
-		int64_t vl = {}, vr = {};
-		ColorRGBA5 lcol = {}, rcol = {};
+		int64_t z = {}, w = {}, u = {}, v = {};
+		ColorRGBA5 col = {};
 	};
 	
 	void rasterizePolygon(Poly p, int yMin, int yMax);
-	void renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool lEdge, bool rEdge, int spanMin, int spanMax, EdgeAttribs& edgeAttribs);
+	void renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool lEdge, bool rEdge, int spanMin, int spanMax, EdgeAttribs* e);
 	void plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes& attributes, bool noTexture);
 	ColorRGBA5 decodeTexture(int32_t u, int32_t v, TextureParameters params);
 
