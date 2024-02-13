@@ -223,7 +223,7 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		//todo: translucent/antialiased/edgemarked polys (different fill rules)
 
 		//not sure if this is accurate.
-		bool forceFillEdge = (y == 191);
+		bool forceFillEdge = (y == 191) || ((DISP3DCNT >> 4) & 0b1) || ((DISP3DCNT >> 5) & 0b1);
 		if (!lEdgeXMajor || (l1.v[0] > l2.v[0]) || forceFillEdge)
 		{
 			renderSpan(p, lEdgeMin, lEdgeMax, y, yMin, true, false, lEdgeMin, rEdgeMax, e);
