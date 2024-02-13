@@ -211,16 +211,27 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		e[0].z = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
 		e[1].z = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 
+		//crossed poly: swap attribs
+		if (lEdgeMin > rEdgeMin)
+		{
+			std::swap(lEdgeMin, rEdgeMin);
+			std::swap(lEdgeMax, rEdgeMax);
+			std::swap(e[0], e[1]);
+		}
+
 		//there are still some slightly buggy edges, but this should be fairly accurate (for opaque polygons)
 		//todo: translucent/antialiased/edgemarked polys (different fill rules)
-		if (!lEdgeXMajor || (l1.v[0] > l2.v[0]))
+
+		//not sure if this is accurate.
+		bool forceFillEdge = (y == 191);
+		if (!lEdgeXMajor || (l1.v[0] > l2.v[0]) || forceFillEdge)
 		{
 			renderSpan(p, lEdgeMin, lEdgeMax, y, yMin, true, false, lEdgeMin, rEdgeMax, e);
 		}
 
 		renderSpan(p, lEdgeMax + 1, rEdgeMin - 1, y, yMin, false, false, lEdgeMin, rEdgeMax, e);
 
-		if ((rEdgeXMajor && (r1.v[0] < r2.v[0])) || (r1.v[0] == r2.v[0]))
+		if ((rEdgeXMajor && (r1.v[0] < r2.v[0])) || (r1.v[0] == r2.v[0]) || forceFillEdge)
 		{
 			if ((r1.v[0] == r2.v[0]) && r1.v[0] != 255)
 				rEdgeMax--;
