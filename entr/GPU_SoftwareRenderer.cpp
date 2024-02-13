@@ -199,7 +199,7 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 			uint64_t x1 = l1.v[1], x2 = l2.v[1], x = y;
 			if (lEdgeXMajor)
 			{
-				x1 = l1.v[0]; x2 = l2.v[0]; x = lEdgeMax;
+				x1 = l1.v[0]; x2 = l2.v[0]; x = lEdgeMin;
 				if (x1 > x2)
 				{
 					uint64_t tmp = x1;
@@ -227,7 +227,7 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 			uint64_t x1 = r1.v[1], x2 = r2.v[1], x = y;
 			if (rEdgeXMajor)
 			{
-				x1 = r1.v[0], x2 = r2.v[0], x = rEdgeMin;
+				x1 = r1.v[0], x2 = r2.v[0], x = rEdgeMax;
 				if (x1 > x2)
 				{
 					uint64_t tmp = x1;
@@ -246,16 +246,18 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		edgeAttribs.zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
 		edgeAttribs.zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 
-		if(!lEdgeXMajor || (l1.v[0] > l2.v[0]))
-			renderSpan(p,lEdgeMin,lEdgeMax,y,yMin,edgeAttribs);
+		if (!lEdgeXMajor || (l1.v[0] > l2.v[0]))
+		{
+			renderSpan(p, lEdgeMin, lEdgeMax, y, yMin, true, false, lEdgeMin, rEdgeMax, edgeAttribs);
+		}
 
-		renderSpan(p, lEdgeMax + 1, rEdgeMin - 1, y, yMin, edgeAttribs);
+		renderSpan(p, lEdgeMax + 1, rEdgeMin - 1, y, yMin, false, false, lEdgeMin, rEdgeMax, edgeAttribs);
 
 		if ((rEdgeXMajor && (r1.v[0] < r2.v[0])) || (r1.v[0] == r2.v[0]))
 		{
 			if ((r1.v[0] == r2.v[0]) && r1.v[0] != 255)
 				rEdgeMax--;
-			renderSpan(p, rEdgeMin, rEdgeMax, y, yMin, edgeAttribs);
+			renderSpan(p, rEdgeMin, rEdgeMax, y, yMin, false, true, lEdgeMin, rEdgeMax, edgeAttribs);
 		}
 
 		//advance next scanline
@@ -264,29 +266,46 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 }
 
 //woah this is a messy function cool
-void GPU::renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, EdgeAttribs& e)
+void GPU::renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool lEdge, bool rEdge, int spanMin, int spanMax, EdgeAttribs& e)
 {
 	for (int x = std::max(xMin, 0); x <= std::min(xMax, 255); x++)
 	{
 		ColorRGBA5 col = {};
 		//is interpolating z fine? or should we interpolate 1/z?
-		int64_t z = linearInterpolate(x, e.zl, e.zr, xMin, xMax);
+		int64_t z = linearInterpolate(x, e.zl, e.zr, spanMin, spanMax);
 		int64_t w = {}, u = {}, v = {};
 		if (e.wl == e.wr)
 		{
-			w = linearInterpolate(x, e.wl, e.wr, xMin, xMax);
-			u = linearInterpolate(x, e.ul, e.ur, xMin, xMax);
-			v = linearInterpolate(x, e.vl, e.vr, xMin, xMax);
-			col = interpolateColor(x, e.lcol, e.rcol, xMin, xMax);
+			w = linearInterpolate(x, e.wl, e.wr, spanMin, spanMax);
+			u = linearInterpolate(x, e.ul, e.ur, spanMin, spanMax);
+			v = linearInterpolate(x, e.vl, e.vr, spanMin, spanMax);
+			col = interpolateColor(x, e.lcol, e.rcol, spanMin, spanMax);
 		}
 		else
 		{
-			uint64_t factor = calcFactor((xMax - xMin) + 1, x - xMin, e.wl, e.wr, 8);
+			uint64_t factor = calcFactor((spanMax - spanMin) + 1, x - spanMin, e.wl, e.wr, 8);
 			w = interpolatePerspectiveCorrect(factor, 8, e.wl, e.wr);
 			u = interpolatePerspectiveCorrect(factor, 8, e.ul, e.ur);
 			v = interpolatePerspectiveCorrect(factor, 8, e.vl, e.vr);
 			col = interpolateColorPerspectiveCorrect(factor, 8, e.lcol, e.rcol);
 		}
+
+		/*if (lEdge)
+		{
+			z = e.zl;
+			w = e.wl;
+			u = e.ul;
+			v = e.vl;
+			col = e.lcol;
+		}
+		if (rEdge)
+		{
+			z = e.zr;
+			w = e.wr;
+			u = e.ur;
+			v = e.vr;
+			col = e.rcol;
+		}*/
 
 		int64_t depth = (wBuffer) ? w : z;
 		ColorRGBA5 texCol = {};

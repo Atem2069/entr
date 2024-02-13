@@ -330,7 +330,7 @@ private:
 	};
 	
 	void rasterizePolygon(Poly p, int yMin, int yMax);
-	void renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, EdgeAttribs& edgeAttribs);
+	void renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool lEdge, bool rEdge, int spanMin, int spanMax, EdgeAttribs& edgeAttribs);
 	void plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes& attributes, bool noTexture);
 	ColorRGBA5 decodeTexture(int32_t u, int32_t v, TextureParameters params);
 
