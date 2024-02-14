@@ -61,7 +61,7 @@ void GPU::render(int yMin, int yMax)
 {
 	uint16_t clearCol = clearColor | 0x8000;
 	uint16_t clearAlpha = (clearColor >> 16) & 0x1F;
-	RenderAttribute clearAttr = { 0x00FFFFFF,clearAlpha,0 };
+	RenderAttribute clearAttr = { 0,0x00FFFFFF,clearAlpha,0 };
 	std::fill(renderBuffer+(256*yMin), renderBuffer + (256 * (yMax+1)), clearCol);
 	std::fill(attributeBuffer + (256 * yMin), attributeBuffer + (256 * (yMax + 1)), clearAttr);
 	//std::fill(depthBuffer+(256*yMin), depthBuffer + (256 * (yMax+1)), 0x00FFFFFF);	
@@ -211,31 +211,38 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		e[0].z = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
 		e[1].z = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 
+		bool rEdgeVertical = (r1.v[0] == r2.v[0]);
+		bool lEdgeNegative = (l1.v[0] > l2.v[0]);
+		bool rEdgePositive = (r1.v[0] < r2.v[0]);
+		bool lxm = lEdgeXMajor, rxm = rEdgeXMajor;
 		//crossed poly: swap attribs
 		if (lEdgeMin > rEdgeMin)
 		{
 			std::swap(lEdgeMin, rEdgeMin);
 			std::swap(lEdgeMax, rEdgeMax);
 			std::swap(e[0], e[1]);
+			std::swap(lxm, rxm);
+			rEdgeVertical = (l1.v[0] == l2.v[0]);
+			lEdgeNegative = (r1.v[0] > r2.v[0]);
+			rEdgePositive = (l1.v[0] < l2.v[0]);
 		}
 
 		//there are still some slightly buggy edges, but this should be fairly accurate (for opaque polygons)
-		//todo: translucent/antialiased/edgemarked polys (different fill rules)
 
 		//not sure if this is accurate.
-		bool forceFillEdge = (y == 191) || ((DISP3DCNT >> 4) & 0b1) || ((DISP3DCNT >> 5) & 0b1);
-		if (!lEdgeXMajor || (l1.v[0] > l2.v[0]) || forceFillEdge)
+		bool forceFillEdge = (y == 191) || ((DISP3DCNT >> 4) & 0b1) || ((DISP3DCNT >> 5) & 0b1) || p.attribs.alpha<31;
+		if (!lxm || lEdgeNegative || forceFillEdge)
 		{
-			renderSpan(p, lEdgeMin, lEdgeMax, y, yMin, true, false, lEdgeMin, rEdgeMax, e);
+			renderSpan(p, lEdgeMin, lEdgeMax, y, yMin, true, lEdgeMin, rEdgeMax, e);
 		}
 
-		renderSpan(p, lEdgeMax + 1, rEdgeMin - 1, y, yMin, false, false, lEdgeMin, rEdgeMax, e);
+		renderSpan(p, lEdgeMax + 1, rEdgeMin - 1, y, yMin, false, lEdgeMin, rEdgeMax, e);
 
-		if ((rEdgeXMajor && (r1.v[0] < r2.v[0])) || (r1.v[0] == r2.v[0]) || forceFillEdge)
+		if ((rxm && rEdgePositive) || rEdgeVertical || forceFillEdge)
 		{
-			if ((r1.v[0] == r2.v[0]) && r1.v[0] != 255)
+			if (rEdgeVertical && r1.v[0] != 255)
 				rEdgeMax--;
-			renderSpan(p, rEdgeMin, rEdgeMax, y, yMin, false, true, lEdgeMin, rEdgeMax, e);
+			renderSpan(p, rEdgeMin, rEdgeMax, y, yMin, true, lEdgeMin, rEdgeMax, e);
 		}
 
 		//advance next scanline
@@ -244,7 +251,7 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 }
 
 //woah this is a messy function call
-void GPU::renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool lEdge, bool rEdge, int spanMin, int spanMax, EdgeAttribs* e)
+void GPU::renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool edge, int spanMin, int spanMax, EdgeAttribs* e)
 {
 	for (int x = std::max(xMin, 0); x <= std::min(xMax, 255); x++)
 	{
@@ -275,7 +282,11 @@ void GPU::renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool lEdge, b
 
 		//this sort of wastes time. could just walk edges until we reach yMin and then start rendering
 		if (y >= yMin)
+		{
+			if (edge)
+				attributeBuffer[(y * 256) + x].flags |= PixelFlags_Edge;
 			plotPixel(x, y, depth, col, texCol, p.attribs, p.texParams.format == 0);
+		}
 	}
 }
 
@@ -381,8 +392,8 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 
 	//todo: revisit this.
 	//translucent pixels get skipped if fb.polyid==curpixel.polyid
-	if (output.a < 31 && (pixelAttribs.polyIDStencil & 0x7F) == attributes.polyID)
-		return;
+	//if (output.a < 31 && (pixelAttribs.polyIDStencil & 0x7F) == attributes.polyID)
+	//	return;
 
 	if (((DISP3DCNT>>3)&0b1) && (output.a != 31 && output.a && fbCol.a))
 	{
@@ -391,6 +402,10 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 		output.b = ((output.b * (output.a + 1) + fbCol.b * (31 - output.a)) / 32) & 0x1F;
 		output.a = std::max(output.a, fbCol.a);
 	}
+
+	if (!attributes.alpha && (pixelAttribs.flags & PixelFlags_Edge))
+		output.a = 31;
+
 	uint16_t res = output.toUint();
 	if ((!(res >> 15)) && depth < pixelAttribs.depth)
 	{

@@ -138,8 +138,15 @@ struct GPUWorkerThread
 	int yMin, yMax;
 };
 
+enum PixelFlags
+{
+	PixelFlags_Edge=1,
+	PixelFlags_Translucent=2
+};
+
 struct RenderAttribute
 {
+	uint8_t flags;
 	uint32_t depth;
 	uint16_t alpha;
 	uint8_t polyIDStencil;
@@ -327,7 +334,7 @@ private:
 	};
 	
 	void rasterizePolygon(Poly p, int yMin, int yMax);
-	void renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool lEdge, bool rEdge, int spanMin, int spanMax, EdgeAttribs* e);
+	void renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool edge, int spanMin, int spanMax, EdgeAttribs* e);
 	void plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes& attributes, bool noTexture);
 	ColorRGBA5 decodeTexture(int32_t u, int32_t v, TextureParameters params);
 
