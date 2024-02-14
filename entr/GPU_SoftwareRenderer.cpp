@@ -61,7 +61,7 @@ void GPU::render(int yMin, int yMax)
 {
 	uint16_t clearCol = clearColor | 0x8000;
 	uint16_t clearAlpha = (clearColor >> 16) & 0x1F;
-	RenderAttribute clearAttr = { 0x00FFFFFF,clearAlpha,0 };
+	RenderAttribute clearAttr = { 0,0x00FFFFFF,clearAlpha,0 };
 	std::fill(renderBuffer+(256*yMin), renderBuffer + (256 * (yMax+1)), clearCol);
 	std::fill(attributeBuffer + (256 * yMin), attributeBuffer + (256 * (yMax + 1)), clearAttr);
 	//std::fill(depthBuffer+(256*yMin), depthBuffer + (256 * (yMax+1)), 0x00FFFFFF);	
@@ -92,20 +92,12 @@ void GPU::render(int yMin, int yMax)
 
 void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 {
-
-	//find top and bottom points
-	//while scanline count < bottom
-	//left slope = top->top+1        (initially)
-	//right slope = top->top-1       (initially)
-	//xspan = xr-xl, draw scanline
-	//if we reached end of any slope, find new slope
-	//otherwise: interpolate x for each slope
-	
 	int smallY = p.yTop, largeY = p.yBottom;
 	int topVtxIdx = p.topVtxIdx;
 
 	Vertex l1 = {}, l2 = {};
 	Vertex r1 = {}, r2 = {};
+	EdgeAttribs e[2] = {};
 
 	int leftStep = 1;
 	int rightStep = p.numVertices - 1;
@@ -115,7 +107,6 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		rightStep = 1;
 	}
 
-	//todo: fix this up. assumes CCW winding order, could calculate winding order to determine order to walk edges on left/right
 	int l2Idx = (topVtxIdx + leftStep) % p.numVertices;
 	int r2Idx = (topVtxIdx + rightStep) % p.numVertices;
 
@@ -124,50 +115,56 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 	r1 = p.m_vertices[topVtxIdx];
 	r2 = p.m_vertices[r2Idx];
 
-	int xMin = l1.v[0]; int xMax = r1.v[0];
-	int y = smallY;
-
-	//end of right span could be on same scanline as start (e.g. with unrotated quads)
-	if (y >= r2.v[1])
-	{
-		r1 = r2;
-		r2Idx = (r2Idx + rightStep) % p.numVertices;
-		r2 = p.m_vertices[r2Idx];
-		xMax = r1.v[0];
-		//there is probably a better/more accurate solution to this
-		//if end of right span is still on the same scanline, then xMax=end of span, to draw the most pixels possible
-		if (r2.v[1] == y)
-			xMax = r2.v[0];
-	}
+	int64_t lEdgeMin = {}, lEdgeMax = {};
+	int64_t rEdgeMin = {}, rEdgeMax = {};
 
 	//determine whether initial edges are x-major
 	bool lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
 	bool rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
 	
-	//clamp ymin,ymax so we don't draw insane polys
-	//we probably have clipping bugs so this is necessary
-	largeY = std::min(largeY, yMax);
+	int y = smallY;
+	largeY = std::min(largeY, yMax+1);
 	y = std::max(0, y);
-	while (y <= largeY)
+
+	//hacky: allow one-pixel tall polys to render
+	if (p.yTop == p.yBottom)
+		largeY++;
+	while (y < largeY)
 	{
-		int64_t wl = {}, wr = {};
-		int64_t ul = {}, ur = {}, vl = {}, vr = {};
-		ColorRGBA5 lcol = {}, rcol = {};
+		if (y >= l2.v[1])
+		{
+			l1 = l2;
+			l2Idx = (l2Idx + leftStep) % p.numVertices;
+			l2 = p.m_vertices[l2Idx];
+			lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
+			lEdgeMin = lEdgeMax = l1.v[0];
+		}
+		interpolateEdge(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1], lEdgeMin, lEdgeMax);
+
+		if (y >= r2.v[1])
+		{
+			r1 = r2;
+			r2Idx = (r2Idx + rightStep) % p.numVertices;
+			r2 = p.m_vertices[r2Idx];
+			rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
+			rEdgeMin = rEdgeMax = r1.v[0];
+		}
+		interpolateEdge(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1], rEdgeMin, rEdgeMax);
 
 		//interpolate linearly if w values equal
 		if (l1.v[3] == l2.v[3])
 		{
-			wl = linearInterpolate(y, l1.v[3], l2.v[3], l1.v[1], l2.v[1]);
-			ul = linearInterpolate(y, l1.texcoord[0], l2.texcoord[0], l1.v[1], l2.v[1]);
-			vl = linearInterpolate(y, l1.texcoord[1], l2.texcoord[1], l1.v[1], l2.v[1]);
-			lcol = interpolateColor(y, l1.color, l2.color, l1.v[1], l2.v[1]);
+			e[0].w = linearInterpolate(y, l1.v[3], l2.v[3], l1.v[1], l2.v[1]);
+			e[0].u = linearInterpolate(y, l1.texcoord[0], l2.texcoord[0], l1.v[1], l2.v[1]);
+			e[0].v = linearInterpolate(y, l1.texcoord[1], l2.texcoord[1], l1.v[1], l2.v[1]);
+			e[0].col = interpolateColor(y, l1.color, l2.color, l1.v[1], l2.v[1]);
 		}
 		else
 		{
 			uint64_t x1 = l1.v[1], x2 = l2.v[1], x = y;
 			if (lEdgeXMajor)
 			{
-				x1 = l1.v[0]; x2 = l2.v[0]; x = xMin;
+				x1 = l1.v[0]; x2 = l2.v[0]; x = lEdgeMin;
 				if (x1 > x2)
 				{
 					uint64_t tmp = x1;
@@ -177,25 +174,25 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 				}
 			}
 			uint64_t factorL = calcFactor((x2-x1) + 1, (x - x1), l1.v[3], l2.v[3], 9);
-			wl = interpolatePerspectiveCorrect(factorL, 9, l1.v[3], l2.v[3]);
-			ul = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[0], l2.texcoord[0]);
-			vl = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[1], l2.texcoord[1]);
-			lcol = interpolateColorPerspectiveCorrect(factorL, 9, l1.color, l2.color);
+			e[0].w = interpolatePerspectiveCorrect(factorL, 9, l1.v[3], l2.v[3]);
+			e[0].u = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[0], l2.texcoord[0]);
+			e[0].v = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[1], l2.texcoord[1]);
+			e[0].col = interpolateColorPerspectiveCorrect(factorL, 9, l1.color, l2.color);
 		}
 
 		if (r1.v[3] == r2.v[3])
 		{
-			wr = linearInterpolate(y, r1.v[3], r2.v[3], r1.v[1], r2.v[1]);
-			ur = linearInterpolate(y, r1.texcoord[0], r2.texcoord[0], r1.v[1], r2.v[1]);
-			vr = linearInterpolate(y, r1.texcoord[1], r2.texcoord[1], r1.v[1], r2.v[1]);
-			rcol = interpolateColor(y, r1.color, r2.color, r1.v[1], r2.v[1]);
+			e[1].w = linearInterpolate(y, r1.v[3], r2.v[3], r1.v[1], r2.v[1]);
+			e[1].u = linearInterpolate(y, r1.texcoord[0], r2.texcoord[0], r1.v[1], r2.v[1]);
+			e[1].v = linearInterpolate(y, r1.texcoord[1], r2.texcoord[1], r1.v[1], r2.v[1]);
+			e[1].col = interpolateColor(y, r1.color, r2.color, r1.v[1], r2.v[1]);
 		}
 		else
 		{
 			uint64_t x1 = r1.v[1], x2 = r2.v[1], x = y;
 			if (rEdgeXMajor)
 			{
-				x1 = r1.v[0], x2 = r2.v[0], x = xMax;
+				x1 = r1.v[0], x2 = r2.v[0], x = rEdgeMax;
 				if (x1 > x2)
 				{
 					uint64_t tmp = x1;
@@ -205,74 +202,91 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 				}
 			}
 			uint64_t factorR = calcFactor((x2-x1) + 1, (x-x1), r1.v[3], r2.v[3], 9);
-			wr = interpolatePerspectiveCorrect(factorR, 9, r1.v[3], r2.v[3]);
-			ur = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[0], r2.texcoord[0]);
-			vr = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[1], r2.texcoord[1]);
-			rcol = interpolateColorPerspectiveCorrect(factorR, 9, r1.color, r2.color);
+			e[1].w = interpolatePerspectiveCorrect(factorR, 9, r1.v[3], r2.v[3]);
+			e[1].u = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[0], r2.texcoord[0]);
+			e[1].v = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[1], r2.texcoord[1]);
+			e[1].col = interpolateColorPerspectiveCorrect(factorR, 9, r1.color, r2.color);
 		}
 
-		int64_t zl = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
-		int64_t zr = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
+		e[0].z = linearInterpolate(y, l1.v[2], l2.v[2], l1.v[1], l2.v[1]);
+		e[1].z = linearInterpolate(y, r1.v[2], r2.v[2], r1.v[1], r2.v[1]);
 
-		for (int x = std::max(xMin,0); x <= std::min(xMax,255); x++)
+		bool rEdgeVertical = (r1.v[0] == r2.v[0]);
+		bool lEdgeNegative = (l1.v[0] > l2.v[0]);
+		bool rEdgePositive = (r1.v[0] < r2.v[0]);
+		bool lxm = lEdgeXMajor, rxm = rEdgeXMajor;
+		//crossed poly: swap attribs
+		if (lEdgeMin > rEdgeMin)
 		{
-			ColorRGBA5 col = {};
-			//is interpolating z fine? or should we interpolate 1/z?
-			int64_t z = linearInterpolate(x, zl, zr, xMin, xMax);
-			int64_t w = {}, u = {}, v = {};
-			if (wl == wr)
-			{
-				w = linearInterpolate(x, wl, wr, xMin, xMax);
-				u = linearInterpolate(x, ul, ur, xMin, xMax);
-				v = linearInterpolate(x, vl, vr, xMin, xMax);
-				col = interpolateColor(x, lcol, rcol, xMin, xMax);
-			}
-			else
-			{
-				uint64_t factor = calcFactor((xMax - xMin) + 1, x - xMin, wl, wr, 8);
-				w = interpolatePerspectiveCorrect(factor, 8, wl, wr);
-				u = interpolatePerspectiveCorrect(factor, 8, ul, ur);
-				v = interpolatePerspectiveCorrect(factor, 8, vl, vr);
-				col = interpolateColorPerspectiveCorrect(factor, 8, lcol, rcol);
-			}
+			std::swap(lEdgeMin, rEdgeMin);
+			std::swap(lEdgeMax, rEdgeMax);
+			std::swap(e[0], e[1]);
+			std::swap(lxm, rxm);
+			rEdgeVertical = (l1.v[0] == l2.v[0]);
+			lEdgeNegative = (r1.v[0] > r2.v[0]);
+			rEdgePositive = (l1.v[0] < l2.v[0]);
+		}
 
-			int64_t depth = (wBuffer) ? w : z;
-			ColorRGBA5 texCol = {};
-			if(p.texParams.format)
-				texCol = decodeTexture((int32_t)u, (int32_t)v, p.texParams);
+		//there are still some slightly buggy edges, but this should be fairly accurate (for opaque polygons)
 
-			//this sort of wastes time. could just walk edges until we reach yMin and then start rendering
-			if(y>=yMin)	
-				plotPixel(x, y, depth, col, texCol, p.attribs, p.texParams.format==0);
+		//not sure if this is accurate.
+		bool forceFillEdge = (y == 191) || ((DISP3DCNT >> 4) & 0b1) || ((DISP3DCNT >> 5) & 0b1) || p.attribs.alpha<31;
+		if (!lxm || lEdgeNegative || forceFillEdge)
+		{
+			renderSpan(p, lEdgeMin, lEdgeMax, y, yMin, true, lEdgeMin, rEdgeMax, e);
+		}
+
+		renderSpan(p, lEdgeMax + 1, rEdgeMin - 1, y, yMin, false, lEdgeMin, rEdgeMax, e);
+
+		if ((rxm && rEdgePositive) || rEdgeVertical || forceFillEdge)
+		{
+			if (rEdgeVertical && r1.v[0] != 255)
+				rEdgeMax--;
+			renderSpan(p, rEdgeMin, rEdgeMax, y, yMin, true, lEdgeMin, rEdgeMax, e);
 		}
 
 		//advance next scanline
 		y++;
+	}
+}
 
-		//this is in dire need of a cleanup
-		//todo: proper x-major interpolation for poly edges
-		if (y >= l2.v[1])	//reached end of left slope
+//woah this is a messy function call
+void GPU::renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool edge, int spanMin, int spanMax, EdgeAttribs* e)
+{
+	for (int x = std::max(xMin, 0); x <= std::min(xMax, 255); x++)
+	{
+		ColorRGBA5 col = {};
+		//is interpolating z fine? or should we interpolate 1/z?
+		int64_t z = linearInterpolate(x, e[0].z, e[1].z, spanMin, spanMax);
+		int64_t w = {}, u = {}, v = {};
+		if (e[0].w == e[1].w)
 		{
-			l1 = l2;
-			l2Idx = (l2Idx + leftStep) % p.numVertices;
-			l2 = p.m_vertices[l2Idx];
-			xMin = l1.v[0];
-			
-			lEdgeXMajor = abs(l2.v[0] - l1.v[0]) > (l2.v[1] - l1.v[1]);
+			w = linearInterpolate(x, e[0].w, e[1].w, spanMin, spanMax);
+			u = linearInterpolate(x, e[0].u, e[1].u, spanMin, spanMax);
+			v = linearInterpolate(x, e[0].v, e[1].v, spanMin, spanMax);
+			col = interpolateColor(x, e[0].col, e[1].col, spanMin, spanMax);
 		}
 		else
-			xMin = linearInterpolate(y, l1.v[0], l2.v[0], l1.v[1], l2.v[1]);
-		if (y >= r2.v[1])
 		{
-			r1 = r2;
-			r2Idx = (r2Idx + rightStep) % p.numVertices;
-			r2 = p.m_vertices[r2Idx];
-			xMax = r1.v[0];
-
-			rEdgeXMajor = abs(r2.v[0] - r1.v[0]) > (r2.v[1] - r1.v[1]);
+			uint64_t factor = calcFactor((spanMax - spanMin) + 1, x - spanMin, e[0].w, e[1].w, 8);
+			w = interpolatePerspectiveCorrect(factor, 8, e[0].w, e[1].w);
+			u = interpolatePerspectiveCorrect(factor, 8, e[0].u, e[1].u);
+			v = interpolatePerspectiveCorrect(factor, 8, e[0].v, e[1].v);
+			col = interpolateColorPerspectiveCorrect(factor, 8, e[0].col, e[1].col);
 		}
-		else
-			xMax = linearInterpolate(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1]);
+
+		int64_t depth = (wBuffer) ? w : z;
+		ColorRGBA5 texCol = {};
+		if (p.texParams.format)
+			texCol = decodeTexture((int32_t)u, (int32_t)v, p.texParams);
+
+		//this sort of wastes time. could just walk edges until we reach yMin and then start rendering
+		if (y >= yMin)
+		{
+			if (edge)
+				attributeBuffer[(y * 256) + x].flags |= PixelFlags_Edge;
+			plotPixel(x, y, depth, col, texCol, p.attribs, p.texParams.format == 0);
+		}
 	}
 }
 
@@ -378,8 +392,8 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 
 	//todo: revisit this.
 	//translucent pixels get skipped if fb.polyid==curpixel.polyid
-	if (output.a < 31 && (pixelAttribs.polyIDStencil & 0x7F) == attributes.polyID)
-		return;
+	//if (output.a < 31 && (pixelAttribs.polyIDStencil & 0x7F) == attributes.polyID)
+	//	return;
 
 	if (((DISP3DCNT>>3)&0b1) && (output.a != 31 && output.a && fbCol.a))
 	{
@@ -388,6 +402,9 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 		output.b = ((output.b * (output.a + 1) + fbCol.b * (31 - output.a)) / 32) & 0x1F;
 		output.a = std::max(output.a, fbCol.a);
 	}
+
+	if (!attributes.alpha && (pixelAttribs.flags & PixelFlags_Edge))
+		output.a = 31;
 
 	uint16_t res = output.toUint();
 	if ((!(res >> 15)) && depth < pixelAttribs.depth)

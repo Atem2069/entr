@@ -138,8 +138,15 @@ struct GPUWorkerThread
 	int yMin, yMax;
 };
 
+enum PixelFlags
+{
+	PixelFlags_Edge=1,
+	PixelFlags_Translucent=2
+};
+
 struct RenderAttribute
 {
+	uint8_t flags;
 	uint32_t depth;
 	uint16_t alpha;
 	uint8_t polyIDStencil;
@@ -319,8 +326,15 @@ private:
 	void submitPolygon();
 
 	void render(int yMin, int yMax);
+
+	struct EdgeAttribs
+	{
+		int64_t z = {}, w = {}, u = {}, v = {};
+		ColorRGBA5 col = {};
+	};
 	
 	void rasterizePolygon(Poly p, int yMin, int yMax);
+	void renderSpan(Poly& p, int xMin, int xMax, int y, int yMin, bool edge, int spanMin, int spanMax, EdgeAttribs* e);
 	void plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5 texCol, PolyAttributes& attributes, bool noTexture);
 	ColorRGBA5 decodeTexture(int32_t u, int32_t v, TextureParameters params);
 
@@ -429,6 +443,52 @@ private:
 		return quotient;
 	}
 
+	inline void interpolateEdge(int64_t y, int64_t x1, int64_t x2, int64_t y1, int64_t y2, int64_t& spanStart, int64_t& spanEnd)
+	{
+		//todo: don't unnecessarily calculate xMajor and DX. we can do that once when we first meet the edge.
+		bool xMajor = std::abs(x2 - x1) > (y2 - y1);
+		bool positive = (x2 >= x1);
+		int64_t dy = std::max((int64_t)1, (y2 - y1));
+
+		if (positive)
+		{
+			int64_t DX = ((1 << 18) / dy) * (x2 - x1);
+			int64_t Xstart = ((y - y1) * DX) + (x1 << 18);
+			if (xMajor || ((x2 - x1) == (y2 - y1)))
+				Xstart += (1 << 17);
+			spanStart = Xstart >> 18;
+			if (!xMajor)
+			{
+				spanEnd = spanStart;
+			}
+			else
+			{
+				int64_t Xend = ((Xstart >> 9) << 9) + DX - (1 << 18);
+				spanEnd = Xend >> 18;
+			}
+		}
+
+		else
+		{
+			int64_t m_x0 = (x1 << 18) - 1;
+			std::swap(x1, x2);
+			int64_t DX = ((1 << 18) / dy) * (x2 - x1);
+			int64_t Xstart = ((x2 << 18) - 1) - ((y - y1) * DX);
+			if (!xMajor)
+			{
+				spanStart = spanEnd = Xstart >> 18;
+			}
+			else
+			{
+				Xstart -= (1 << 17);
+				static constexpr uint64_t mask = (0xFFFFFFFFFFFFFFFF << 9);
+				int64_t Xend = Xstart + (~mask - (Xstart & ~mask)) - DX + (1 << 18);
+				spanStart = (Xend >> 18);
+				spanEnd = (Xstart >> 18);
+			}
+		}
+	}
+
 	//interpolation
 	int64_t linearInterpolate(int64_t x, int64_t y1, int64_t y2, int64_t x1, int64_t x2)
 	{
@@ -436,7 +496,6 @@ private:
 		{
 			return y1;
 		}
-		//r1.v[0] + ((y - r1.v[1]) * (r2.v[0] - r1.v[0])) / (r2.v[1] - r1.v[1]);
 		return y1 + ((x - x1) * (y2 - y1)) / (x2-x1);
 	}
 
@@ -461,26 +520,11 @@ private:
 
 	int64_t interpolatePerspectiveCorrect(int64_t factor, int64_t shiftAmt, int64_t u1, int64_t u2)
 	{
-		//if (u1 <= u2)
-		//	return u1 + (((u2 - u1) * factor) >> shiftAmt);
-		//else
-			return u2 + (((u1 - u2) * ((1<<shiftAmt) - factor)) >> shiftAmt);
+		return u2 + (((u1 - u2) * ((1<<shiftAmt) - factor)) >> shiftAmt);
 	}
 
 	ColorRGBA5 interpolateColor(int x, ColorRGBA5 y1, ColorRGBA5 y2, int x1, int x2)
 	{
-		/*uint16_t r1 = y1 & 0x1F;
-		uint16_t g1 = (y1 >> 5) & 0x1F;
-		uint16_t b1 = (y1 >> 10) & 0x1F;
-		uint16_t r2 = y2 & 0x1F;
-		uint16_t g2 = (y2 >> 5) & 0x1F;
-		uint16_t b2 = (y2 >> 10) & 0x1F;
-		
-		uint16_t r = linearInterpolate(x, r1, r2, x1, x2) & 0x1F;
-		uint16_t g = linearInterpolate(x, g1, g2, x1, x2) & 0x1F;
-		uint16_t b = linearInterpolate(x, b1, b2, x1, x2) & 0x1F;
-		return r | (g << 5) | (b << 10);*/
-
 		uint64_t r = linearInterpolate(x, y1.r, y2.r, x1, x2) & 0x1F;
 		uint64_t g = linearInterpolate(x, y1.g, y2.g, x1, x2) & 0x1F;
 		uint64_t b = linearInterpolate(x, y1.b, y2.b, x1, x2) & 0x1F;
@@ -496,20 +540,6 @@ private:
 
 	ColorRGBA5 interpolateColorPerspectiveCorrect(int64_t factor, int64_t shiftAmt, ColorRGBA5 col1, ColorRGBA5 col2)
 	{
-		/*uint16_t r1 = col1 & 0x1F;
-		uint16_t g1 = (col1 >> 5) & 0x1F;
-		uint16_t b1 = (col1 >> 10) & 0x1F;
-
-		uint16_t r2 = col2 & 0x1F;
-		uint16_t g2 = (col2 >> 5) & 0x1F;
-		uint16_t b2 = (col2 >> 10) & 0x1F;
-
-		uint16_t r = interpolatePerspectiveCorrect(factor, shiftAmt, r1, r2) & 0x1F;
-		uint16_t g = interpolatePerspectiveCorrect(factor, shiftAmt, g1, g2) & 0x1F;
-		uint16_t b = interpolatePerspectiveCorrect(factor, shiftAmt, b1, b2) & 0x1F;
-
-		return r | (g << 5) | (b << 10);*/
-
 		uint64_t r = interpolatePerspectiveCorrect(factor, shiftAmt, col1.r, col2.r) & 0x1F;
 		uint64_t g = interpolatePerspectiveCorrect(factor, shiftAmt, col1.g, col2.g) & 0x1F;
 		uint64_t b = interpolatePerspectiveCorrect(factor, shiftAmt, col1.b, col2.b) & 0x1F;

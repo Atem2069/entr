@@ -1,6 +1,9 @@
 #include<iostream>
 #include<thread>
 
+//go fuck yourself winapi.
+#define NOMINMAX
+
 #include"Display.h"
 #include"NDS.h"
 #include"Logger.h"
