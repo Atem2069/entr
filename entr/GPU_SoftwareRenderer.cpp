@@ -390,10 +390,13 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 	uint16_t curAlpha = pixelAttribs.alpha;
 	ColorRGBA5 fbCol = { curCol & 0x1F, (curCol >> 5) & 0x1F, (curCol >> 10) & 0x1F, curAlpha&0x1F };
 
-	//todo: revisit this.
-	//translucent pixels get skipped if fb.polyid==curpixel.polyid
-	//if (output.a < 31 && (pixelAttribs.polyIDStencil & 0x7F) == attributes.polyID)
-	//	return;
+	if (output.a && output.a < 31)
+	{
+		//don't draw translucent pixel if fb.translucent and fb.polyid==curpixel.polyid
+		if ((pixelAttribs.flags & PixelFlags_Translucent) && ((pixelAttribs.polyIDStencil & 0x7F) == attributes.polyID))
+			return;
+		pixelAttribs.flags |= PixelFlags_Translucent;
+	}
 
 	if (((DISP3DCNT>>3)&0b1) && (output.a != 31 && output.a && fbCol.a))
 	{
