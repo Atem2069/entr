@@ -64,6 +64,7 @@ void GPU::render(int yMin, int yMax)
 	RenderAttribute clearAttr = { 0,0x00FFFFFF,clearAlpha,0 };
 	std::fill(renderBuffer+(256*yMin), renderBuffer + (256 * (yMax+1)), clearCol);
 	std::fill(attributeBuffer + (256 * yMin), attributeBuffer + (256 * (yMax + 1)), clearAttr);
+	std::fill(stencilBuffer + (256 * yMin), stencilBuffer + (256 * (yMax + 1)), 0);
 	//std::fill(depthBuffer+(256*yMin), depthBuffer + (256 * (yMax+1)), 0x00FFFFFF);	
 	//std::fill(alphaBuffer+(256*yMin), alphaBuffer + (256 * (yMax+1)), clearAlpha);					//think 2d<->3d relies on alpha blending in ppu, so leave default alpha to 0 for now (otherwise gfx are broken)
 
@@ -393,7 +394,7 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 	if (output.a && output.a < 31)
 	{
 		//don't draw translucent pixel if fb.translucent and fb.polyid==curpixel.polyid
-		if ((pixelAttribs.flags & PixelFlags_Translucent) && ((pixelAttribs.polyIDStencil & 0x7F) == attributes.polyID))
+		if ((pixelAttribs.flags & PixelFlags_Translucent) && (pixelAttribs.polyID == attributes.polyID))
 			return;
 		pixelAttribs.flags |= PixelFlags_Translucent;
 	}
@@ -416,8 +417,7 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 
 		pixelAttribs.alpha = output.a;
 		pixelAttribs.depth = depth;
-		pixelAttribs.polyIDStencil &= 0x80;
-		pixelAttribs.polyIDStencil |= attributes.polyID & 0x7F;
+		pixelAttribs.polyID = attributes.polyID;
 		attributeBuffer[(y * 256) + x] = pixelAttribs;
 	}
 }

@@ -149,7 +149,7 @@ struct RenderAttribute
 	uint8_t flags;
 	uint32_t depth;
 	uint16_t alpha;
-	uint8_t polyIDStencil;
+	uint8_t polyID;
 };
 
 class GPU
@@ -198,8 +198,7 @@ private:
 
 	uint16_t renderBuffer[256 * 192];
 	RenderAttribute attributeBuffer[256 * 192];
-	//uint16_t alphaBuffer[256 * 192];	//i don't like this, but we want the render buffer to be in the same format as what the PPU expects. 
-	//uint32_t depthBuffer[256 * 192];
+	uint8_t stencilBuffer[256 * 192];
 	bool wBuffer = false;
 	bool swapBuffersPending = false;
 	InterruptManager* m_interruptManager;
