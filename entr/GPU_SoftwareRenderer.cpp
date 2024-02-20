@@ -65,29 +65,17 @@ void GPU::render(int yMin, int yMax)
 	std::fill(renderBuffer+(256*yMin), renderBuffer + (256 * (yMax+1)), clearCol);
 	std::fill(attributeBuffer + (256 * yMin), attributeBuffer + (256 * (yMax + 1)), clearAttr);
 	std::fill(stencilBuffer + (256 * yMin), stencilBuffer + (256 * (yMax + 1)), 0);
-	//std::fill(depthBuffer+(256*yMin), depthBuffer + (256 * (yMax+1)), 0x00FFFFFF);	
-	//std::fill(alphaBuffer+(256*yMin), alphaBuffer + (256 * (yMax+1)), clearAlpha);					//think 2d<->3d relies on alpha blending in ppu, so leave default alpha to 0 for now (otherwise gfx are broken)
 
 	for (uint32_t i = 0; i < m_renderPolygonCount; i++)
 	{
 		Poly p = m_polygonRAM[!bufIdx][i];
-		if (!p.drawable || (p.attribs.mode==3))
-			continue;
 
 		//skip render if poly is completely out of thread's 'render area'
 		bool skipRender = (p.yTop < yMin&& p.yBottom < yMin) || (p.yTop > yMax && p.yBottom > yMax);
-		if (skipRender)
+		if (!p.drawable || skipRender)
 			continue;
 
 		rasterizePolygon(p, yMin, yMax);
-		/*
-		for (int i = 0; i < p.numVertices; i++)
-		{
-			Vertex v0 = p.m_vertices[i];
-			Vertex v1 = p.m_vertices[(i + 1) % p.numVertices];
-			debug_drawLine(v0.v[0], v0.v[1], v1.v[0], v1.v[1]);
-		}
-		*/
 	}
 }
 
@@ -413,6 +401,11 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 	uint16_t res = output.toUint();
 	if ((!(res >> 15)) && depth < pixelAttribs.depth)
 	{
+		//is this check true?
+		if (attributes.mode == 3 && ((attributes.polyID && !stencilBuffer[(y * 256) + x]) || !attributes.polyID || attributes.polyID==pixelAttribs.polyID))
+			return;
+
+		stencilBuffer[(y * 256) + x] = 0;
 		renderBuffer[(y * 256) + x] = res;
 
 		pixelAttribs.alpha = output.a;
@@ -420,6 +413,10 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 		pixelAttribs.polyID = attributes.polyID;
 		attributeBuffer[(y * 256) + x] = pixelAttribs;
 	}
+
+	//shadow poly with polyid.0 sets stencil bits when depth test fails
+	if (depth >= pixelAttribs.depth && attributes.mode == 3 && !attributes.polyID)
+		stencilBuffer[(y * 256) + x] = 1;
 }
 
 ColorRGBA5 GPU::decodeTexture(int32_t u, int32_t v, TextureParameters params)
