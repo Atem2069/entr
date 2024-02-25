@@ -12,6 +12,7 @@
 #include"SPI.h"
 #include"RTC.h"
 #include"WifiStub.h"
+#include"APU.h"
 
 #include<format>
 
@@ -149,6 +150,7 @@ private:
 	SPI m_spi;
 	RTC m_rtc;
 	WifiStub m_wifi;
+	APU m_apu;
 
 	DMAChannel m_NDS7Channels[4] = {};
 	DMAChannel m_NDS9Channels[4] = {};

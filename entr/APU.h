@@ -25,7 +25,7 @@ public:
 private:
 	Scheduler* m_scheduler;
 	uint16_t SOUNDCNT = {};
-	uint8_t SOUNDBIAS = {};
+	uint16_t SOUNDBIAS = {};
 
 	APUChannel m_channels[16] = {};
 };

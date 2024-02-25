@@ -19,6 +19,7 @@ void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, C
 	m_NDS9Timer.init(true, m_interruptManager, m_scheduler);
 	m_NDS7Timer.init(false, m_interruptManager, m_scheduler);
 	m_spi.init(m_interruptManager);
+	m_apu.init(m_scheduler);
 
 	m_ppu->registerMemory(m_mem);
 	m_ppu->registerDMACallbacks((callbackFn)&Bus::NDS9_HBlankDMACallback, (callbackFn)&Bus::NDS9_VBlankDMACallback, (void*)this);
@@ -403,6 +404,8 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 {
 	if (address >= 0x04800000)
 		return m_wifi.read(address);
+	if (address >= 0x04000400 && address <= 0x04000505)
+		return m_apu.readIO(address);
 	switch (address)
 	{
 	case 0x04000004: case 0x04000005: case 0x04000006: case 0x04000007:
@@ -441,10 +444,6 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 		return WRAMCNT;
 	case 0x04000300:
 		return NDS7_POSTFLG;
-	case 0x04000504:
-		return hack_soundBias & 0xFF;
-	case 0x04000505:
-		return ((hack_soundBias >> 8) & 0b11);
 	//	return 1;
 	}
 	return 0;
@@ -455,6 +454,11 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 	if (address >= 0x04800000)
 	{
 		m_wifi.write(address,value);
+		return;
+	}
+	if (address >= 0x04000400 && address <= 0x04000505)
+	{
+		m_apu.writeIO(address,value);
 		return;
 	}
 	switch (address)
