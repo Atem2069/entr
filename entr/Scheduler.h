@@ -20,7 +20,8 @@ enum class Event
 	NDS9_TIMER2=8,
 	NDS9_TIMER3=9,
 	Gamecard=10,
-	GXFIFO=11
+	GXFIFO=11,
+	Sample=12
 };
 
 struct SchedulerEntry
