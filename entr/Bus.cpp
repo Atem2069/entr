@@ -19,7 +19,7 @@ void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, C
 	m_NDS9Timer.init(true, m_interruptManager, m_scheduler);
 	m_NDS7Timer.init(false, m_interruptManager, m_scheduler);
 	m_spi.init(m_interruptManager);
-	m_apu.init(m_scheduler);
+	m_apu.init(this, m_scheduler);
 
 	m_ppu->registerMemory(m_mem);
 	m_ppu->registerDMACallbacks((callbackFn)&Bus::NDS9_HBlankDMACallback, (callbackFn)&Bus::NDS9_VBlankDMACallback, (void*)this);

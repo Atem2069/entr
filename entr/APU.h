@@ -16,12 +16,14 @@ struct APUChannel
 	//todo: extra stuff (e.g. actual sample data,...)
 };
 
+class Bus;
+
 class APU
 {
 public:
 	APU();
 	~APU();
-	void init(Scheduler* scheduler);
+	void init(Bus* bus, Scheduler* scheduler);
 
 	uint8_t readIO(uint32_t address);
 	void writeIO(uint32_t address, uint8_t value);
@@ -30,6 +32,7 @@ private:
 	void tickChannel(int channel);
 	void sampleChannels();
 	Scheduler* m_scheduler;
+	Bus* m_bus;
 	uint16_t SOUNDCNT = {};
 	uint16_t SOUNDBIAS = {};
 

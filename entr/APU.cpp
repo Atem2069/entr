@@ -1,4 +1,5 @@
 #include"APU.h"
+#include"Bus.h"
 
 APU::APU()
 {
@@ -10,8 +11,9 @@ APU::~APU()
 
 }
 
-void APU::init(Scheduler* scheduler)
+void APU::init(Bus* bus, Scheduler* scheduler)
 {
+	m_bus = bus;
 	m_scheduler = scheduler;
 	//sdl init,...
 
@@ -86,7 +88,7 @@ void APU::writeIO(uint32_t address, uint8_t value)
 		break;
 	case 3:
 		m_channels[chan].control &= 0x00FFFFFF; m_channels[chan].control |= (value << 24);
-		if (!(m_channels[chan].control >> 15))
+		if (!(m_channels[chan].control >> 31))
 		{
 			m_channels[chan].curLength = 0;
 			m_channels[chan].cycleCount = 0;
@@ -133,7 +135,7 @@ void APU::writeIO(uint32_t address, uint8_t value)
 
 void APU::tickChannel(int channel)
 {
-	if (!(m_channels[channel].control >> 15))
+	if (!(m_channels[channel].control >> 31))
 		return;
 	m_channels[channel].cycleCount += cyclesPerSample;
 	int timer = (0x10000 - m_channels[channel].timer) << 1;
@@ -147,7 +149,7 @@ void APU::tickChannel(int channel)
 		{
 			m_channels[channel].curLength = 0;
 			m_channels[channel].cycleCount = 0;
-			m_channels[channel].control &= 0x7FFF;
+			m_channels[channel].control &= 0x7FFFFFFF;
 		}
 	}
 }
