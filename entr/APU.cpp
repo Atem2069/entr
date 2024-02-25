@@ -143,8 +143,23 @@ void APU::tickChannel(int channel)
 	{
 		m_channels[channel].cycleCount -= timer;
 
+		uint8_t format = (m_channels[channel].control >> 29) & 0b11;
+		switch (format)
+		{
+		case 0:
+			m_channels[channel].sample = m_bus->NDS7_read8(m_channels[channel].srcAddress + m_channels[channel].curLength);
+			m_channels[channel].sample <<= 8;
+			m_channels[channel].curLength++;
+			break;
+		case 1:
+			m_channels[channel].sample = m_bus->NDS7_read16(m_channels[channel].srcAddress + m_channels[channel].curLength);
+			m_channels[channel].curLength += 2;
+			break;
+		default:
+			m_channels[channel].sample = 0;
+			m_channels[channel].curLength++;
+		}
 		//hacks
-		m_channels[channel].curLength++;
 		if (m_channels[channel].curLength == (m_channels[channel].length << 2))
 		{
 			m_channels[channel].curLength = 0;

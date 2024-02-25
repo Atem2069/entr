@@ -13,7 +13,8 @@ struct APUChannel
 
 	uint32_t cycleCount;
 	uint32_t curLength;
-	//todo: extra stuff (e.g. actual sample data,...)
+	
+	uint16_t sample;
 };
 
 class Bus;
