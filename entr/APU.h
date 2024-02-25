@@ -3,6 +3,9 @@
 #include"Logger.h"
 #include"Scheduler.h"
 
+#include<SDL.h>
+#undef main			//wtf sdl?
+
 struct APUChannel
 {
 	uint32_t control;
@@ -38,6 +41,9 @@ private:
 	uint16_t SOUNDBIAS = {};
 
 	APUChannel m_channels[16] = {};
+
+	SDL_AudioDeviceID m_audioDevice;
+	float m_sampleBuffer[4096] = {};
 
 	static constexpr int cyclesPerSample = 512;
 };

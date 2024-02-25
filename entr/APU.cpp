@@ -3,12 +3,24 @@
 
 APU::APU()
 {
+	SDL_Init(SDL_INIT_AUDIO);
+	SDL_AudioSpec desiredSpec = {}, obtainedSpec = {};
+	desiredSpec.freq = 65536;
+	desiredSpec.format = AUDIO_F32;
+	desiredSpec.channels = 2;
+	desiredSpec.silence = 0;
+	desiredSpec.samples = 2048;
+	m_audioDevice = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &obtainedSpec, 0);
 
+	if (!m_audioDevice)
+		Logger::msg(LoggerSeverity::Error, "Couldn't open audio device :(");
+
+	SDL_PauseAudioDevice(m_audioDevice, 0);
 }
 
 APU::~APU()
 {
-
+	SDL_Quit();
 }
 
 void APU::init(Bus* bus, Scheduler* scheduler)
