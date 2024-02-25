@@ -312,17 +312,14 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 		{
 		case 0:
 		{
-			if (texCol.a)
-			{
-				uint32_t R = (((uint32_t)texCol.r + 1) * ((uint32_t)polyCol.r + 1) - 1) / 32;
-				uint32_t G = (((uint32_t)texCol.g + 1) * ((uint32_t)polyCol.g + 1) - 1) / 32;
-				uint32_t B = (((uint32_t)texCol.b + 1) * ((uint32_t)polyCol.b + 1) - 1) / 32;
-				uint32_t A = (((uint32_t)texCol.a + 1) * ((uint32_t)polyCol.a + 1) - 1) / 32;
-				output.r = R & 0x1F;
-				output.g = G & 0x1F;
-				output.b = B & 0x1F;
-				output.a = A & 0x1F;
-			}
+			uint32_t R = (((uint32_t)texCol.r + 1) * ((uint32_t)polyCol.r + 1) - 1) / 32;
+			uint32_t G = (((uint32_t)texCol.g + 1) * ((uint32_t)polyCol.g + 1) - 1) / 32;
+			uint32_t B = (((uint32_t)texCol.b + 1) * ((uint32_t)polyCol.b + 1) - 1) / 32;
+			uint32_t A = (((uint32_t)texCol.a + 1) * ((uint32_t)polyCol.a + 1) - 1) / 32;
+			output.r = R & 0x1F;
+			output.g = G & 0x1F;
+			output.b = B & 0x1F;
+			output.a = A & 0x1F;
 			break;
 		}
 		case 1:
