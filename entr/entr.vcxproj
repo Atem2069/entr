@@ -143,6 +143,7 @@
     <ClCompile Include="..\lib\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\lib\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\lib\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="APU.cpp" />
     <ClCompile Include="ARM7\ARM7TDMI.cpp" />
     <ClCompile Include="ARM7\ARM7_ARMOps.cpp" />
     <ClCompile Include="ARM7\ARM7_BarrelShifter.cpp" />
@@ -191,6 +192,7 @@
     <ClInclude Include="..\lib\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\lib\imgui\imstb_textedit.h" />
     <ClInclude Include="..\lib\imgui\imstb_truetype.h" />
+    <ClInclude Include="APU.h" />
     <ClInclude Include="ARM7\ARM7TDMI.h" />
     <ClInclude Include="ARM9\ARM946E.h" />
     <ClInclude Include="Bus.h" />
