@@ -504,7 +504,7 @@ template<Engine engine> void PPU::composeLayers()
 	for (int i = 0; i < 256; i++)
 	{
 		Window pointAttribs = getPointAttributes<engine>(i, VCOUNT);
-		bool doBlendOp = (m_regs->BLDCNT >> 5) & 0b1;
+		bool doBlendOpA = (m_regs->BLDCNT >> 5) & 0b1, doBlendOpB = (m_regs->BLDCNT >> 13);
 		//offset into framebuffer to render into.
 		//each engine is assigned a screen (top/bottom) to render to - the framebuffer consists of both screens (bottom screen rendered directly below top)
 		uint32_t renderBase = (engine == Engine::A) ? EngineA_RenderBase : EngineB_RenderBase;
@@ -516,19 +516,28 @@ template<Engine engine> void PPU::composeLayers()
 			m_renderBuffer[pageIdx][renderBase + (256 * VCOUNT) + i] = 0xFFFFFFFF;
 			continue;
 		}
+
+		uint16_t blendColB = backdrop;
+		int blendAPrio=255, blendBPrio = 255;
 		
 		uint16_t finalCol = backdrop;
 		uint8_t bestPriority = 255;
-		for (int j = 3; j >= 0; j--)
+		for (int j = 0; j < 4; j++)
 		{
-			if (m_backgroundLayers[j].enabled && pointAttribs.layerDrawable[j])
+			if (m_backgroundLayers[j].enabled && pointAttribs.layerDrawable[j] && (!(m_backgroundLayers[j].lineBuffer[i] >> 15)))
 			{
 				uint16_t colAtLayer = m_backgroundLayers[j].lineBuffer[i];
-				if ((!(colAtLayer >> 15)) && m_backgroundLayers[j].priority <= bestPriority)
+				if (m_backgroundLayers[j].priority < bestPriority)
 				{
-					doBlendOp = (m_regs->BLDCNT >> j) & 0b1;
+					doBlendOpA = (m_regs->BLDCNT >> j) & 0b1;
 					bestPriority = m_backgroundLayers[j].priority;
 					finalCol = colAtLayer;
+				}
+				else if (m_backgroundLayers[j].priority <= blendBPrio)
+				{
+					blendColB = colAtLayer;
+					blendBPrio = m_backgroundLayers[j].priority;
+					doBlendOpB = ((m_regs->BLDCNT >> (j + 8)) & 0b1);
 				}
 			}
 		}
@@ -536,18 +545,33 @@ template<Engine engine> void PPU::composeLayers()
 		uint16_t spritePixel = spriteLineBuffer[i];
 		if ((!(spritePixel >> 15)) && spriteAttributeBuffer[i].priority <= bestPriority && pointAttribs.objDrawable)
 		{
-			doBlendOp = (m_regs->BLDCNT >> 4) & 0b1;
+			doBlendOpA = (m_regs->BLDCNT >> 4) & 0b1;
 			finalCol = spritePixel;
 		}
 
 		//todo: support alpha blending mode
 		uint8_t blendMode = (m_regs->BLDCNT >> 6) & 0b11;
-		if (doBlendOp && pointAttribs.blendable)
+		if (doBlendOpA && pointAttribs.blendable)
 		{
 			//could speed this up with vector intrinsics
 			uint8_t R = finalCol & 0x1F, G = (finalCol >> 5) & 0x1F, B = (finalCol >> 10) & 0x1F;
 			switch (blendMode)
 			{
+			case 1:
+			{
+				//messy
+				if (!doBlendOpB)
+					break;
+				uint8_t R2 = blendColB & 0x1F, G2 = (blendColB >> 5) & 0x1F, B2 = (blendColB >> 10) & 0x1F;
+				uint8_t R1 = R, G1 = G, B1 = B;
+				uint8_t evA = (m_regs->BLDALPHA & 0x1F), evB = ((m_regs->BLDALPHA >> 8) & 0x1F);
+				R1 = (R1 * evA) >> 4; G1 = (G1 * evA) >> 4; B1 = (B1 * evA) >> 4;
+				R2 = (R2 * evB) >> 4; G2 = (G2 * evB) >> 4; B2 = (B2 * evB) >> 4;
+				R = std::min(31, R1 + R2);
+				G = std::min(31, G1 + G2);
+				B = std::min(31, B1 + B2);
+				break;
+			}
 			case 2:
 			{
 				R += ((31 - R) * m_regs->BLDY) >> 4;
@@ -1560,6 +1584,10 @@ uint8_t PPU::readIO(uint32_t address)
 		return m_engineARegisters.BLDCNT & 0xFF;
 	case 0x04000051:
 		return (m_engineARegisters.BLDCNT >> 8) & 0xFF;
+	case 0x04000052:
+		return m_engineARegisters.BLDALPHA & 0xFF;
+	case 0x04000053:
+		return (m_engineARegisters.BLDALPHA >> 8) & 0xFF;
 	case 0x04000064:
 		return DISPCAPCNT & 0xFF;
 	case 0x04000065:
@@ -1604,6 +1632,10 @@ uint8_t PPU::readIO(uint32_t address)
 		return m_engineBRegisters.BLDCNT & 0xFF;
 	case 0x04001051:
 		return (m_engineBRegisters.BLDCNT >> 8) & 0xFF;
+	case 0x04001052:
+		return m_engineBRegisters.BLDALPHA & 0xFF;
+	case 0x04001053:
+		return (m_engineBRegisters.BLDALPHA >> 8) & 0xFF;
 	}
 	//Logger::msg(LoggerSeverity::Warn, std::format("Unimplemented PPU IO read! addr={:#x}", address));
 	return 0;
@@ -1944,6 +1976,14 @@ void PPU::writeIO(uint32_t address, uint8_t value)
 		break;
 	case 0x04000051:
 		m_registers->BLDCNT &= 0xFF; m_registers->BLDCNT |= (value << 8);
+		break;
+	case 0x04000052:
+		value = std::min(16, value & 0x1F);
+		m_registers->BLDALPHA &= 0xFF00; m_registers->BLDALPHA |= value;
+		break;
+	case 0x04000053:
+		value = std::min(16, value & 0x1F);
+		m_registers->BLDALPHA &= 0xFF; m_registers->BLDALPHA |= (value << 8);
 		break;
 	case 0x04000054:
 		m_registers->BLDY = std::min(16,value & 0x1F);
