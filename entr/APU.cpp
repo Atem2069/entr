@@ -174,17 +174,42 @@ void APU::tickChannel(int channel)
 		//hacks
 		if (m_channels[channel].curLength == (m_channels[channel].length << 2))
 		{
-			m_channels[channel].curLength = 0;
-			m_channels[channel].cycleCount = 0;
-			m_channels[channel].control &= 0x7FFFFFFF;
+			//is this right?
+			//wtf even is manual/one-shot??
+			uint8_t repeatMode = (m_channels[channel].control >> 27) & 0b11;
+			switch (repeatMode)
+			{
+			case 1:
+				m_channels[channel].curLength = (m_channels[channel].loopStart) << 2;
+				break;
+			case 2: case 0:
+				m_channels[channel].curLength = 0;
+				m_channels[channel].cycleCount = 0;
+				m_channels[channel].control &= 0x7FFFFFFF;
+				break;
+			}
 		}
 	}
 }
 
 void APU::sampleChannels()
 {
+	int32_t finalSample = 0;
 	for (int i = 0; i < 16; i++)
+	{
 		tickChannel(i);
+		finalSample += m_channels[i].sample;
+	}
+
+	float sampleOut = ((float)finalSample) / 2048.0f;
+	m_sampleBuffer[sampleIndex<<1] = sampleOut;
+	m_sampleBuffer[(sampleIndex<<1) + 1] = sampleOut;
+	sampleIndex++;
+	if (sampleIndex == 2048)
+	{
+		sampleIndex = 0;
+		SDL_QueueAudio(m_audioDevice, (void*)m_sampleBuffer, 2048 * 8);
+	}
 
 	//todo: stuff with each channel
 	m_scheduler->addEvent(Event::Sample, (callbackFn)&APU::onSampleEvent, (void*)this, m_scheduler->getEventTime() + cyclesPerSample);

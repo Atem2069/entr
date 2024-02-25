@@ -17,7 +17,7 @@ struct APUChannel
 	uint32_t cycleCount;
 	uint32_t curLength;
 	
-	uint16_t sample;
+	int16_t sample;
 };
 
 class Bus;
@@ -44,6 +44,7 @@ private:
 
 	SDL_AudioDeviceID m_audioDevice;
 	float m_sampleBuffer[4096] = {};
+	int sampleIndex = 0;
 
 	static constexpr int cyclesPerSample = 512;
 };
