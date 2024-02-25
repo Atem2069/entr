@@ -533,7 +533,7 @@ template<Engine engine> void PPU::composeLayers()
 					bestPriority = m_backgroundLayers[j].priority;
 					finalCol = colAtLayer;
 				}
-				else if (m_backgroundLayers[j].priority <= blendBPrio)
+				else if (m_backgroundLayers[j].priority < blendBPrio)
 				{
 					blendColB = colAtLayer;
 					blendBPrio = m_backgroundLayers[j].priority;
@@ -543,10 +543,18 @@ template<Engine engine> void PPU::composeLayers()
 		}
 
 		uint16_t spritePixel = spriteLineBuffer[i];
-		if ((!(spritePixel >> 15)) && spriteAttributeBuffer[i].priority <= bestPriority && pointAttribs.objDrawable)
+		if ((!(spritePixel >> 15)) && pointAttribs.objDrawable)
 		{
-			doBlendOpA = (m_regs->BLDCNT >> 4) & 0b1;
-			finalCol = spritePixel;
+			if (spriteAttributeBuffer[i].priority <= bestPriority)
+			{
+				doBlendOpA = (m_regs->BLDCNT >> 4) & 0b1;
+				finalCol = spritePixel;
+			}
+			else if (spriteAttributeBuffer[i].priority <= blendBPrio)
+			{
+				blendColB = spritePixel;
+				doBlendOpB = ((m_regs->BLDCNT >> 12) & 0b1);
+			}
 		}
 
 		//todo: support alpha blending mode
