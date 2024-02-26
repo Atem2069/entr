@@ -99,15 +99,32 @@ void APU::writeIO(uint32_t address, uint8_t value)
 		m_channels[chan].control &= 0xFF00FFFF; m_channels[chan].control |= (value << 16);
 		break;
 	case 3:
+	{
+		bool wasEnabled = (m_channels[chan].control >> 31);
 		m_channels[chan].control &= 0x00FFFFFF; m_channels[chan].control |= (value << 24);
 		if (!(m_channels[chan].control >> 31))
 		{
 			m_channels[chan].curSampleCount = 0;
-			m_channels[chan].curSrcOffset = 0;
-			m_channels[chan].cycleCount = 0;
 			m_channels[chan].sample = 0;
 		}
+		if (!wasEnabled && (m_channels[chan].control >> 31))
+		{
+			m_channels[chan].curSrcAddress = m_channels[chan].srcAddress;
+			m_channels[chan].lastCheckTimestamp = m_scheduler->getCurrentTimestamp();
+			if (((m_channels[chan].control >> 29) & 0b11) == 2)
+			{
+				uint32_t adpcmHeader = m_bus->NDS7_read32(m_channels[chan].srcAddress);
+				m_channels[chan].adpcm_initial = adpcmHeader & 0xFFFF;
+				m_channels[chan].adpcm_tableIdx = (adpcmHeader >> 16) & 0x7F;
+				m_channels[chan].adpcm_loop = m_channels[chan].adpcm_initial;
+				m_channels[chan].adpcm_loopTableIdx = m_channels[chan].adpcm_tableIdx;
+				m_channels[chan].curSrcAddress += 4;
+				m_channels[chan].curSampleCount = 0;
+				m_channels[chan].sample = 0;
+			}
+		}
 		break;
+	}
 	case 4:
 		m_channels[chan].srcAddress &= 0xFFFFFF00; m_channels[chan].srcAddress |= value;
 		break;
@@ -154,70 +171,58 @@ void APU::tickChannel(int channel)
 		m_channels[channel].sample = 0;
 		return;
 	}
-	m_channels[channel].cycleCount += cyclesPerSample;
 	int timer = (0x10000 - m_channels[channel].timer) << 1;
-	while (m_channels[channel].cycleCount >= timer)
+
+	int64_t timeDiff = m_scheduler->getEventTime() - m_channels[channel].lastCheckTimestamp;
+	while (timeDiff >= timer)
 	{
-		m_channels[channel].cycleCount -= timer;
+		timeDiff -= timer;
 
 		uint8_t format = (m_channels[channel].control >> 29) & 0b11;
 		switch (format)
 		{
 		case 0:
-			m_channels[channel].sample = m_bus->NDS7_read8(m_channels[channel].srcAddress + m_channels[channel].curSrcOffset);
+			m_channels[channel].sample = m_bus->NDS7_read8(m_channels[channel].curSrcAddress);
 			m_channels[channel].sample <<= 8;
-			m_channels[channel].curSrcOffset++;
+			m_channels[channel].curSrcAddress++;
 			break;
 		case 1:
-			m_channels[channel].sample = m_bus->NDS7_read16(m_channels[channel].srcAddress + m_channels[channel].curSrcOffset);
-			m_channels[channel].curSrcOffset += 2;
+			m_channels[channel].sample = m_bus->NDS7_read16(m_channels[channel].curSrcAddress);
+			m_channels[channel].curSrcAddress += 2;
 			break;
 		case 2:
 		{
-			if (m_channels[channel].curSrcOffset == 0)
+			uint32_t adpcmSample = m_bus->NDS7_read8(m_channels[channel].curSrcAddress);
+			if ((m_channels[channel].curSampleCount & 0b1))
 			{
-				uint32_t adpcmHeader = m_bus->NDS7_read32(m_channels[channel].srcAddress);
-				m_channels[channel].adpcm_initial = adpcmHeader & 0xFFFF;
-				m_channels[channel].adpcm_tableIdx = (adpcmHeader >> 16) & 0x7F;
-				m_channels[channel].curSrcOffset += 4;
-				m_channels[channel].curSampleCount = 0;
-				m_channels[channel].sample = 0;
+				adpcmSample >>= 4;
+				m_channels[channel].curSrcAddress++;
 			}
+			adpcmSample &= 0xF;
+			int diff = ((adpcmSample & 7) * 2 + 1) * m_adpcmTable[m_channels[channel].adpcm_tableIdx] / 8;
+			if (!(adpcmSample & 8))
+				m_channels[channel].sample = std::min(m_channels[channel].adpcm_initial + diff, 0x7FFF);
+			else
+				m_channels[channel].sample = std::max(m_channels[channel].adpcm_initial - diff, -0x7FFF);
+			m_channels[channel].adpcm_initial = m_channels[channel].sample;
+			m_channels[channel].adpcm_tableIdx = std::min(std::max(m_channels[channel].adpcm_tableIdx + m_indexTable[adpcmSample & 7], 0),88);
+			if ((m_channels[channel].curSrcAddress-m_channels[channel].srcAddress == (m_channels[channel].loopStart << 2)) && (m_channels[channel].curSampleCount&0b1))
 			{
-				bool stupid = false;
-				uint32_t adpcmSample = m_bus->NDS7_read8((m_channels[channel].srcAddress&~0b11) + m_channels[channel].curSrcOffset);
-				if ((m_channels[channel].curSampleCount & 0b1))
-				{
-					adpcmSample >>= 4;
-					m_channels[channel].curSrcOffset++;
-					stupid = true;
-				}
-				adpcmSample &= 0xF;
-				int diff = ((adpcmSample & 7) * 2 + 1) * m_adpcmTable[m_channels[channel].adpcm_tableIdx] / 8;
-				if (!(adpcmSample & 8))
-					m_channels[channel].sample = std::min(m_channels[channel].adpcm_initial + diff, 0x7FFF);
-				else
-					m_channels[channel].sample = std::max(m_channels[channel].adpcm_initial - diff, -0x7FFF);
-				m_channels[channel].adpcm_initial = m_channels[channel].sample;
-				m_channels[channel].adpcm_tableIdx = std::min(std::max(m_channels[channel].adpcm_tableIdx + m_indexTable[adpcmSample & 7], 0),88);
-				if (m_channels[channel].curSrcOffset == (m_channels[channel].loopStart << 2) && stupid)
-				{
-					m_channels[channel].adpcm_loop = m_channels[channel].adpcm_initial;
-					m_channels[channel].adpcm_loopTableIdx = m_channels[channel].adpcm_tableIdx;
-				}
+				m_channels[channel].adpcm_loop = m_channels[channel].adpcm_initial;
+				m_channels[channel].adpcm_loopTableIdx = m_channels[channel].adpcm_tableIdx;
 			}
 			break;
 		}
-		default:
-			m_channels[channel].sample = 0;
-			m_channels[channel].curSrcOffset++;
+		//default:
+			//m_channels[channel].sample = 0;
+			//m_channels[channel].curSrcAddress++;
 		}
 
 		m_channels[channel].curSampleCount++;
 
 		//hacks
-		uint32_t endOffset = ((m_channels[channel].length + m_channels[channel].loopStart) << 2);
-		if (m_channels[channel].curSrcOffset == endOffset)
+		uint32_t endOffset = m_channels[channel].srcAddress + ((m_channels[channel].length + m_channels[channel].loopStart) << 2);
+		if (m_channels[channel].curSrcAddress >= endOffset)
 		{
 			//is this right?
 			//wtf even is manual/one-shot??
@@ -225,20 +230,23 @@ void APU::tickChannel(int channel)
 			switch (repeatMode)
 			{
 			case 1:
-				m_channels[channel].curSrcOffset = ((int)m_channels[channel].loopStart) << 2;
+				m_channels[channel].curSrcAddress = m_channels[channel].srcAddress + (((int)m_channels[channel].loopStart) << 2);
 				m_channels[channel].adpcm_initial = m_channels[channel].adpcm_loop;
 				m_channels[channel].adpcm_tableIdx = m_channels[channel].adpcm_loopTableIdx;
 				break;
-			case 2: case 0:
-				m_channels[channel].curSrcOffset = 0;
-				m_channels[channel].cycleCount = 0;
+			case 2:
+				//m_channels[channel].cycleCount = 0;
 				m_channels[channel].curSampleCount = 0;
 				m_channels[channel].control &= 0x7FFFFFFF;
+				m_channels[channel].sample = 0;
 				return;
+			default:
+				std::cout << "wtf??" << '\n';
 			}
 			//doesn't really matter what it's set to, just for tracking adpcm really
 			m_channels[channel].curSampleCount = 0;
 		}
+		m_channels[channel].lastCheckTimestamp = m_scheduler->getEventTime() - timeDiff;
 	}
 }
 
@@ -250,8 +258,9 @@ void APU::sampleChannels()
 		tickChannel(i);
 		int channelPan = (m_channels[i].control >> 16) & 0x7F;
 		int volume = (m_channels[i].control) & 0x7F;
-		int16_t sample = m_channels[i].sample;
+		int32_t sample = m_channels[i].sample;
 		sample = sample * volume / 128;
+
 		finalSampleLeft += ((sample * (128 - channelPan))/128);
 		finalSampleRight += ((sample * channelPan) / 128);
 	}
@@ -272,7 +281,6 @@ void APU::sampleChannels()
 		//while (SDL_GetQueuedAudioSize(m_audioDevice) > sampleBufferSize * 8);
 	}
 
-	//todo: stuff with each channel
 	m_scheduler->addEvent(Event::Sample, (callbackFn)&APU::onSampleEvent, (void*)this, m_scheduler->getEventTime() + cyclesPerSample);
 }
 

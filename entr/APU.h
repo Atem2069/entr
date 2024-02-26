@@ -11,11 +11,11 @@ struct APUChannel
 	uint32_t control;
 	uint32_t srcAddress;
 	uint16_t timer;
-	uint16_t loopStart;
+	uint32_t loopStart;
 	uint32_t length;
 
-	uint32_t cycleCount;
-	uint32_t curSrcOffset;
+	int64_t lastCheckTimestamp;
+	uint32_t curSrcAddress;
 	uint32_t curSampleCount;
 	
 	//adpcm specific
