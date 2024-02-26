@@ -27,6 +27,7 @@ void Timer::event()
 	switch (m_scheduler->getLastFiredEvent())
 	{
 	case Event::NDS9_TIMER0: case Event::NDS7_TIMER0:
+		timerIdx = 0;
 		break;
 	case Event::NDS9_TIMER1: case Event::NDS7_TIMER1:
 		timerIdx = 1;
@@ -38,7 +39,6 @@ void Timer::event()
 		timerIdx = 3;
 		break;
 	}
-
 
 	uint8_t ctrlreg = m_timers[timerIdx].CNT_H;
 	bool timerEnabled = (ctrlreg >> 7) & 0b1;
@@ -63,8 +63,8 @@ uint8_t Timer::readIO(uint32_t address)
 	setCurrentClock(timerIdx, m_timers[timerIdx].CNT_H & 0b11, m_scheduler->getCurrentTimestamp());
 
 	bool cascade = (m_timers[timerIdx].CNT_H >> 2) & 0b1;
-	if (cascade)
-		m_scheduler->tick();	//hehe - the aging cart cascade test requires quite tight timing, so force all pending events to fire first 
+	//if (cascade)
+	//	m_scheduler->tick();	//hehe - the aging cart cascade test requires quite tight timing, so force all pending events to fire first 
 	//some pending timer events may occur too late otherwise, which means we fail :(
 	switch (addrOffset)
 	{
@@ -87,21 +87,14 @@ void Timer::writeIO(uint32_t address, uint8_t value)
 	switch (addrOffset)
 	{
 	case 0:
-		//m_timers[timerIdx].CNT_L &= 0xFF00; m_timers[timerIdx].CNT_L |= value;
-		m_timers[timerIdx].newReloadVal &= 0xFF00; m_timers[timerIdx].newReloadVal |= value;
-		m_timers[timerIdx].newReloadWritten = true;
-		writeReload(timerIdx);
+		m_timers[timerIdx].CNT_L &= 0xFF00; m_timers[timerIdx].CNT_L |= value;
 		break;
 	case 1:
-		m_timers[timerIdx].newReloadVal &= 0xFF;  m_timers[timerIdx].newReloadVal |= (value << 8);
-		if (!m_timers[timerIdx].newReloadWritten)	//if for some reason only the top byte of the reload is written? 
-		{
-			m_timers[timerIdx].newReloadWritten = true;
-			writeReload(timerIdx);
-		}
+		m_timers[timerIdx].CNT_L &= 0xFF; m_timers[timerIdx].CNT_L |= (value << 8);
+		//if (timerIdx == 1)
+		//	std::cout << "timer1 reload write: " << std::hex << m_timers[timerIdx].CNT_L << '\n';
 		break;
 	case 2:
-		m_timers[timerIdx].newControlWritten = true;
 		m_timers[timerIdx].newControlVal = value;
 		writeControl(timerIdx);
 		break;
@@ -129,10 +122,8 @@ void Timer::calculateNextOverflow(int timerIdx, uint64_t timeBase)
 	m_scheduler->removeEvent(timerEventLUT[NDS9][timerIdx]);	//just in case :)
 	m_scheduler->addEvent(timerEventLUT[NDS9][timerIdx], &Timer::onSchedulerEvent, (void*)this, overflowTimestamp);
 
-	m_timers[timerIdx].timeActivated = currentTime;
 	m_timers[timerIdx].lastUpdateClock = (currentTime >> shiftLut[prescalerSelect]);
 	m_timers[timerIdx].overflowTime = overflowTimestamp;
-
 }
 
 void Timer::checkCascade(int timerIdx)
@@ -176,9 +167,6 @@ void Timer::setCurrentClock(int idx, uint8_t prescalerSetting, uint64_t timestam
 
 void Timer::writeControl(int timerIdx)
 {
-	if (!m_timers[timerIdx].newControlWritten)
-		return;
-	m_timers[timerIdx].newControlWritten = false;
 	setCurrentClock(timerIdx, m_timers[timerIdx].CNT_H & 0b11, m_scheduler->getCurrentTimestamp());				//update clock first if possible
 	bool timerWasEnabled = (m_timers[timerIdx].CNT_H >> 7) & 0b1;
 	bool timerNowEnabled = (m_timers[timerIdx].newControlVal >> 7) & 0b1;
@@ -190,7 +178,7 @@ void Timer::writeControl(int timerIdx)
 	m_timers[timerIdx].CNT_H = m_timers[timerIdx].newControlVal;
 
 	if (timerIdx == 0)
-		{
+	{
 		m_timers[timerIdx].CNT_H &= 0b11111011;	//clear cascade bit on timer0
 		countup = false;
 	}
@@ -201,14 +189,16 @@ void Timer::writeControl(int timerIdx)
 		if (!countup)
 		{
 			m_timers[timerIdx].initialClock = m_timers[timerIdx].clock;
-			calculateNextOverflow(timerIdx, m_scheduler->getCurrentTimestamp() + 2);		//+1 to account for 2-cycle startup delay
+			calculateNextOverflow(timerIdx, m_scheduler->getCurrentTimestamp());
 		}
 	}
 	if (timerWasEnabled && timerNowEnabled)
 		calculateNextOverflow(timerIdx, m_scheduler->getCurrentTimestamp());
 
-	if ((timerWasEnabled && !timerNowEnabled) || (countup))			//if timer becomes disabled, or it becomes a countup timer: unschedule
+	if ((!timerNowEnabled) || (countup))			//if timer becomes disabled, or it becomes a countup timer: unschedule
+	{
 		m_scheduler->removeEvent(timerEventLUT[NDS9][timerIdx]);
+	}
 }
 
 void Timer::writeReload(int timerIdx)

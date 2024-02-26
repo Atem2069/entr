@@ -74,6 +74,7 @@ void APU::writeIO(uint32_t address, uint8_t value)
 		return;
 	case 0x04000501:
 		SOUNDCNT &= 0xFF; SOUNDCNT |= (value << 8);
+		Logger::msg(LoggerSeverity::Info, std::format("SOUNDCNT: {:#x}", SOUNDCNT));
 		return;
 	case 0x04000502: case 0x04000503:
 		return;
@@ -240,8 +241,8 @@ void APU::tickChannel(int channel)
 				m_channels[channel].control &= 0x7FFFFFFF;
 				m_channels[channel].sample = 0;
 				return;
-			default:
-				std::cout << "wtf??" << '\n';
+			//default:
+			//	std::cout << "wtf??" << '\n';
 			}
 			//doesn't really matter what it's set to, just for tracking adpcm really
 			m_channels[channel].curSampleCount = 0;
@@ -253,16 +254,19 @@ void APU::tickChannel(int channel)
 void APU::sampleChannels()
 {
 	int32_t finalSampleLeft = 0, finalSampleRight = 0;
-	for (int i = 0; i < 16; i++)
+	if ((SOUNDCNT >> 15))
 	{
-		tickChannel(i);
-		int channelPan = (m_channels[i].control >> 16) & 0x7F;
-		int volume = (m_channels[i].control) & 0x7F;
-		int32_t sample = m_channels[i].sample;
-		sample = sample * volume / 128;
+		for (int i = 0; i < 16; i++)
+		{
+			tickChannel(i);
+			int channelPan = (m_channels[i].control >> 16) & 0x7F;
+			int volume = (m_channels[i].control) & 0x7F;
+			int32_t sample = m_channels[i].sample;
+			sample = sample * volume / 128;
 
-		finalSampleLeft += ((sample * (128 - channelPan))/128);
-		finalSampleRight += ((sample * channelPan) / 128);
+			finalSampleLeft += ((sample * (128 - channelPan)) / 128);
+			finalSampleRight += ((sample * channelPan) / 128);
+		}
 	}
 
 	float sampleOutLeft = ((float)finalSampleLeft) / 262144.f;
