@@ -5,11 +5,11 @@ APU::APU()
 {
 	SDL_Init(SDL_INIT_AUDIO);
 	SDL_AudioSpec desiredSpec = {}, obtainedSpec = {};
-	desiredSpec.freq = 65536;
+	desiredSpec.freq = sampleRate;
 	desiredSpec.format = AUDIO_F32;
 	desiredSpec.channels = 2;
 	desiredSpec.silence = 0;
-	desiredSpec.samples = 2048;
+	desiredSpec.samples = sampleBufferSize;
 	m_audioDevice = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &obtainedSpec, 0);
 
 	if (!m_audioDevice)
@@ -102,8 +102,10 @@ void APU::writeIO(uint32_t address, uint8_t value)
 		m_channels[chan].control &= 0x00FFFFFF; m_channels[chan].control |= (value << 24);
 		if (!(m_channels[chan].control >> 31))
 		{
-			m_channels[chan].curLength = 0;
+			m_channels[chan].curSampleCount = 0;
+			m_channels[chan].curSrcOffset = 0;
 			m_channels[chan].cycleCount = 0;
+			m_channels[chan].sample = 0;
 		}
 		break;
 	case 4:
@@ -148,7 +150,10 @@ void APU::writeIO(uint32_t address, uint8_t value)
 void APU::tickChannel(int channel)
 {
 	if (!(m_channels[channel].control >> 31))
+	{
+		m_channels[channel].sample = 0;
 		return;
+	}
 	m_channels[channel].cycleCount += cyclesPerSample;
 	int timer = (0x10000 - m_channels[channel].timer) << 1;
 	while (m_channels[channel].cycleCount >= timer)
@@ -159,20 +164,60 @@ void APU::tickChannel(int channel)
 		switch (format)
 		{
 		case 0:
-			m_channels[channel].sample = m_bus->NDS7_read8(m_channels[channel].srcAddress + m_channels[channel].curLength);
+			m_channels[channel].sample = m_bus->NDS7_read8(m_channels[channel].srcAddress + m_channels[channel].curSrcOffset);
 			m_channels[channel].sample <<= 8;
-			m_channels[channel].curLength++;
+			m_channels[channel].curSrcOffset++;
 			break;
 		case 1:
-			m_channels[channel].sample = m_bus->NDS7_read16(m_channels[channel].srcAddress + m_channels[channel].curLength);
-			m_channels[channel].curLength += 2;
+			m_channels[channel].sample = m_bus->NDS7_read16(m_channels[channel].srcAddress + m_channels[channel].curSrcOffset);
+			m_channels[channel].curSrcOffset += 2;
 			break;
+		case 2:
+		{
+			if (m_channels[channel].curSrcOffset == 0)
+			{
+				uint32_t adpcmHeader = m_bus->NDS7_read32(m_channels[channel].srcAddress);
+				m_channels[channel].adpcm_initial = adpcmHeader & 0xFFFF;
+				m_channels[channel].adpcm_tableIdx = (adpcmHeader >> 16) & 0x7F;
+				m_channels[channel].curSrcOffset += 4;
+				m_channels[channel].curSampleCount = 0;
+				m_channels[channel].sample = 0;
+			}
+			{
+				bool stupid = false;
+				uint32_t adpcmSample = m_bus->NDS7_read8((m_channels[channel].srcAddress&~0b11) + m_channels[channel].curSrcOffset);
+				if ((m_channels[channel].curSampleCount & 0b1))
+				{
+					adpcmSample >>= 4;
+					m_channels[channel].curSrcOffset++;
+					stupid = true;
+				}
+				adpcmSample &= 0xF;
+				int diff = ((adpcmSample & 7) * 2 + 1) * m_adpcmTable[m_channels[channel].adpcm_tableIdx] / 8;
+				if (!(adpcmSample & 8))
+					m_channels[channel].sample = std::min(m_channels[channel].adpcm_initial + diff, 0x7FFF);
+				else
+					m_channels[channel].sample = std::max(m_channels[channel].adpcm_initial - diff, -0x7FFF);
+				m_channels[channel].adpcm_initial = m_channels[channel].sample;
+				m_channels[channel].adpcm_tableIdx = std::min(std::max(m_channels[channel].adpcm_tableIdx + m_indexTable[adpcmSample & 7], 0),88);
+				if (m_channels[channel].curSrcOffset == (m_channels[channel].loopStart << 2) && stupid)
+				{
+					m_channels[channel].adpcm_loop = m_channels[channel].adpcm_initial;
+					m_channels[channel].adpcm_loopTableIdx = m_channels[channel].adpcm_tableIdx;
+				}
+			}
+			break;
+		}
 		default:
 			m_channels[channel].sample = 0;
-			m_channels[channel].curLength++;
+			m_channels[channel].curSrcOffset++;
 		}
+
+		m_channels[channel].curSampleCount++;
+
 		//hacks
-		if (m_channels[channel].curLength == (m_channels[channel].length << 2))
+		uint32_t endOffset = ((m_channels[channel].length + m_channels[channel].loopStart) << 2);
+		if (m_channels[channel].curSrcOffset == endOffset)
 		{
 			//is this right?
 			//wtf even is manual/one-shot??
@@ -180,35 +225,51 @@ void APU::tickChannel(int channel)
 			switch (repeatMode)
 			{
 			case 1:
-				m_channels[channel].curLength = (m_channels[channel].loopStart) << 2;
+				m_channels[channel].curSrcOffset = ((int)m_channels[channel].loopStart) << 2;
+				m_channels[channel].adpcm_initial = m_channels[channel].adpcm_loop;
+				m_channels[channel].adpcm_tableIdx = m_channels[channel].adpcm_loopTableIdx;
 				break;
 			case 2: case 0:
-				m_channels[channel].curLength = 0;
+				m_channels[channel].curSrcOffset = 0;
 				m_channels[channel].cycleCount = 0;
+				m_channels[channel].curSampleCount = 0;
 				m_channels[channel].control &= 0x7FFFFFFF;
-				break;
+				return;
 			}
+			//doesn't really matter what it's set to, just for tracking adpcm really
+			m_channels[channel].curSampleCount = 0;
 		}
 	}
 }
 
 void APU::sampleChannels()
 {
-	int32_t finalSample = 0;
+	int32_t finalSampleLeft = 0, finalSampleRight = 0;
 	for (int i = 0; i < 16; i++)
 	{
 		tickChannel(i);
-		finalSample += m_channels[i].sample;
+		int channelPan = (m_channels[i].control >> 16) & 0x7F;
+		int volume = (m_channels[i].control) & 0x7F;
+		int16_t sample = m_channels[i].sample;
+		sample = sample * volume / 128;
+		finalSampleLeft += ((sample * (128 - channelPan))/128);
+		finalSampleRight += ((sample * channelPan) / 128);
 	}
 
-	float sampleOut = ((float)finalSample) / 2048.0f;
-	m_sampleBuffer[sampleIndex<<1] = sampleOut;
-	m_sampleBuffer[(sampleIndex<<1) + 1] = sampleOut;
+	float sampleOutLeft = ((float)finalSampleLeft) / 262144.f;
+	float sampleOutRight = ((float)finalSampleRight) / 262144.f;
+	m_sampleBuffer[sampleIndex << 1] = sampleOutLeft;
+	m_sampleBuffer[(sampleIndex << 1) + 1] = sampleOutRight;
 	sampleIndex++;
-	if (sampleIndex == 2048)
+	if (sampleIndex == sampleBufferSize)
 	{
+		float m_finalSamples[sampleBufferSize * 2] = {};
+		memcpy(m_finalSamples, m_sampleBuffer, sampleBufferSize * 8);
 		sampleIndex = 0;
-		SDL_QueueAudio(m_audioDevice, (void*)m_sampleBuffer, 2048 * 8);
+		SDL_QueueAudio(m_audioDevice, (void*)m_finalSamples, sampleBufferSize * 8);
+
+		//rudimentary audio sync
+		//while (SDL_GetQueuedAudioSize(m_audioDevice) > sampleBufferSize * 8);
 	}
 
 	//todo: stuff with each channel

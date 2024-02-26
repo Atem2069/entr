@@ -35,8 +35,8 @@ void NDS::frameEventHandler()
 
 	auto curTime = std::chrono::high_resolution_clock::now();
 	double timeDiff = std::chrono::duration<double, std::milli>(curTime - m_lastTime).count();	
-	static constexpr double target = ((560190.0 / 33513982.0) * 1000.0);
-
+	//static constexpr double target = ((560190.0 / 33554432.0) * 1000.0);
+	static constexpr double target = 1000.0 / 60.0;
 	if (!Config::NDS.disableFrameSync)
 	{
 		while (timeDiff < target)
