@@ -27,7 +27,6 @@ void APU::init(Bus* bus, Scheduler* scheduler)
 {
 	m_bus = bus;
 	m_scheduler = scheduler;
-	//sdl init,...
 
 	m_scheduler->addEvent(Event::Sample, (callbackFn)&APU::onSampleEvent, (void*)this, cyclesPerSample);
 }
@@ -74,7 +73,6 @@ void APU::writeIO(uint32_t address, uint8_t value)
 		return;
 	case 0x04000501:
 		SOUNDCNT &= 0xFF; SOUNDCNT |= (value << 8);
-		Logger::msg(LoggerSeverity::Info, std::format("SOUNDCNT: {:#x}", SOUNDCNT));
 		return;
 	case 0x04000502: case 0x04000503:
 		return;
@@ -214,19 +212,14 @@ void APU::tickChannel(int channel)
 			}
 			break;
 		}
-		//default:
-			//m_channels[channel].sample = 0;
-			//m_channels[channel].curSrcAddress++;
 		}
 
 		m_channels[channel].curSampleCount++;
 
-		//hacks
 		uint32_t endOffset = m_channels[channel].srcAddress + ((m_channels[channel].length + m_channels[channel].loopStart) << 2);
 		if (m_channels[channel].curSrcAddress >= endOffset)
 		{
 			//is this right?
-			//wtf even is manual/one-shot??
 			uint8_t repeatMode = (m_channels[channel].control >> 27) & 0b11;
 			switch (repeatMode)
 			{
@@ -236,13 +229,10 @@ void APU::tickChannel(int channel)
 				m_channels[channel].adpcm_tableIdx = m_channels[channel].adpcm_loopTableIdx;
 				break;
 			case 2:
-				//m_channels[channel].cycleCount = 0;
 				m_channels[channel].curSampleCount = 0;
 				m_channels[channel].control &= 0x7FFFFFFF;
 				m_channels[channel].sample = 0;
 				return;
-			//default:
-			//	std::cout << "wtf??" << '\n';
 			}
 			//doesn't really matter what it's set to, just for tracking adpcm really
 			m_channels[channel].curSampleCount = 0;
@@ -261,7 +251,10 @@ void APU::sampleChannels()
 			tickChannel(i);
 			int channelPan = (m_channels[i].control >> 16) & 0x7F;
 			int volume = (m_channels[i].control) & 0x7F;
+			int volDivider = (m_channels[i].control >> 8) & 0b11;
+			static constexpr int shiftLUT[4] = { 0,1,2,4 };
 			int32_t sample = m_channels[i].sample;
+			sample >>= shiftLUT[volDivider];
 			sample = sample * volume / 128;
 
 			finalSampleLeft += ((sample * (128 - channelPan)) / 128);
