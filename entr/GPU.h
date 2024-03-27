@@ -114,6 +114,7 @@ struct PolyAttributes
 	bool depthEqual;
 	uint16_t alpha;
 	uint8_t polyID;
+	bool updateTranslucentDepth;
 };
 
 struct Poly

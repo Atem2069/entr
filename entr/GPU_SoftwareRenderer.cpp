@@ -383,6 +383,8 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 			return;
 		pixelAttribs.flags |= PixelFlags_Translucent;
 	}
+	else
+		pixelAttribs.flags &= ~PixelFlags_Translucent;
 
 	if (((DISP3DCNT>>3)&0b1) && (output.a != 31 && output.a && fbCol.a))
 	{
@@ -402,13 +404,15 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 		if (attributes.mode == 3 && ((attributes.polyID && !stencilBuffer[(y * 256) + x]) || !attributes.polyID || attributes.polyID==pixelAttribs.polyID))
 			return;
 
-		stencilBuffer[(y * 256) + x] = 0;
-		renderBuffer[(y * 256) + x] = res;
-
+		//weird check, translucent pixels only update depth when POLYGON_ATTR.11 set
+		if (((pixelAttribs.flags & PixelFlags_Translucent) && attributes.updateTranslucentDepth) || !(pixelAttribs.flags & PixelFlags_Translucent))
+			pixelAttribs.depth = depth;
 		pixelAttribs.alpha = output.a;
-		pixelAttribs.depth = depth;
 		pixelAttribs.polyID = attributes.polyID;
 		attributeBuffer[(y * 256) + x] = pixelAttribs;
+
+		stencilBuffer[(y * 256) + x] = 0;
+		renderBuffer[(y * 256) + x] = res;
 	}
 
 	//shadow poly with polyid.0 sets stencil bits when depth test fails

@@ -366,6 +366,7 @@ void GPU::cmd_setPolygonAttributes(uint32_t* params)
 	pendingAttributes.depthEqual = (params[0] >> 14) & 0b1;
 	pendingAttributes.alpha = (params[0] >> 16) & 0x1F;
 	pendingAttributes.polyID = (params[0] >> 24) & 0x3F;
+	pendingAttributes.updateTranslucentDepth = (params[0] >> 11) & 0b1;
 	//todo: rest of attribs
 }
 
