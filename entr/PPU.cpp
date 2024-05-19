@@ -1167,9 +1167,9 @@ template<Engine engine> void PPU::renderSprites()
 		int spritePriority = curSpriteEntry->priority;
 
 		int spriteBoundsLookupId = (curSpriteEntry->shape << 2) | curSpriteEntry->size;
-		static constexpr int spriteXBoundsLUT[12] = { 8,16,32,64,16,32,32,64,8,8,16,32 };
-		static constexpr int spriteYBoundsLUT[12] = { 8,16,32,64,8,8,16,32,16,32,32,64 };
-		static constexpr int xPitchLUT[12] = { 1,2,4,8,2,4,4,8,1,1,2,4 };
+		static constexpr int spriteXBoundsLUT[16] = { 8,16,32,64,16,32,32,64,8,8,16,32,0,0,0,0 };
+		static constexpr int spriteYBoundsLUT[16] = { 8,16,32,64,8,8,16,32,16,32,32,64,0,0,0,0 };
+		static constexpr int xPitchLUT[16] = { 1,2,4,8,2,4,4,8,1,1,2,4,0,0,0,0 };
 
 		spriteRight = spriteLeft + spriteXBoundsLUT[spriteBoundsLookupId];
 		spriteBottom = spriteTop + spriteYBoundsLUT[spriteBoundsLookupId];
@@ -1215,6 +1215,9 @@ template<Engine engine> void PPU::renderSprites()
 		}
 
 		int numXTilesToRender = (spriteRight - spriteLeft) / 8;
+		if (numXTilesToRender > 16) {
+			std::cout << "oh no.." << numXTilesToRender << " " << spriteRight << " " << spriteLeft << '\n';
+		}
 		for (int xSpanTile = 0; xSpanTile < numXTilesToRender; xSpanTile++)
 		{
 			int curXSpanTile = xSpanTile;
