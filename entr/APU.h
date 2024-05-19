@@ -26,6 +26,9 @@ struct APUChannel
 	int16_t adpcm_loop;
 	int adpcm_loopTableIdx;
 
+	//psg specific
+	uint8_t dutyCycle;
+
 	int16_t sample;
 };
 
@@ -72,4 +75,8 @@ private:
 		0x08E0,0x09C3,0x0ABD,0x0BD0,0x0CFF,0x0E4C,0x0FBA,0x114C,0x1307,0x14EE,0x1706,0x1954,
 		0x1BDC,0x1EA5,0x21B6,0x2515,0x28CA,0x2CDF,0x315B,0x364B,0x3BB9,0x41B2,0x4844,0x4F7E,
 		0x5771,0x602F,0x69CE,0x7462,0x7FFF };
+
+	//bit order reversed in comparison to actual wave duty
+	//so we can just do a SHR by duty_cycle w/o extra magic
+	static constexpr uint8_t m_waveDutyTable[8] = { 0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110, 0b00000000 };
 };

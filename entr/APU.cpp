@@ -105,6 +105,7 @@ void APU::writeIO(uint32_t address, uint8_t value)
 		{
 			m_channels[chan].curSampleCount = 0;
 			m_channels[chan].sample = 0;
+			m_channels[chan].dutyCycle = 0;
 		}
 		if (!wasEnabled && (m_channels[chan].control >> 31))
 		{
@@ -250,7 +251,14 @@ void APU::tickADPCMChannel(int channel)
 
 void APU::tickPSGChannel(int channel)
 {
-	//todo
+	//todo: impl noise for PSG channel 14/15
+	uint8_t dutySelection = (m_channels[channel].control >> 24) & 0b111;
+	uint8_t waveDuty = m_waveDutyTable[dutySelection];
+
+	uint8_t amplitude = (waveDuty >> m_channels[channel].dutyCycle) & 0b1;
+	m_channels[channel].dutyCycle = (m_channels[channel].dutyCycle + 1) & 7;
+
+	m_channels[channel].sample = amplitude ? 0x7FFF : 0x8000;
 }
 
 void APU::sampleChannels()
