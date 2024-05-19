@@ -43,6 +43,10 @@ public:
 	static void onSampleEvent(void* ctx);
 private:
 	void tickChannel(int channel);
+	void tickPCM8Channel(int channel);
+	void tickPCM16Channel(int channel);
+	void tickADPCMChannel(int channel);
+	void tickPSGChannel(int channel);
 	void sampleChannels();
 	Scheduler* m_scheduler;
 	Bus* m_bus;

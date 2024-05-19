@@ -180,44 +180,16 @@ void APU::tickChannel(int channel)
 		uint8_t format = (m_channels[channel].control >> 29) & 0b11;
 		switch (format)
 		{
-		case 0:
-			m_channels[channel].sample = m_bus->NDS7_read8(m_channels[channel].curSrcAddress);
-			m_channels[channel].sample <<= 8;
-			m_channels[channel].curSrcAddress++;
-			break;
-		case 1:
-			m_channels[channel].sample = m_bus->NDS7_read16(m_channels[channel].curSrcAddress);
-			m_channels[channel].curSrcAddress += 2;
-			break;
-		case 2:
-		{
-			uint32_t adpcmSample = m_bus->NDS7_read8(m_channels[channel].curSrcAddress);
-			if ((m_channels[channel].curSampleCount & 0b1))
-			{
-				adpcmSample >>= 4;
-				m_channels[channel].curSrcAddress++;
-			}
-			adpcmSample &= 0xF;
-			int diff = ((adpcmSample & 7) * 2 + 1) * m_adpcmTable[m_channels[channel].adpcm_tableIdx] / 8;
-			if (!(adpcmSample & 8))
-				m_channels[channel].sample = std::min(m_channels[channel].adpcm_initial + diff, 0x7FFF);
-			else
-				m_channels[channel].sample = std::max(m_channels[channel].adpcm_initial - diff, -0x7FFF);
-			m_channels[channel].adpcm_initial = m_channels[channel].sample;
-			m_channels[channel].adpcm_tableIdx = std::min(std::max(m_channels[channel].adpcm_tableIdx + m_indexTable[adpcmSample & 7], 0),88);
-			if ((m_channels[channel].curSrcAddress-m_channels[channel].srcAddress == (m_channels[channel].loopStart << 2)) && (m_channels[channel].curSampleCount&0b1))
-			{
-				m_channels[channel].adpcm_loop = m_channels[channel].adpcm_initial;
-				m_channels[channel].adpcm_loopTableIdx = m_channels[channel].adpcm_tableIdx;
-			}
-			break;
-		}
+		case 0: tickPCM8Channel(channel); break;
+		case 1: tickPCM16Channel(channel); break;
+		case 2: tickADPCMChannel(channel); break;
+		case 3: tickPSGChannel(channel); break;
 		}
 
 		m_channels[channel].curSampleCount++;
 
 		uint32_t endOffset = m_channels[channel].srcAddress + ((m_channels[channel].length + m_channels[channel].loopStart) << 2);
-		if (m_channels[channel].curSrcAddress >= endOffset)
+		if (m_channels[channel].curSrcAddress >= endOffset && format != 3)
 		{
 			//is this right?
 			uint8_t repeatMode = (m_channels[channel].control >> 27) & 0b11;
@@ -239,6 +211,46 @@ void APU::tickChannel(int channel)
 		}
 		m_channels[channel].lastCheckTimestamp = m_scheduler->getEventTime() - timeDiff;
 	}
+}
+
+void APU::tickPCM8Channel(int channel)
+{
+	m_channels[channel].sample = (m_bus->NDS7_read8(m_channels[channel].curSrcAddress)) << 8;
+	m_channels[channel].curSrcAddress++;
+}
+
+void APU::tickPCM16Channel(int channel)
+{
+	m_channels[channel].sample = m_bus->NDS7_read16(m_channels[channel].curSrcAddress);
+	m_channels[channel].curSrcAddress += 2;
+}
+
+void APU::tickADPCMChannel(int channel)
+{
+	uint32_t adpcmSample = m_bus->NDS7_read8(m_channels[channel].curSrcAddress);
+	if ((m_channels[channel].curSampleCount & 0b1))
+	{
+		adpcmSample >>= 4;
+		m_channels[channel].curSrcAddress++;
+	}
+	adpcmSample &= 0xF;
+	int diff = ((adpcmSample & 7) * 2 + 1) * m_adpcmTable[m_channels[channel].adpcm_tableIdx] / 8;
+	if (!(adpcmSample & 8))
+		m_channels[channel].sample = std::min(m_channels[channel].adpcm_initial + diff, 0x7FFF);
+	else
+		m_channels[channel].sample = std::max(m_channels[channel].adpcm_initial - diff, -0x7FFF);
+	m_channels[channel].adpcm_initial = m_channels[channel].sample;
+	m_channels[channel].adpcm_tableIdx = std::min(std::max(m_channels[channel].adpcm_tableIdx + m_indexTable[adpcmSample & 7], 0), 88);
+	if ((m_channels[channel].curSrcAddress - m_channels[channel].srcAddress == (m_channels[channel].loopStart << 2)) && (m_channels[channel].curSampleCount & 0b1))
+	{
+		m_channels[channel].adpcm_loop = m_channels[channel].adpcm_initial;
+		m_channels[channel].adpcm_loopTableIdx = m_channels[channel].adpcm_tableIdx;
+	}
+}
+
+void APU::tickPSGChannel(int channel)
+{
+	//todo
 }
 
 void APU::sampleChannels()
