@@ -109,8 +109,12 @@ void APU::writeIO(uint32_t address, uint8_t value)
 		}
 		if (!wasEnabled && (m_channels[chan].control >> 31))
 		{
+			//reset LFSR to 7FFF
+			m_channels[chan].LFSR = 0x7FFF;
+			//non-psg channels: setup initial src address
 			m_channels[chan].curSrcAddress = m_channels[chan].srcAddress;
-			m_channels[chan].lastCheckTimestamp = m_scheduler->getCurrentTimestamp();
+
+			//adpcm hacks
 			if (((m_channels[chan].control >> 29) & 0b11) == 2)
 			{
 				uint32_t adpcmHeader = m_bus->NDS7_read32(m_channels[chan].srcAddress);
@@ -122,6 +126,7 @@ void APU::writeIO(uint32_t address, uint8_t value)
 				m_channels[chan].curSampleCount = 0;
 				m_channels[chan].sample = 0;
 			}
+			m_channels[chan].lastCheckTimestamp = m_scheduler->getCurrentTimestamp();
 		}
 		break;
 	}
@@ -251,7 +256,23 @@ void APU::tickADPCMChannel(int channel)
 
 void APU::tickPSGChannel(int channel)
 {
-	//todo: impl noise for PSG channel 14/15
+	if (channel >= 14)
+	{
+		//PSG noise
+		uint8_t carry = m_channels[channel].LFSR & 0b1;
+		m_channels[channel].LFSR >>= 1;
+
+		if (carry)
+		{
+			m_channels[channel].sample = 0x8000;
+			m_channels[channel].LFSR ^= 0x6000;
+		}
+		else
+			m_channels[channel].sample = 0x7FFF;
+		return;
+	}
+
+	//regular PSG (square waves)
 	uint8_t dutySelection = (m_channels[channel].control >> 24) & 0b111;
 	uint8_t waveDuty = m_waveDutyTable[dutySelection];
 

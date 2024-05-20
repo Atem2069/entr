@@ -28,6 +28,7 @@ struct APUChannel
 
 	//psg specific
 	uint8_t dutyCycle;
+	uint16_t LFSR;
 
 	int16_t sample;
 };
