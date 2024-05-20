@@ -159,16 +159,13 @@ private:
 	void NDS7_writeDMAReg(uint32_t address, uint8_t value);
 	void NDS7_checkDMAChannel(int channel);
 	void NDS7_doDMATransfer(int channel);
-	void NDS7DMA_onCartridge();
+	void NDS7DMA_onTrigger(int trigger);
 
 	uint8_t NDS9_readDMAReg(uint32_t address);
 	void NDS9_writeDMAReg(uint32_t address, uint8_t value);
 	void NDS9_checkDMAChannel(int channel);
 	void NDS9_doDMATransfer(int channel);
-	void NDS9DMA_onHBlank();
-	void NDS9DMA_onVBlank();
-	void NDS9DMA_onCartridge();
-	void NDS9DMA_onGXFIFO();
+	void NDS9DMA_onTrigger(int trigger);
 
 	uint8_t WRAMCNT = 0;
 	uint16_t EXMEMCNT = {};

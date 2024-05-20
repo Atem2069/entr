@@ -394,14 +394,14 @@ void Bus::NDS7_doDMATransfer(int channel)
 		m_NDS7Channels[channel].control &= 0x7FFF;
 }
 
-void Bus::NDS7DMA_onCartridge()
+void Bus::NDS7DMA_onTrigger(int trigger)
 {
 	for (int i = 0; i < 4; i++)
 	{
 		DMAChannel curChannel = m_NDS7Channels[i];
 		bool channelEnabled = (curChannel.control >> 15) & 0b1;
 		uint8_t startTiming = (curChannel.control >> 12) & 0b11;
-		if (channelEnabled && (startTiming == 2))
+		if (channelEnabled && (startTiming == trigger))
 			NDS7_doDMATransfer(i);
 	}
 }
@@ -410,5 +410,5 @@ void Bus::NDS7DMA_onCartridge()
 void Bus::NDS7_CartridgeDMACallback(void* context)
 {
 	Bus* thisPtr = (Bus*)context;
-	thisPtr->NDS7DMA_onCartridge();
+	thisPtr->NDS7DMA_onTrigger(2);
 }

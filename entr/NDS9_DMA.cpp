@@ -480,50 +480,14 @@ void Bus::NDS9_doDMATransfer(int channel)
 }
 
 //this is sort of slow, not super nice. could use bitmasks instead.
-void Bus::NDS9DMA_onHBlank()
+void Bus::NDS9DMA_onTrigger(int trigger)
 {
 	for (int i = 0; i < 4; i++)
 	{
 		DMAChannel curChannel = m_NDS9Channels[i];
 		bool channelEnabled = (curChannel.control >> 15) & 0b1;
 		uint8_t startTiming = (curChannel.control >> 11) & 0b111;
-		if (channelEnabled && (startTiming == 2))
-			NDS9_doDMATransfer(i);
-	}
-}
-
-void Bus::NDS9DMA_onVBlank()
-{
-	for (int i = 0; i < 4; i++)
-	{
-		DMAChannel curChannel = m_NDS9Channels[i];
-		bool channelEnabled = (curChannel.control >> 15) & 0b1;
-		uint8_t startTiming = (curChannel.control >> 11) & 0b111;
-		if (channelEnabled && (startTiming == 1))
-			NDS9_doDMATransfer(i);
-	}
-}
-
-void Bus::NDS9DMA_onCartridge()
-{
-	for (int i = 0; i < 4; i++)
-	{
-		DMAChannel curChannel = m_NDS9Channels[i];
-		bool channelEnabled = (curChannel.control >> 15) & 0b1;
-		uint8_t startTiming = (curChannel.control >> 11) & 0b111;
-		if (channelEnabled && (startTiming == 5))
-			NDS9_doDMATransfer(i);
-	}
-}
-
-void Bus::NDS9DMA_onGXFIFO()
-{
-	for (int i = 0; i < 4; i++)
-	{
-		DMAChannel curChannel = m_NDS9Channels[i];
-		bool channelEnabled = (curChannel.control >> 15) & 0b1;
-		uint8_t startTiming = (curChannel.control >> 11) & 0b111;
-		if (channelEnabled && (startTiming == 7))
+		if (channelEnabled && (startTiming == trigger))
 			NDS9_doDMATransfer(i);
 	}
 }
@@ -531,23 +495,23 @@ void Bus::NDS9DMA_onGXFIFO()
 void Bus::NDS9_HBlankDMACallback(void* context)
 {
 	Bus* thisPtr = (Bus*)context;
-	thisPtr->NDS9DMA_onHBlank();
+	thisPtr->NDS9DMA_onTrigger(2);
 }
 
 void Bus::NDS9_VBlankDMACallback(void* context)
 {
 	Bus* thisPtr = (Bus*)context;
-	thisPtr->NDS9DMA_onVBlank();
+	thisPtr->NDS9DMA_onTrigger(1);
 }
 
 void Bus::NDS9_CartridgeDMACallback(void* context)
 {
 	Bus* thisPtr = (Bus*)context;
-	thisPtr->NDS9DMA_onCartridge();
+	thisPtr->NDS9DMA_onTrigger(5);
 }
 
 void Bus::NDS9_GXFIFODMACallback(void* context)
 {
 	Bus* thisPtr = (Bus*)context;
-	thisPtr->NDS9DMA_onGXFIFO();
+	thisPtr->NDS9DMA_onTrigger(7);
 }
