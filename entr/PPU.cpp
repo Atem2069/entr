@@ -518,7 +518,7 @@ template<Engine engine> void PPU::composeLayers()
 		}
 
 		uint16_t blendColB = backdrop;
-		int blendAPrio=255, blendBPrio = 255;
+		int blendAPrio = 255, blendBPrio = 255, blendALayer = 255;
 		
 		uint16_t finalCol = backdrop;
 		uint8_t bestPriority = 255;
@@ -530,6 +530,7 @@ template<Engine engine> void PPU::composeLayers()
 				if (m_backgroundLayers[j].priority < bestPriority)
 				{
 					doBlendOpA = (m_regs->BLDCNT >> j) & 0b1;
+					blendALayer = j;
 					bestPriority = m_backgroundLayers[j].priority;
 					finalCol = colAtLayer;
 				}
@@ -547,7 +548,12 @@ template<Engine engine> void PPU::composeLayers()
 		{
 			if (spriteAttributeBuffer[i].priority <= bestPriority)
 			{
-				doBlendOpA = (m_regs->BLDCNT >> 4) & 0b1;
+
+				//evil check!! if prev layer was selected as blend target a, but is *also* blend target b (before sprite check)
+				if (doBlendOpA && (blendALayer <= 3) && ((m_regs->BLDCNT >> (8 + blendALayer)) & 0b1))
+					blendColB = finalCol;
+				//blend target a if either sprite layer selected blendable, or semitransparent
+				doBlendOpA = ((m_regs->BLDCNT >> 4) & 0b1) || spriteAttributeBuffer[i].transparent;
 				finalCol = spritePixel;
 			}
 			else if (spriteAttributeBuffer[i].priority <= blendBPrio)
