@@ -1033,14 +1033,47 @@ template<Engine engine, int bg> void PPU::renderDirectColorBitmap()
 		m_regs = &m_engineBRegisters;
 	}
 
+	int32_t xRef = 0, yRef = 0;
+	int16_t dx = 0, dy = 0, dmx = 0, dmy = 0;
+
 	uint16_t ctrlReg = {};
 	switch (bg)
 	{
 	case 2:
 		ctrlReg = m_regs->BG2CNT;
+		xRef = m_regs->BG2X & 0xFFFFFF;
+		if ((xRef >> 27) & 0b1)
+			xRef |= 0xF0000000;
+		yRef = m_regs->BG2Y & 0xFFFFFF;
+		if ((yRef >> 27) & 0b1)
+			yRef |= 0xF0000000;
+
+		dx = m_regs->BG2PA;
+		dy = m_regs->BG2PC;
+		dmx = m_regs->BG2PB;
+		dmy = m_regs->BG2PD;
+
+		//hacks
+		m_regs->BG2X = (xRef + dmx) & 0x0FFFFFFF;
+		m_regs->BG2Y = (yRef + dmy) & 0x0FFFFFFF;
 		break;
 	case 3:
 		ctrlReg = m_regs->BG3CNT;
+		xRef = m_regs->BG3X & 0xFFFFFF;
+		if ((xRef >> 27) & 0b1)
+			xRef |= 0xF0000000;
+		yRef = m_regs->BG3Y & 0xFFFFFF;
+		if ((yRef >> 27) & 0b1)
+			yRef |= 0xF0000000;
+
+		dx = m_regs->BG3PA;
+		dy = m_regs->BG3PC;
+		dmx = m_regs->BG3PB;
+		dmy = m_regs->BG3PD;
+
+		//hacks
+		m_regs->BG3X = (xRef + dmx) & 0x0FFFFFFF;
+		m_regs->BG3Y = (yRef + dmy) & 0x0FFFFFFF;
 		break;
 	}
 
@@ -1048,9 +1081,16 @@ template<Engine engine, int bg> void PPU::renderDirectColorBitmap()
 	uint8_t bgPriority = ctrlReg & 0b11;
 	m_backgroundLayers[bg].priority = bgPriority;
 
-	for (int x = 0; x < 256; x++)		//todo: account for affine
+	for (int x = 0; x < 256; x++, calcAffineCoords(xRef,yRef,dx,dy))	
 	{
-		uint32_t pixelBase = ((256 * VCOUNT * 2) + (x << 1));
+		uint32_t xCoord = (xRef >> 8) & 0xFFFFF;
+		uint32_t yCoord = (yRef >> 8) & 0xFFFFF;
+		if (xCoord > 255 || yCoord > 191)
+		{
+			m_backgroundLayers[bg].lineBuffer[x] = 0x8000;
+			continue;
+		}
+		uint32_t pixelBase = ((256 * yCoord * 2) + (xCoord << 1));
 		uint8_t colLow = ppuReadBg<engine>(screenBase+pixelBase);
 		uint8_t colHigh = ppuReadBg<engine>(screenBase+pixelBase+1);
 		uint16_t res = (colHigh << 8) | colLow;
@@ -1072,23 +1112,64 @@ template<Engine engine, int bg> void PPU::render256ColorBitmap()
 		m_regs = &m_engineBRegisters;
 	}
 
+	int32_t xRef = 0, yRef = 0;
+	int16_t dx = 0, dy = 0, dmx = 0, dmy = 0;
+
 	uint16_t ctrlReg = {};
 	switch (bg)
 	{
 	case 2:
 		ctrlReg = m_regs->BG2CNT;
+		xRef = m_regs->BG2X & 0xFFFFFF;
+		if ((xRef >> 27) & 0b1)
+			xRef |= 0xF0000000;
+		yRef = m_regs->BG2Y & 0xFFFFFF;
+		if ((yRef >> 27) & 0b1)
+			yRef |= 0xF0000000;
+
+		dx = m_regs->BG2PA;
+		dy = m_regs->BG2PC;
+		dmx = m_regs->BG2PB;
+		dmy = m_regs->BG2PD;
+
+		//hacks
+		m_regs->BG2X = (xRef + dmx) & 0x0FFFFFFF;
+		m_regs->BG2Y = (yRef + dmy) & 0x0FFFFFFF;
 		break;
 	case 3:
 		ctrlReg = m_regs->BG3CNT;
+		ctrlReg = m_regs->BG3CNT;
+		xRef = m_regs->BG3X & 0xFFFFFF;
+		if ((xRef >> 27) & 0b1)
+			xRef |= 0xF0000000;
+		yRef = m_regs->BG3Y & 0xFFFFFF;
+		if ((yRef >> 27) & 0b1)
+			yRef |= 0xF0000000;
+
+		dx = m_regs->BG3PA;
+		dy = m_regs->BG3PC;
+		dmx = m_regs->BG3PB;
+		dmy = m_regs->BG3PD;
+
+		//hacks
+		m_regs->BG3X = (xRef + dmx) & 0x0FFFFFFF;
+		m_regs->BG3Y = (yRef + dmy) & 0x0FFFFFFF;
 		break;
 	}
 	uint32_t screenBase = ((ctrlReg >> 8) & 0x1F) * 16384;
 	uint8_t bgPriority = ctrlReg & 0b11;
 	m_backgroundLayers[bg].priority = bgPriority;
 
-	for (int x = 0; x < 256; x++)
+	for (int x = 0; x < 256; x++, calcAffineCoords(xRef,yRef,dx,dy))
 	{
-		uint32_t pixelBase = ((256 * VCOUNT) + x);
+		uint32_t xCoord = (xRef >> 8) & 0xFFFFF;
+		uint32_t yCoord = (yRef >> 8) & 0xFFFFF;
+		if (xCoord > 255 || yCoord > 191)
+		{
+			m_backgroundLayers[bg].lineBuffer[x] = 0x8000;
+			continue;
+		}
+		uint32_t pixelBase = ((256 * yCoord) + xCoord);
 		uint8_t paletteId = ppuReadBg<engine>(screenBase+pixelBase);
 		uint16_t col = 0x8000;
 		if (paletteId)
