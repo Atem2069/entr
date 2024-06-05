@@ -522,6 +522,7 @@ template<Engine engine> void PPU::composeLayers()
 		
 		uint16_t finalCol = backdrop;
 		uint8_t bestPriority = 255;
+
 		for (int j = 0; j < 4; j++)
 		{
 			if (m_backgroundLayers[j].enabled && pointAttribs.layerDrawable[j] && (!(m_backgroundLayers[j].lineBuffer[i] >> 15)))
@@ -530,11 +531,12 @@ template<Engine engine> void PPU::composeLayers()
 				if (m_backgroundLayers[j].priority < bestPriority)
 				{
 					doBlendOpA = (m_regs->BLDCNT >> j) & 0b1;
-					blendALayer = j;
+					if(doBlendOpA)
+						blendALayer = j;
 					bestPriority = m_backgroundLayers[j].priority;
 					finalCol = colAtLayer;
 				}
-				else if (m_backgroundLayers[j].priority < blendBPrio)
+				if ((m_backgroundLayers[j].priority < blendBPrio) && blendALayer != j)
 				{
 					blendColB = colAtLayer;
 					blendBPrio = m_backgroundLayers[j].priority;
