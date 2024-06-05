@@ -82,15 +82,16 @@ consteval std::array<ARM7TDMI::instructionFn, 1024> ARM7TDMI::genThumbTable()
 
 void ARM7TDMI::run(int cycles)
 {
+	if (m_bus->ARM7_halt)
+	{
+		if (m_interruptManager->NDS7_getInterrupt())
+			m_bus->ARM7_halt = false;
+		else
+			return;
+	}
+	dispatchInterrupt();
 	for (int i = 0; i < cycles; i++)
 	{
-		if (m_bus->ARM7_halt)
-		{
-			if (m_interruptManager->NDS7_getInterrupt())
-				m_bus->ARM7_halt = false;
-			else
-				return;
-		}
 		//fetch();
 		int exPipelinePtr = m_pipelinePtr + 1;
 		if (exPipelinePtr == 3)			//seems faster than using modulus
@@ -124,7 +125,8 @@ void ARM7TDMI::run(int cycles)
 			break;
 		}
 
-		dispatchInterrupt();
+		if (m_bus->ARM7_halt)
+			return;
 	}
 }
 

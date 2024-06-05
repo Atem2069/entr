@@ -81,15 +81,16 @@ consteval std::array<ARM946E::instructionFn, 1024> ARM946E::genThumbTable()
 
 void ARM946E::run(int cycles)
 {
+	if (m_halted)
+	{
+		if (m_interruptManager->NDS9_getInterrupt() && m_interruptManager->NDS9_getInterruptsEnabled())
+			m_halted = false;
+		else
+			return;
+	}
+	dispatchInterrupt();
 	for (int i = 0; i < cycles; i++)
 	{
-		if (m_halted)
-		{
-			if (m_interruptManager->NDS9_getInterrupt() && m_interruptManager->NDS9_getInterruptsEnabled())
-				m_halted = false;
-			else
-				return;
-		}
 		//fetch();
 		switch (m_inThumbMode)
 		{
@@ -109,8 +110,9 @@ void ARM946E::run(int cycles)
 
 		//static constexpr uint32_t incrLUT[4] = { 4,2,0,0 };
 		//R[15] += incrLUT[(m_inThumbMode&0b1) + ((m_pipelineFlushed&0b1)<<1)];
-		dispatchInterrupt();
 		m_pipelineFlushed = false;
+		if (m_halted)
+			return;
 	}
 }
 
