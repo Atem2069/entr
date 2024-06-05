@@ -73,14 +73,16 @@ int main()
 		//blarg. key input
 		Input::inputState.A = m_display.getPressed(GLFW_KEY_X);
 		Input::inputState.B = m_display.getPressed(GLFW_KEY_Z);
-		Input::inputState.L = m_display.getPressed(GLFW_KEY_A);
-		Input::inputState.R = m_display.getPressed(GLFW_KEY_S);
+		Input::inputState.L = m_display.getPressed(GLFW_KEY_Q);
+		Input::inputState.R = m_display.getPressed(GLFW_KEY_W);
 		Input::inputState.Start = m_display.getPressed(GLFW_KEY_ENTER);
 		Input::inputState.Select = m_display.getPressed(GLFW_KEY_RIGHT_SHIFT);
 		Input::inputState.Up = m_display.getPressed(GLFW_KEY_UP);
 		Input::inputState.Down = m_display.getPressed(GLFW_KEY_DOWN);
 		Input::inputState.Left = m_display.getPressed(GLFW_KEY_LEFT);
 		Input::inputState.Right = m_display.getPressed(GLFW_KEY_RIGHT);
+		Input::extInputState.X = m_display.getPressed(GLFW_KEY_A);
+		Input::extInputState.Y = m_display.getPressed(GLFW_KEY_S);
 
 		int x = 0, y = 0;
 		m_display.getCursorPos(x, y);
