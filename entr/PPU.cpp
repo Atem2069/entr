@@ -537,7 +537,8 @@ template<Engine engine> void PPU::composeLayers()
 				{
 					bestPriority = m_backgroundLayers[j].priority;
 					finalCol = col;
-					doBlendOpA = (m_regs->BLDCNT >> j) & 0b1;
+					//cursed check: looks like 3d bgs force alpha blending
+					doBlendOpA = ((m_regs->BLDCNT >> j) & 0b1) || (j==0 && bg03d);
 					if(doBlendOpA)
 						blendALayer = j;
 				}
