@@ -38,6 +38,7 @@ void GuiRenderer::render()
 				m_menuItemSelected = true;
 				ImGui::MenuItem("Direct Boot", nullptr, &Config::NDS.directBoot);
 				ImGui::MenuItem("Disable Video Sync", nullptr, &Config::NDS.disableFrameSync);
+				ImGui::MenuItem("Enable PXI Message Logging", nullptr, &Config::NDS.PXIMessageLogging);
 				ImGui::MenuItem("Emulation settings", nullptr, &m_showSaveTypeDialog);
 				ImGui::EndMenu();
 			}

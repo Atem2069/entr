@@ -9,6 +9,7 @@ struct SystemConfig
 	bool shouldReset;
 	bool directBoot;
 	bool disableFrameSync;
+	bool PXIMessageLogging;
 	int saveType;
 	int saveSizeOverride;
 	int numGPUThreads;

@@ -167,8 +167,11 @@ void IPC::NDS9_write32(uint32_t address, uint32_t value)
 			m_interruptManager->NDS7_requestInterrupt(InterruptType::IPCReceive);
 		NDS9_IPCFIFO.push(value);
 
-		//https://github.com/pret/pokediamond/blob/master/include/nitro/PXI_fifo_shared.h.
-		Logger::msg(LoggerSeverity::Info, std::format("PXI: tag={} err={}? data={:#x}", FIFOTagNames[value & 0x1F], ((value>>5)&0b1), (value>>6)));
+		if (Config::NDS.PXIMessageLogging)
+		{
+			//https://github.com/pret/pokediamond/blob/master/include/nitro/PXI_fifo_shared.h.
+			Logger::msg(LoggerSeverity::Info, std::format("PXI: tag={} err={}? data={:#x}", FIFOTagNames[value & 0x1F], ((value >> 5) & 0b1), (value >> 6)));
+		}
 		break;
 	}
 }

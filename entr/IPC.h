@@ -2,6 +2,7 @@
 
 #include"Logger.h"
 #include"InterruptManager.h"
+#include"Config.h"
 
 struct IPCFIFO
 {
