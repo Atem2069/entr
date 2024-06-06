@@ -491,12 +491,17 @@ template<Engine engine> void PPU::composeLayers()
 	uint16_t* spriteLineBuffer = m_engineASpriteLineBuffer;
 	SpriteAttribute* spriteAttributeBuffer = m_engineASpriteAttribBuffer;
 	PPURegisters* m_regs = &m_engineARegisters;
+	bool bg03d = false;
 	if constexpr (engine == Engine::B)
 	{
 		m_regs = &m_engineBRegisters;
 		m_backgroundLayers = m_engineBBgLayers;
 		spriteLineBuffer = m_engineBSpriteLineBuffer;
 		spriteAttributeBuffer = m_engineBSpriteAttribBuffer;
+	}
+	else
+	{
+		bg03d = (m_regs->DISPCNT >> 3) & 0b1;
 	}
 
 	uint16_t backdrop = (engine == Engine::A) ? *(uint16_t*)m_mem->PAL : *(uint16_t*)(m_mem->PAL + 0x400);
@@ -523,24 +528,25 @@ template<Engine engine> void PPU::composeLayers()
 		uint16_t finalCol = backdrop;
 		uint8_t bestPriority = 255;
 
-		for (int j = 0; j < 4; j++)
+		for (int j = 3; j >= 0; j--)
 		{
-			if (m_backgroundLayers[j].enabled && pointAttribs.layerDrawable[j] && (!(m_backgroundLayers[j].lineBuffer[i] >> 15)))
+			uint16_t col = m_backgroundLayers[j].lineBuffer[i];
+			if (!(col >> 15) && m_backgroundLayers[j].enabled && pointAttribs.layerDrawable[j])
 			{
-				uint16_t colAtLayer = m_backgroundLayers[j].lineBuffer[i];
-				if (m_backgroundLayers[j].priority < bestPriority)
+				if ((m_backgroundLayers[j].priority <= bestPriority))
 				{
+					bestPriority = m_backgroundLayers[j].priority;
+					finalCol = col;
 					doBlendOpA = (m_regs->BLDCNT >> j) & 0b1;
 					if(doBlendOpA)
 						blendALayer = j;
-					bestPriority = m_backgroundLayers[j].priority;
-					finalCol = colAtLayer;
 				}
-				if ((m_backgroundLayers[j].priority < blendBPrio) && blendALayer != j)
+
+				if (m_backgroundLayers[j].priority <= blendBPrio && blendALayer != j)
 				{
-					blendColB = colAtLayer;
+					doBlendOpB = (m_regs->BLDCNT >> (8 + j)) & 0b1;
 					blendBPrio = m_backgroundLayers[j].priority;
-					doBlendOpB = ((m_regs->BLDCNT >> (j + 8)) & 0b1);
+					blendColB = col;
 				}
 			}
 		}
@@ -565,7 +571,6 @@ template<Engine engine> void PPU::composeLayers()
 			}
 		}
 
-		//todo: support alpha blending mode
 		uint8_t blendMode = (m_regs->BLDCNT >> 6) & 0b11;
 		if (doBlendOpA && pointAttribs.blendable)
 		{
@@ -581,6 +586,14 @@ template<Engine engine> void PPU::composeLayers()
 				uint8_t R2 = blendColB & 0x1F, G2 = (blendColB >> 5) & 0x1F, B2 = (blendColB >> 10) & 0x1F;
 				uint8_t R1 = R, G1 = G, B1 = B;
 				uint8_t evA = (m_regs->BLDALPHA & 0x1F), evB = ((m_regs->BLDALPHA >> 8) & 0x1F);
+
+				//override evA/evB with GPU alpha
+				//evA = a/2, evB=1-a/2
+				if (blendALayer == 0 && bg03d)
+				{
+					evA = (m_gpuInstance->output.alpha[(VCOUNT * 256) + i])>>1;
+					evB = 16 - evA;
+				}
 				R1 = (R1 * evA) >> 4; G1 = (G1 * evA) >> 4; B1 = (B1 * evA) >> 4;
 				R2 = (R2 * evB) >> 4; G2 = (G2 * evB) >> 4; B2 = (B2 * evB) >> 4;
 				R = std::min(31, R1 + R2);
