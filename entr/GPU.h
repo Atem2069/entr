@@ -149,8 +149,13 @@ struct RenderAttribute
 {
 	uint8_t flags;
 	uint32_t depth;
-	uint16_t alpha;
 	uint8_t polyID;
+};
+
+struct RenderOutput
+{
+	uint16_t output[256 * 192];
+	uint16_t alpha[256 * 192];
 };
 
 class GPU
@@ -183,7 +188,7 @@ public:
 	void onVBlank();
 	void onSync(int threadId);
 
-	static uint16_t output[256 * 192];
+	static RenderOutput output;
 	static int numThreads;
 	static int linesPerThread;
 private:
@@ -197,7 +202,7 @@ private:
 	callbackFn m_callback;
 	void* m_callbackCtx;
 
-	uint16_t renderBuffer[256 * 192];
+	RenderOutput renderBuffer = {};
 	RenderAttribute attributeBuffer[256 * 192];
 	uint8_t stencilBuffer[256 * 192];
 	bool wBuffer = false;

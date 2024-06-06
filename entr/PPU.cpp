@@ -695,7 +695,7 @@ template<Engine engine, int bg> void PPU::renderBackground()
 		{
 			m_backgroundLayers[0].priority = (m_engineARegisters.BG0CNT & 0b11);
 			uint32_t offs = (VCOUNT * 256);
-			memcpy(m_backgroundLayers[0].lineBuffer, (GPU::output + offs), 256 * sizeof(uint16_t));
+			memcpy(m_backgroundLayers[0].lineBuffer, (GPU::output.output + offs), 256 * sizeof(uint16_t));
 			return;
 		}
 	}
@@ -2237,7 +2237,7 @@ void PPU::captureLine()
 
 	uint16_t* srcA = captureBuffer;
 	if ((DISPCAPCNT >> 24) & 0b1)
-		srcA = &GPU::output[256 * VCOUNT];
+		srcA = &GPU::output.output[256 * VCOUNT];
 
 	//writeAddr += ((captureWidth * VCOUNT) << 1);
 	writeOffs = (writeOffs + ((captureWidth * VCOUNT) << 1)) & 0x1FFFF;

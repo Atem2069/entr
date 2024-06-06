@@ -51,7 +51,9 @@ void GPU::onSync(int threadId)
 	while (m_workerThreads[threadId].rendering) {}
 
 	uint32_t start = (threadId * linesPerThread) * 256;
-	memcpy(&output[start], &renderBuffer[start], 256 * linesPerThread * sizeof(uint16_t));
+	//memcpy(&output[start], &renderBuffer[start], 256 * linesPerThread * sizeof(uint16_t));
+	memcpy(&output.output[start], &renderBuffer.output[start], 256 * linesPerThread * sizeof(uint16_t));
+	memcpy(&output.alpha[start], &renderBuffer.alpha[start], 256 * linesPerThread * sizeof(uint16_t));
 
 	if (threadId == (numThreads - 1))
 		renderInProgress = false;
@@ -61,8 +63,9 @@ void GPU::render(int yMin, int yMax)
 {
 	uint16_t clearCol = clearColor | 0x8000;
 	uint16_t clearAlpha = (clearColor >> 16) & 0x1F;
-	RenderAttribute clearAttr = { 0,0x00FFFFFF,clearAlpha,0 };
-	std::fill(renderBuffer+(256*yMin), renderBuffer + (256 * (yMax+1)), clearCol);
+	RenderAttribute clearAttr = { 0,0x00FFFFFF,0 };
+	std::fill(renderBuffer.output+(256*yMin), renderBuffer.output + (256 * (yMax+1)), clearCol);
+	std::fill(renderBuffer.alpha + (256 * yMin), renderBuffer.alpha + (256 * (yMax + 1)), clearAlpha);
 	std::fill(attributeBuffer + (256 * yMin), attributeBuffer + (256 * (yMax + 1)), clearAttr);
 	std::fill(stencilBuffer + (256 * yMin), stencilBuffer + (256 * (yMax + 1)), 0);
 
@@ -372,8 +375,8 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 	}
 
 	RenderAttribute pixelAttribs = attributeBuffer[(y * 256) + x];
-	uint16_t curCol = renderBuffer[(y * 256) + x];
-	uint16_t curAlpha = pixelAttribs.alpha;
+	uint16_t curCol = renderBuffer.output[(y * 256) + x];
+	uint16_t curAlpha = renderBuffer.alpha[(y * 256) + x];
 	ColorRGBA5 fbCol = { curCol & 0x1F, (curCol >> 5) & 0x1F, (curCol >> 10) & 0x1F, curAlpha&0x1F };
 
 	if (output.a && output.a < 31)
@@ -407,12 +410,12 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 		//weird check, translucent pixels only update depth when POLYGON_ATTR.11 set
 		if (((pixelAttribs.flags & PixelFlags_Translucent) && attributes.updateTranslucentDepth) || !(pixelAttribs.flags & PixelFlags_Translucent))
 			pixelAttribs.depth = depth;
-		pixelAttribs.alpha = output.a;
 		pixelAttribs.polyID = attributes.polyID;
 		attributeBuffer[(y * 256) + x] = pixelAttribs;
 
 		stencilBuffer[(y * 256) + x] = 0;
-		renderBuffer[(y * 256) + x] = res;
+		renderBuffer.output[(y * 256) + x] = res;
+		renderBuffer.alpha[(y * 256) + x] = output.a;
 	}
 
 	//shadow poly with polyid.0 sets stencil bits when depth test fails
@@ -651,7 +654,7 @@ void GPU::plotLow(int x0, int y0, int x1, int y1)
 	for (int x = x0; x < x1; x++)
 	{
 		if ((x >= 0 && x < 256) && (y >= 0 && y < 192))
-			renderBuffer[(256 * y) + x] = 0x001F;
+			renderBuffer.output[(256 * y) + x] = 0x001F;
 		if (D > 0)
 		{
 			y += yi;
@@ -678,7 +681,7 @@ void GPU::plotHigh(int x0, int y0, int x1, int y1)
 	for (int y = y0; y < y1; y++)
 	{
 		if ((x >= 0 && x < 256) && (y >= 0 && y < 192))
-			renderBuffer[(256 * y) + x] = 0x001F;
+			renderBuffer.output[(256 * y) + x] = 0x001F;
 		if (D > 0)
 		{
 			x += xi;

@@ -397,6 +397,6 @@ void GPU::renderWorker(int threadIdx)
 	}
 }
 
-uint16_t GPU::output[256 * 192] = {};
+RenderOutput GPU::output = {};
 int GPU::numThreads = 4;
 int GPU::linesPerThread = 48;

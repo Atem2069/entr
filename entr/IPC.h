@@ -77,4 +77,10 @@ private:
 
 	IPCFIFO NDS7_IPCFIFO;
 	IPCFIFO NDS9_IPCFIFO;
+
+	//debugging stuff
+	std::string FIFOTagNames[32] = { "TAG_EX", "TAG_USER_0", "TAG_USER_1", "TAG_SYSTEM", "TAG_NVRAM", "TAG_RTC", "TAG_TOUCHPANEL", "TAG_SOUND",
+									"TAG_PM", "TAG_MIC", "TAG_WM", "TAG_FS", "TAG_OS", "TAG_CTRDG", "TAG_CARD", "TAG_WVR",
+									"TAG_CTRDG_Ex","UNK","UNK","UNK","UNK","UNK","UNK","UNK",
+									"UNK","UNK","UNK","UNK","UNK","UNK","UNK","UNK" };
 };
