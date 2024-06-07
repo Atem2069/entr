@@ -222,7 +222,7 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		//there are still some slightly buggy edges, but this should be fairly accurate (for opaque polygons)
 
 		//not sure if this is accurate.
-		bool forceFillEdge = (y == 191) || ((DISP3DCNT >> 4) & 0b1) || ((DISP3DCNT >> 5) & 0b1) || p.attribs.alpha<31;
+		bool forceFillEdge = (y == 191) || ((DISP3DCNT >> 4) & 0b1) || ((DISP3DCNT >> 5) & 0b1) || (p.attribs.alpha<31 && ((DISP3DCNT>>3)&0b1)) || (!p.attribs.alpha);
 		if (!lxm || lEdgeNegative || forceFillEdge)
 		{
 			renderSpan(p, lEdgeMin, lEdgeMax, y, yMin, true, lEdgeMin, rEdgeMax, e);
