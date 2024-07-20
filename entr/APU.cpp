@@ -284,27 +284,36 @@ void APU::tickPSGChannel(int channel)
 
 void APU::sampleChannels()
 {
-	int32_t finalSampleLeft = 0, finalSampleRight = 0;
+	int64_t finalSampleLeft = 0, finalSampleRight = 0;
 	if ((SOUNDCNT >> 15))
 	{
+		static constexpr int shiftLUT[4] = { 4,3,2,0 };
 		for (int i = 0; i < 16; i++)
 		{
 			tickChannel(i);
 			int channelPan = (m_channels[i].control >> 16) & 0x7F;
 			int volume = (m_channels[i].control) & 0x7F;
 			int volDivider = (m_channels[i].control >> 8) & 0b11;
-			static constexpr int shiftLUT[4] = { 0,1,2,4 };
-			int32_t sample = m_channels[i].sample;
-			sample >>= shiftLUT[volDivider];
-			sample = sample * volume / 128;
 
-			finalSampleLeft += ((sample * (128 - channelPan)) / 128);
-			finalSampleRight += ((sample * channelPan) / 128);
+			int64_t sample = m_channels[i].sample;					//16.0
+			sample <<= shiftLUT[volDivider];						//16.4
+			sample *= volume;										//16.11
+
+			int64_t sampleLeft = sample, sampleRight = sample;
+			sampleLeft *= (128-channelPan);							//16.18
+			sampleRight *= channelPan;								//16.18
+
+			finalSampleLeft += (sampleLeft >> 10);					//16.8 <--strip 10 bits
+			finalSampleRight += (sampleRight >> 10);				//16.8
 		}
+
+		int masterVolume = SOUNDCNT & 0x7F;
+		finalSampleLeft = (finalSampleLeft * masterVolume) >> 21;
+		finalSampleRight = (finalSampleRight * masterVolume) >> 21;
 	}
 
-	float sampleOutLeft = ((float)finalSampleLeft) / 262144.f;
-	float sampleOutRight = ((float)finalSampleRight) / 262144.f;
+	float sampleOutLeft = ((float)finalSampleLeft) / 2048.f;
+	float sampleOutRight = ((float)finalSampleRight) / 2048.f;
 	m_sampleBuffer[sampleIndex << 1] = sampleOutLeft;
 	m_sampleBuffer[(sampleIndex << 1) + 1] = sampleOutRight;
 	sampleIndex++;
