@@ -28,6 +28,12 @@
     <Filter Include="ImGui">
       <UniqueIdentifier>{4de937e9-2da1-425e-934d-d2146cdbc87c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\HLE">
+      <UniqueIdentifier>{ee215170-497c-4c08-af22-a9bf03caec3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\HLE">
+      <UniqueIdentifier>{4c67c307-db2a-44e4-8de1-e2cdc36a67f1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -165,6 +171,9 @@
     <ClCompile Include="APU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HLE\PXI_FS.cpp">
+      <Filter>Source Files\HLE</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Logger.h">
@@ -280,6 +289,9 @@
     </ClInclude>
     <ClInclude Include="APU.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HLE\PXI_FS.h">
+      <Filter>Header Files\HLE</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

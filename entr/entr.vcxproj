@@ -164,6 +164,7 @@
     <ClCompile Include="GPU_GeometryEngine.cpp" />
     <ClCompile Include="GPU_SoftwareRenderer.cpp" />
     <ClCompile Include="GuiRenderer.cpp" />
+    <ClCompile Include="HLE\PXI_FS.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="InterruptManager.cpp" />
     <ClCompile Include="IPC.cpp" />
@@ -203,6 +204,7 @@
     <ClInclude Include="Flash.h" />
     <ClInclude Include="GPU.h" />
     <ClInclude Include="GuiRenderer.h" />
+    <ClInclude Include="HLE\PXI_FS.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="InterruptManager.h" />
     <ClInclude Include="IPC.h" />

@@ -5,12 +5,14 @@ IPC::IPC()
 
 }
 
-void IPC::init(InterruptManager* interruptManager)
+void IPC::init(InterruptManager* interruptManager, Bus* bus)
 {
 	m_interruptManager = interruptManager;
 
 	NDS7_IPCData = 0;
 	NDS9_IPCData = 0;
+
+	m_fs.init(bus);
 }
 
 IPC::~IPC()
@@ -137,6 +139,9 @@ void IPC::NDS7_write32(uint32_t address, uint32_t value)
 		if (NDS7_IPCFIFO.size == 0 && NDS9_IPCFIFO.IRQOnReceive && NDS7_IPCFIFO.enabled)
 			m_interruptManager->NDS9_requestInterrupt(InterruptType::IPCReceive);
 		NDS7_IPCFIFO.push(value);
+
+		if((value&0x1F)==11)
+			Logger::msg(LoggerSeverity::Info, std::format("PXI: tag={} err={}? data={:#x}", FIFOTagNames[value & 0x1F], ((value >> 5) & 0b1), (value >> 6)));
 		break;
 	}
 }
@@ -170,7 +175,16 @@ void IPC::NDS9_write32(uint32_t address, uint32_t value)
 		if (Config::NDS.PXIMessageLogging)
 		{
 			//https://github.com/pret/pokediamond/blob/master/include/nitro/PXI_fifo_shared.h.
-			Logger::msg(LoggerSeverity::Info, std::format("PXI: tag={} err={}? data={:#x}", FIFOTagNames[value & 0x1F], ((value >> 5) & 0b1), (value >> 6)));
+			//Logger::msg(LoggerSeverity::Info, std::format("PXI: tag={} err={}? data={:#x}", FIFOTagNames[value & 0x1F], ((value >> 5) & 0b1), (value >> 6)));
+
+			switch (value & 0x1F)
+			{
+			case 11:
+				m_fs.processPXICmd((value >> 6));
+				break;
+			//default:
+				//Logger::msg(LoggerSeverity::Info, std::format("Unhandled PXI msg: tag={} err={} data={:#x}", FIFOTagNames[value & 0x1F], ((value >> 5) & 0b1), (value >> 6)));
+			}
 		}
 		break;
 	}

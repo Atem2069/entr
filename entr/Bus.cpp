@@ -15,7 +15,7 @@ void Bus::init(std::vector<uint8_t> NDS7_BIOS, std::vector<uint8_t> NDS9_BIOS, C
 	m_cartridge = cartridge;
 
 	m_mem = new NDSMem;
-	m_ipc.init(m_interruptManager);
+	m_ipc.init(m_interruptManager, this);
 	m_NDS9Timer.init(true, m_interruptManager, m_scheduler);
 	m_NDS7Timer.init(false, m_interruptManager, m_scheduler);
 	m_spi.init(m_interruptManager);

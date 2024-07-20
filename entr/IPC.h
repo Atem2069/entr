@@ -3,6 +3,7 @@
 #include"Logger.h"
 #include"InterruptManager.h"
 #include"Config.h"
+#include"HLE/PXI_FS.h"
 
 struct IPCFIFO
 {
@@ -51,11 +52,13 @@ struct IPCFIFO
 	bool IRQOnReceive = false;		//triggers irq when receive fifo is not empty            ^^
 };
 
+class Bus;
+
 class IPC
 {
 public:
 	IPC();
-	void init(InterruptManager* interruptManager);
+	void init(InterruptManager* interruptManager, Bus* bus);
 	~IPC();
 
 	uint8_t NDS7_read8(uint32_t address);
@@ -84,4 +87,7 @@ private:
 									"TAG_PM", "TAG_MIC", "TAG_WM", "TAG_FS", "TAG_OS", "TAG_CTRDG", "TAG_CARD", "TAG_WVR",
 									"TAG_CTRDG_Ex","UNK","UNK","UNK","UNK","UNK","UNK","UNK",
 									"UNK","UNK","UNK","UNK","UNK","UNK","UNK","UNK" };
+
+	//HLE stubs
+	PXIFS m_fs;
 };
