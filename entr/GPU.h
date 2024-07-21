@@ -237,6 +237,7 @@ private:
 	uint16_t clearDepth = {};
 	uint32_t clearColor = {};
 	uint16_t m_toonTable[32];
+	uint8_t alphaTestRef = {};
 
 	static constexpr uint8_t m_cmdParameterLUT[256] =
 	{
