@@ -1153,10 +1153,10 @@ template<Engine engine, int bg> void PPU::render256ColorBitmap()
 	case 3:
 		ctrlReg = m_regs->BG3CNT;
 		ctrlReg = m_regs->BG3CNT;
-		xRef = m_regs->BG3X & 0xFFFFFF;
+		xRef = m_regs->BG3X & 0xFFFFFFF;
 		if ((xRef >> 27) & 0b1)
 			xRef |= 0xF0000000;
-		yRef = m_regs->BG3Y & 0xFFFFFF;
+		yRef = m_regs->BG3Y & 0xFFFFFFF;
 		if ((yRef >> 27) & 0b1)
 			yRef |= 0xF0000000;
 
@@ -1178,7 +1178,9 @@ template<Engine engine, int bg> void PPU::render256ColorBitmap()
 	{
 		uint32_t xCoord = (xRef >> 8) & 0xFFFFF;
 		uint32_t yCoord = (yRef >> 8) & 0xFFFFF;
-		if (xCoord > 255 || yCoord > 191)
+		//really awful hack
+		//need to do LUT for bmp size based on bg (bg2 can do 512x256, bg3 512x512 supposedly..?)
+		if (xCoord > 511 || yCoord > 511)
 		{
 			m_backgroundLayers[bg].lineBuffer[x] = 0x8000;
 			continue;

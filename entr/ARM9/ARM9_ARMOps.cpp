@@ -885,7 +885,7 @@ void ARM946E::ARM_CoprocessorRegisterTransfer()
 			ITCM_enabled = (CP15_control >> 18) & 0b1;
 			ITCM_load = (CP15_control >> 19) & 0b1;
 			m_exceptionBase = ((CP15_control >> 13) & 0b1) ? 0xFFFF0000 : 0x00000000;
-			Logger::msg(LoggerSeverity::Info, std::format("Ctrl register write. Exception base={:#x}. DTCM enabled={}, load={}. ITCM enabled={}, load={}.",m_exceptionBase,DTCM_enabled,DTCM_load,ITCM_enabled,ITCM_load));
+			Logger::msg(LoggerSeverity::Info, std::format("Ctrl register write [{:#x}]. Exception base={:#x}. DTCM enabled={}, load={}. ITCM enabled={}, load={}.",CP15_control,m_exceptionBase,DTCM_enabled,DTCM_load,ITCM_enabled,ITCM_load));
 			break;
 		case 0x0910:
 			DTCM_Ctrl = getReg(srcDestRegIdx);
