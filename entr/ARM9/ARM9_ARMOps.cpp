@@ -590,6 +590,10 @@ void ARM946E::ARM_HalfwordTransferImmediateOffset()
 
 void ARM946E::ARM_SingleDataTransfer()
 {
+	//hack for PLD. 
+	//TODO: add extra LUT bit for condition=0xF
+	if ((m_currentOpcode >> 28) == 0xF)
+		return;
 	bool immediate = ((m_currentOpcode >> 25) & 0b1);
 	bool preIndex = ((m_currentOpcode >> 24) & 0b1);
 	bool upDown = ((m_currentOpcode >> 23) & 0b1);	//1=up,0=down
@@ -880,7 +884,8 @@ void ARM946E::ARM_CoprocessorRegisterTransfer()
 			DTCM_load = (CP15_control >> 17) & 0b1;
 			ITCM_enabled = (CP15_control >> 18) & 0b1;
 			ITCM_load = (CP15_control >> 19) & 0b1;
-			Logger::msg(LoggerSeverity::Info, std::format("Ctrl register write. DTCM enabled={}, load={}. ITCM enabled={}, load={}",DTCM_enabled,DTCM_load,ITCM_enabled,ITCM_load));
+			m_exceptionBase = ((CP15_control >> 13) & 0b1) ? 0xFFFF0000 : 0x00000000;
+			Logger::msg(LoggerSeverity::Info, std::format("Ctrl register write. Exception base={:#x}. DTCM enabled={}, load={}. ITCM enabled={}, load={}.",m_exceptionBase,DTCM_enabled,DTCM_load,ITCM_enabled,ITCM_load));
 			break;
 		case 0x0910:
 			DTCM_Ctrl = getReg(srcDestRegIdx);
@@ -913,7 +918,7 @@ void ARM946E::ARM_SoftwareInterrupt()
 
 	setSPSR(oldCPSR);			//set SPSR_svc
 	setReg(14, oldPC);			//Save old R15
-	setReg(15, 0xFFFF0008);		//SWI entry point is 0x08
+	setReg(15, m_exceptionBase+0x08);		//SWI entry point is 0x08
 }
 
 void ARM946E::ARM_CountLeadingZeros()

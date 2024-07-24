@@ -303,4 +303,6 @@ private:
 	uint32_t DTCM_Ctrl = 0x0080000A;
 	uint32_t DTCM_Base = 0x00800000;
 	uint32_t DTCM_Size = 0x4000;
+
+	uint32_t m_exceptionBase = 0xFFFF0000;
 };
