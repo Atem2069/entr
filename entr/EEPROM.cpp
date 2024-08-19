@@ -42,6 +42,13 @@ uint8_t EEPROM::sendCommand(uint8_t value)
 		break;
 	case EEPROMState::WriteAddress:
 	{
+		if (m_saveSize == 512)
+		{
+			m_addressLatch = value + (highAddress ? 0x100 : 0);
+			highAddress = false;
+			m_state = m_nextState;
+			break;
+		}
 		uint32_t shiftAmount = 8 - (m_addressProgress * 8);
 		m_addressLatch &= ~(0xFF << shiftAmount);
 		m_addressLatch |= (value << shiftAmount);
@@ -101,6 +108,16 @@ void EEPROM::decodeCommand(uint8_t value)
 	case 0x02:						//write data
 		m_state = EEPROMState::WriteAddress;
 		m_nextState = EEPROMState::WriteData;
+		break;
+	case 0x0B:						//read high (0.5k)
+		m_state = EEPROMState::WriteAddress;
+		m_nextState = EEPROMState::ReadData;
+		highAddress = true;
+		break;
+	case 0x0A:						//write high (0.5k)
+		m_state = EEPROMState::WriteAddress;
+		m_nextState = EEPROMState::WriteData;
+		highAddress = true;
 		break;
 	default:
 		Logger::msg(LoggerSeverity::Error, std::format("Unknown EEPROM command {:#x}", value));
