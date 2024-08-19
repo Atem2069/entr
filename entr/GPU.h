@@ -6,6 +6,9 @@
 #include"NDSMem.h"
 #include"Config.h"
 #include<queue>
+#include<thread>
+#include<condition_variable>
+#include<mutex>
 
 struct GXFIFOCommand
 {
