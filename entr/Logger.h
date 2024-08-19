@@ -1,5 +1,8 @@
 #pragma once
 
+//go fuck yourself msvc.
+#define _USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION 0
+
 #include<iostream>
 #include<string>
 #include<queue>
