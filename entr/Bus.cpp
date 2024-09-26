@@ -404,7 +404,7 @@ uint8_t Bus::NDS7_readIO8(uint32_t address)
 {
 	if (address >= 0x04800000)
 		return m_wifi.read(address);
-	if (address >= 0x04000400 && address <= 0x04000505)
+	if ((address >= 0x04000400 && address <= 0x0400051c))
 		return m_apu.readIO(address);
 	switch (address)
 	{
@@ -456,7 +456,7 @@ void Bus::NDS7_writeIO8(uint32_t address, uint8_t value)
 		m_wifi.write(address,value);
 		return;
 	}
-	if (address >= 0x04000400 && address <= 0x04000505)
+	if (address >= 0x04000400 && address <= 0x0400051c)
 	{
 		m_apu.writeIO(address,value);
 		return;

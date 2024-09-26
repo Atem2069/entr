@@ -45,6 +45,16 @@ uint8_t APU::readIO(uint32_t address)
 		return SOUNDBIAS & 0xFF;
 	case 0x04000505:
 		return (SOUNDBIAS >> 8) & 0xFF;
+	case 0x04000506: case 0x04000507:
+		return 0;
+	case 0x04000508:
+		return SNDCAP0CNT;
+	case 0x04000509:
+		return SNDCAP1CNT;
+	case 0x0400050a: case 0x0400050b: case 0x0400050c: case 0x0400050d: case 0x0400050e: case 0x040005ef: case 0x04000510:
+	case 0x04000511: case 0x04000512: case 0x04000513: case 0x04000514: case 0x04000515: case 0x04000516: case 0x04000517:
+	case 0x04000518: case 0x04000519: case 0x0400051a: case 0x0400051b: case 0x0400051c:
+		return 0;
 	}
 
 	uint32_t chan = (address >> 4) & 0xF;
@@ -81,6 +91,18 @@ void APU::writeIO(uint32_t address, uint8_t value)
 		return;
 	case 0x04000505:
 		SOUNDBIAS &= 0xFF; SOUNDBIAS |= ((value & 0b11) << 8);
+		return;
+	case 0x04000506: case 0x04000507:
+		return;
+	case 0x04000508:
+		SNDCAP0CNT = value & 0x8F;
+		return;
+	case 0x04000509:
+		SNDCAP1CNT = value & 0x8F;
+		return;
+	case 0x0400050a: case 0x0400050b: case 0x0400050c: case 0x0400050d: case 0x0400050e: case 0x040005ef: case 0x04000510:
+	case 0x04000511: case 0x04000512: case 0x04000513: case 0x04000514: case 0x04000515: case 0x04000516: case 0x04000517:
+	case 0x04000518: case 0x04000519: case 0x0400051a: case 0x0400051b: case 0x0400051c:
 		return;
 	}
 
