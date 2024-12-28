@@ -143,28 +143,30 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 		}
 		interpolateEdge(y, r1.v[0], r2.v[0], r1.v[1], r2.v[1], rEdgeMin, rEdgeMax);
 
+
+		uint64_t x1 = l1.v[1], x2 = l2.v[1], x = y;
+		if (lEdgeXMajor)
+		{
+			x1 = l1.v[0]; x2 = l2.v[0]; x = lEdgeMin;
+
+			//need to account for swapped edges explicitly here
+			//the invariant that y1<y2 does not hold for x-major cases
+			if (x1 > x2)
+			{
+				std::swap(x1, x2);
+				x = (x2 - x) + x1;
+			}
+		}
 		//interpolate linearly if w values equal
 		if (l1.v[3] == l2.v[3])
 		{
-			e[0].w = linearInterpolate(y, l1.v[3], l2.v[3], l1.v[1], l2.v[1]);
-			e[0].u = linearInterpolate(y, l1.texcoord[0], l2.texcoord[0], l1.v[1], l2.v[1]);
-			e[0].v = linearInterpolate(y, l1.texcoord[1], l2.texcoord[1], l1.v[1], l2.v[1]);
-			e[0].col = interpolateColor(y, l1.color, l2.color, l1.v[1], l2.v[1]);
+			e[0].w = linearInterpolate(x, l1.v[3], l2.v[3], x1, x2);
+			e[0].u = linearInterpolate(x, l1.texcoord[0], l2.texcoord[0], x1, x2);
+			e[0].v = linearInterpolate(x, l1.texcoord[1], l2.texcoord[1], x1, x2);
+			e[0].col = interpolateColor(x, l1.color, l2.color, x1, x2);
 		}
 		else
 		{
-			uint64_t x1 = l1.v[1], x2 = l2.v[1], x = y;
-			if (lEdgeXMajor)
-			{
-				x1 = l1.v[0]; x2 = l2.v[0]; x = lEdgeMin;
-				if (x1 > x2)
-				{
-					uint64_t tmp = x1;
-					x1 = x2;
-					x2 = tmp;
-					x = (x2 - x) + x1;
-				}
-			}
 			uint64_t factorL = calcFactor((x2-x1) + 1, (x - x1), l1.v[3], l2.v[3], 9);
 			e[0].w = interpolatePerspectiveCorrect(factorL, 9, l1.v[3], l2.v[3]);
 			e[0].u = interpolatePerspectiveCorrect(factorL, 9, l1.texcoord[0], l2.texcoord[0]);
@@ -172,27 +174,29 @@ void GPU::rasterizePolygon(Poly p, int yMin, int yMax)
 			e[0].col = interpolateColorPerspectiveCorrect(factorL, 9, l1.color, l2.color);
 		}
 
+
+		x1 = r1.v[1], x2 = r2.v[1], x = y;
+		if (rEdgeXMajor)
+		{
+			x1 = r1.v[0]; x2 = r2.v[0]; x = rEdgeMax;
+
+			//need to account for swapped edges explicitly here
+			//the invariant that y1<y2 does not hold for x-major cases
+			if (x1 > x2)
+			{
+				std::swap(x1, x2);
+				x = (x2 - x) + x1;
+			}
+		}
 		if (r1.v[3] == r2.v[3])
 		{
-			e[1].w = linearInterpolate(y, r1.v[3], r2.v[3], r1.v[1], r2.v[1]);
-			e[1].u = linearInterpolate(y, r1.texcoord[0], r2.texcoord[0], r1.v[1], r2.v[1]);
-			e[1].v = linearInterpolate(y, r1.texcoord[1], r2.texcoord[1], r1.v[1], r2.v[1]);
-			e[1].col = interpolateColor(y, r1.color, r2.color, r1.v[1], r2.v[1]);
+			e[1].w = linearInterpolate(x, r1.v[3], r2.v[3], x1, x2);
+			e[1].u = linearInterpolate(x, r1.texcoord[0], r2.texcoord[0], x1, x2);
+			e[1].v = linearInterpolate(x, r1.texcoord[1], r2.texcoord[1], x1, x2);
+			e[1].col = interpolateColor(x, r1.color, r2.color, x1, x2);
 		}
 		else
 		{
-			uint64_t x1 = r1.v[1], x2 = r2.v[1], x = y;
-			if (rEdgeXMajor)
-			{
-				x1 = r1.v[0], x2 = r2.v[0], x = rEdgeMax;
-				if (x1 > x2)
-				{
-					uint64_t tmp = x1;
-					x1 = x2;
-					x2 = tmp;
-					x = (x2 - x) + x1;
-				}
-			}
 			uint64_t factorR = calcFactor((x2-x1) + 1, (x-x1), r1.v[3], r2.v[3], 9);
 			e[1].w = interpolatePerspectiveCorrect(factorR, 9, r1.v[3], r2.v[3]);
 			e[1].u = interpolatePerspectiveCorrect(factorR, 9, r1.texcoord[0], r2.texcoord[0]);
