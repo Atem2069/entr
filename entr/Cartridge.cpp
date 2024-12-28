@@ -73,9 +73,8 @@ void Cartridge::encryptSecureArea(uint8_t* keyBuf)
 		return;
 
 	//write 'encryObj' to secure area ID
-	char encryObj[8] = { 'e','n','c','r','y','O','b','j' };
-	for (int i = 0; i < 8; i++)
-		m_cartData[0x4000 + i] = encryObj[i];
+	const char* encryObj = "encryObj";
+	memcpy(&m_cartData[0x4000], encryObj, 8);
 
 	//level 3 encrypt first 2KB
 	KEY1_InitKeyCode(cartId, 3, 2);
