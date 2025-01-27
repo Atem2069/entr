@@ -620,7 +620,7 @@ void ARM946E::Thumb_SoftwareInterrupt()
 
 	setSPSR(oldCPSR);			//set SPSR_svc
 	setReg(14, oldPC);			//Save old R15
-	setReg(15, 0xFFFF0008);		//SWI entry point is 0x08
+	setReg(15, m_exceptionBase + 0x08);		//SWI entry point is 0x08
 }
 
 void ARM946E::Thumb_UnconditionalBranch()

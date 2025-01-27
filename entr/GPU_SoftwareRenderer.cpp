@@ -401,7 +401,8 @@ void GPU::plotPixel(int x, int y, uint64_t depth, ColorRGBA5 polyCol, ColorRGBA5
 		output.a = 31;
 
 	uint16_t res = output.toUint();
-	if ((!(res >> 15)) && depth < pixelAttribs.depth)
+	bool passAlphaTest = ((DISP3DCNT >> 2) & 0b1) ? (output.a > alphaTestRef) : true;
+	if ((!(res >> 15)) && depth < pixelAttribs.depth && passAlphaTest)
 	{
 		//is this check true?
 		if (attributes.mode == 3 && ((attributes.polyID && !stencilBuffer[(y * 256) + x]) || !attributes.polyID || attributes.polyID==pixelAttribs.polyID))

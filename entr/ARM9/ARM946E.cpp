@@ -162,7 +162,7 @@ bool ARM946E::dispatchInterrupt()
 	constexpr int pcOffsetAmount[2] = { 4,0 };
 	setSPSR(oldCPSR);
 	setReg(14, getReg(15) - pcOffsetAmount[wasThumb]);
-	setReg(15, 0xFFFF0018);	//ARM9 uses high interrupt vector?
+	setReg(15, m_exceptionBase + 0x18);	//ARM9 uses high interrupt vector?
 	m_pipelineFlushed = false;
 	return true;
 }

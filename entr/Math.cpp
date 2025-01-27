@@ -17,7 +17,7 @@ uint8_t DSMath::readIO(uint32_t address)
 	case 0x04000280:
 		return DIVCNT & 0xFF;
 	case 0x04000281:
-		return ((DIVCNT >> 8) & 0xFF);
+		return ((DIVCNT >> 8) & 0x7F);
 	case 0x04000290:
 		return DIV_NUMER & 0xFF;
 	case 0x04000291:
@@ -86,6 +86,8 @@ uint8_t DSMath::readIO(uint32_t address)
 		return ((DIVREM_RESULT >> 56) & 0xFF);
 	case 0x040002B0:
 		return SQRTCNT & 0b1;
+	case 0x040002B1:
+		return 0;
 	case 0x040002B4:
 		m_doSqrt();
 		return SQRT_RESULT & 0xFF;

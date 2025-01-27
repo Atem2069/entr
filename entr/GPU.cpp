@@ -134,6 +134,9 @@ void GPU::write(uint32_t address, uint8_t value)
 	case 0x04000603:
 		GXSTAT &= 0x3FFFFFFF; GXSTAT |= (value & 0xC0) << 24;
 		break;
+	case 0x04000340:
+		alphaTestRef = value & 0x1F;
+		break;
 	case 0x04000350:
 		clearColor &= 0xFFFFFF00; clearColor |= value;
 		break;

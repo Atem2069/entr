@@ -6,6 +6,9 @@
 #include"NDSMem.h"
 #include"Config.h"
 #include<queue>
+#include<thread>
+#include<condition_variable>
+#include<mutex>
 
 struct GXFIFOCommand
 {
@@ -237,6 +240,7 @@ private:
 	uint16_t clearDepth = {};
 	uint32_t clearColor = {};
 	uint16_t m_toonTable[32];
+	uint8_t alphaTestRef = {};
 
 	static constexpr uint8_t m_cmdParameterLUT[256] =
 	{

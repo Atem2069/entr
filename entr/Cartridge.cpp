@@ -27,7 +27,7 @@ void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptM
 
 		switch (saveSize)
 		{
-		case 8: case 32: case 64: case 128:
+		case 0: case 8: case 32: case 64: case 128:
 			m_backup = new EEPROM(savePath);
 			break;
 		case 256: case 512: case 1024: case 8192:

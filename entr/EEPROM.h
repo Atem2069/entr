@@ -27,6 +27,7 @@ private:
 	uint8_t m_data[65536];			
 	uint16_t m_addressLatch = 0;
 	int m_addressProgress = 0;
+	bool highAddress = false;
 
 	uint8_t m_statusRegister = 0;
 

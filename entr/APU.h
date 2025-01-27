@@ -57,6 +57,8 @@ private:
 	uint16_t SOUNDCNT = {};
 	uint16_t SOUNDBIAS = {};
 
+	uint8_t SNDCAP0CNT = {}, SNDCAP1CNT = {};	//just stubbing these for now
+
 	APUChannel m_channels[16] = {};
 
 	static constexpr int cyclesPerSample = 1024;

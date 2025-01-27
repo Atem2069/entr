@@ -82,6 +82,7 @@ void GuiRenderer::render()
 		ImGui::Begin("Emulation settings", &m_showSaveTypeDialog, ImGuiWindowFlags_NoCollapse);
 		//should account for different save sizes (e.g. can have small EEPROM variants)
 		ImGui::Text("Cartridge Savetype");
+		if (ImGui::RadioButton("EEPROM 0.5K", Config::NDS.saveType == 0 && Config::NDS.saveSizeOverride == 512)) { Config::NDS.saveType = 0; Config::NDS.saveSizeOverride = 512; }
 		if (ImGui::RadioButton("EEPROM 8K", Config::NDS.saveType == 0 && Config::NDS.saveSizeOverride == 8192)) { Config::NDS.saveType = 0; Config::NDS.saveSizeOverride = 8192; }
 		if (ImGui::RadioButton("EEPROM 64K", Config::NDS.saveType == 0 && Config::NDS.saveSizeOverride==65536)) { Config::NDS.saveType = 0; Config::NDS.saveSizeOverride = 65536; }
 		if (ImGui::RadioButton("EEPROM 128K", Config::NDS.saveType == 0 && Config::NDS.saveSizeOverride==131072)) { Config::NDS.saveType = 0; Config::NDS.saveSizeOverride = 131072;}
