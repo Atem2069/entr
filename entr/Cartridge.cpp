@@ -18,6 +18,7 @@ void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptM
 	std::string savePath = Config::NDS.RomName.substr(0, extensionPos) + ".sav";
 
 	//this is messy. all cartridge loading/saving stuff needs a good think-through
+	/*
 	bool manualSaveType = true;
 	if (std::filesystem::exists(savePath))
 	{
@@ -56,6 +57,7 @@ void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptM
 			break;
 		}
 	}
+	*/
 }
 
 Cartridge::~Cartridge()

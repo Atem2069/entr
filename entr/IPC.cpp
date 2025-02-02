@@ -166,12 +166,6 @@ void IPC::NDS9_write32(uint32_t address, uint32_t value)
 	switch (address)
 	{
 	case 0x04000188:
-		if (NDS9_IPCFIFO.size == 16)
-			NDS9_IPCFIFO.error = true;
-		if (NDS9_IPCFIFO.size == 0 && NDS7_IPCFIFO.IRQOnReceive && NDS9_IPCFIFO.enabled)
-			m_interruptManager->NDS7_requestInterrupt(InterruptType::IPCReceive);
-		NDS9_IPCFIFO.push(value);
-
 		if (Config::NDS.PXIMessageLogging)
 		{
 			//https://github.com/pret/pokediamond/blob/master/include/nitro/PXI_fifo_shared.h.
@@ -180,12 +174,16 @@ void IPC::NDS9_write32(uint32_t address, uint32_t value)
 			switch (value & 0x1F)
 			{
 			case 11:
-				m_fs.processPXICmd((value >> 6));
-				break;
-			//default:
-				//Logger::msg(LoggerSeverity::Info, std::format("Unhandled PXI msg: tag={} err={} data={:#x}", FIFOTagNames[value & 0x1F], ((value >> 5) & 0b1), (value >> 6)));
+				NDS7_write32(0x04000188, m_fs.processPXICmd((value >> 6)));
+				return;
 			}
 		}
+
+		if (NDS9_IPCFIFO.size == 16)
+			NDS9_IPCFIFO.error = true;
+		if (NDS9_IPCFIFO.size == 0 && NDS7_IPCFIFO.IRQOnReceive && NDS9_IPCFIFO.enabled)
+			m_interruptManager->NDS7_requestInterrupt(InterruptType::IPCReceive);
+		NDS9_IPCFIFO.push(value);
 		break;
 	}
 }
