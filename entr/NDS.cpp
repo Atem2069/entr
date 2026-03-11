@@ -1,5 +1,7 @@
 #include"NDS.h"
 
+#include<chrono>
+
 NDS::NDS()
 {
 
