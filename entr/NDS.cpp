@@ -60,12 +60,11 @@ bool NDS::initialise()
 {
 	Logger::msg(LoggerSeverity::Info, std::format("Create new NDS instance. directBoot={} ROM path={}",Config::NDS.directBoot, Config::NDS.RomName));
 	m_scheduler.invalidateAll();
-	std::vector<uint8_t> romData;
+
 	std::vector<uint8_t> nds7bios;
 	std::vector<uint8_t> nds9bios;
 	std::vector<uint8_t> firmware;	//don't like this tbh.
-	if (!readFile(romData, Config::NDS.RomName.c_str()))	//silently fail, not a huge issue
-		return false;
+
 	if (!readFile(nds7bios, "rom\\biosnds7.bin"))
 	{
 		Logger::msg(LoggerSeverity::Error, "Couldn't load NDS7 BIOS..");
@@ -79,21 +78,26 @@ bool NDS::initialise()
 	if (!readFile(firmware, "rom\\firmware.bin"))
 		return false;
 
-	uint32_t ARM9Offs = *(uint32_t*)&romData[0x20];
-	uint32_t ARM9Entry = *(uint32_t*)&romData[0x24];
-	uint32_t ARM9LoadAddr = *(uint32_t*)&romData[0x28];
-	uint32_t ARM9Size = *(uint32_t*)&romData[0x2c];
+	if (!m_cartridge.init(Config::NDS.RomName, &m_interruptManager, &m_scheduler))
+		return false;
 
-	uint32_t ARM7Offs = *(uint32_t*)&romData[0x30];
-	uint32_t ARM7Entry = *(uint32_t*)&romData[0x34];
-	uint32_t ARM7LoadAddr = *(uint32_t*)&romData[0x38];
-	uint32_t ARM7Size = *(uint32_t*)&romData[0x3c];
+	uint8_t* cartHeader = m_cartridge.getROMHeader();
+
+	uint32_t ARM9Offs = *(uint32_t*)&cartHeader[0x20];
+	uint32_t ARM9Entry = *(uint32_t*)&cartHeader[0x24];
+	uint32_t ARM9LoadAddr = *(uint32_t*)&cartHeader[0x28];
+	uint32_t ARM9Size = *(uint32_t*)&cartHeader[0x2c];
+
+	uint32_t ARM7Offs = *(uint32_t*)&cartHeader[0x30];
+	uint32_t ARM7Entry = *(uint32_t*)&cartHeader[0x34];
+	uint32_t ARM7LoadAddr = *(uint32_t*)&cartHeader[0x38];
+	uint32_t ARM7Size = *(uint32_t*)&cartHeader[0x3c];
 
 
 	Logger::msg(LoggerSeverity::Info, std::format("ARM9 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM9Offs, ARM9Entry, ARM9LoadAddr, ARM9Size));
 	Logger::msg(LoggerSeverity::Info, std::format("ARM7 ROM offset={:#x} entry={:#x} load={:#x} size={:#x}", ARM7Offs, ARM7Entry, ARM7LoadAddr, ARM7Size));
 
-	m_cartridge.init(romData, &m_interruptManager,&m_scheduler);
+
 	m_bus.init(nds7bios, nds9bios, &m_cartridge, &m_scheduler, &m_interruptManager, &m_ppu, &m_gpu, &m_input);
 
 	if (Config::NDS.directBoot)
@@ -114,21 +118,35 @@ bool NDS::initialise()
 
 		m_cartridge.directBoot();
 		//load arm9/arm7 binaries
+
+		//this is kind of ridiculous in all fairness, todo: cleanup
+		uint8_t* arm9Binary = new uint8_t[ARM9Size];
+		uint8_t* arm7Binary = new uint8_t[ARM7Size];
+
+		auto& is = m_cartridge.getFileHandle();
+
+		is.seekg(ARM9Offs);
+		is.read((char*)arm9Binary, ARM9Size);
+
+		is.seekg(ARM7Offs);
+		is.read((char*)arm7Binary, ARM7Size);
+
 		for (int i = 0; i < ARM9Size; i++)
 		{
-			uint8_t curByte = romData[ARM9Offs + i];
-			m_bus.NDS9_write8(ARM9LoadAddr + i, curByte);
+			m_bus.NDS9_write8(ARM9LoadAddr + i, arm9Binary[i]);
 		}
 		for (int i = 0; i < ARM7Size; i++)
 		{
-			uint8_t curByte = romData[ARM7Offs + i];
-			m_bus.NDS7_write8(ARM7LoadAddr + i, curByte);
+			m_bus.NDS7_write8(ARM7LoadAddr + i, arm7Binary[i]);
 		}
 		Logger::msg(LoggerSeverity::Info, "Mapped ARM9/ARM7 binaries into memory!");
 
+		delete[] arm9Binary;
+		delete[] arm7Binary;
+
 		//copy over rom header
 		for (int i = 0; i < 0x170; i++)
-			m_bus.NDS9_write8(0x027FFE00 + i, romData[i]);
+			m_bus.NDS9_write8(0x027FFE00 + i, cartHeader[i]);
 		//copy firmware user data (e.g. tsc calibration)
 		for (int i = 0; i < 0xF0; i++)
 			m_bus.NDS9_write8(0x027FFC80 + i, firmware[0x3FE00 + i]);

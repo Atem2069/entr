@@ -18,8 +18,18 @@ class Cartridge
 {
 public:
 	Cartridge();
-	void init(std::vector<uint8_t> cartData, InterruptManager* interruptManager, Scheduler* scheduler);
+	bool init(std::string filePath, InterruptManager* interruptManager, Scheduler* scheduler);
 	~Cartridge();
+
+	uint8_t* getROMHeader();
+
+	// hacky as all hell, but i'm lazy. :)
+	// todo: remove this when we have proper infra for parsing header +
+	// arm7/arm9 binary state.
+	std::ifstream& getFileHandle()
+	{
+		return fileHandle;
+	}
 
 	void encryptSecureArea(uint8_t* keyBuf);
 	void directBoot() { m_encryptionState = CartEncryptionState::KEY2; }	//directly enter KEY2/main data mode if direct booting
@@ -54,8 +64,13 @@ private:
 	void onTransferEvent();
 
 	CartEncryptionState m_encryptionState = CartEncryptionState::Unencrypted;
-	//std::vector<uint8_t> m_cartData;	//vector probably sucks, but oh well
-	uint8_t* m_cartData;
+
+	std::ifstream fileHandle;
+	uint8_t romHeader[0x200];
+
+	//800h long. needs to be handled separately to 'normal' cart data
+	uint8_t* secureArea;
+
 	uint8_t read(uint32_t address);
 	void write(uint32_t address, uint8_t value);
 

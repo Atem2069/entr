@@ -6,11 +6,21 @@ Cartridge::Cartridge()
 
 }
 
-void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptManager, Scheduler* scheduler)
+bool Cartridge::init(std::string filePath, InterruptManager* interruptManager, Scheduler* scheduler)
 {
-	//m_cartData = cartData;
-	m_cartData = new uint8_t[cartData.size()];
-	std::copy(cartData.begin(), cartData.end(), m_cartData);
+	fileHandle = std::ifstream(filePath, std::ios::in | std::ios::binary);
+	if (!fileHandle.good())
+		return false;
+
+	secureArea = new uint8_t[0x4000];
+
+	// TODO: use proper struct for cart header, makes things easier ;)
+	fileHandle.seekg(0);
+	fileHandle.read((char*)romHeader, 0x200);
+
+	fileHandle.seekg(0x4000);
+	fileHandle.read((char*)secureArea, 0x4000);
+
 	m_interruptManager = interruptManager;
 	m_scheduler = scheduler;
 
@@ -56,36 +66,47 @@ void Cartridge::init(std::vector<uint8_t> cartData, InterruptManager* interruptM
 			break;
 		}
 	}
+
+	return true;
 }
 
 Cartridge::~Cartridge()
 {
+	fileHandle.close();
+
+	delete[] secureArea;
 	delete m_backup;
-	delete[] m_cartData;
+}
+
+uint8_t* Cartridge::getROMHeader()
+{
+	return romHeader;
 }
 
 void Cartridge::encryptSecureArea(uint8_t* keyBuf)
 {
 	memcpy(storedKeyBuffer, keyBuf, 0x1048);
-	cartId = m_cartData[0xC] | (m_cartData[0xD] << 8) | (m_cartData[0xE] << 16) | (m_cartData[0xF] << 24);
-	uint32_t secureAreaId = *(uint32_t*)&m_cartData[0x4000];
+	cartId = romHeader[0xC] | (romHeader[0xD] << 8) | (romHeader[0xE] << 16) | (romHeader[0xF] << 24);
+
+	uint32_t secureAreaId = *(uint32_t*)&secureArea[0];
+
 	if (secureAreaId != 0xE7FFDEFF)							//secure area already encrypted, or no secure area exists
 		return;
 
 	//write 'encryObj' to secure area ID
 	const char* encryObj = "encryObj";
-	memcpy(&m_cartData[0x4000], encryObj, 8);
+	memcpy(&secureArea[0], encryObj, 8);
 
 	//level 3 encrypt first 2KB
 	KEY1_InitKeyCode(cartId, 3, 2);
-	for (int i = 0x4000; i < 0x4800; i += 8)
+	for (int i = 0x0; i < 0x800; i += 8)
 	{
-		KEY1_encrypt((uint32_t*)&m_cartData[i]);
+		KEY1_encrypt((uint32_t*)&secureArea[i]);
 	}
 
 	//level 2 encrypt secure area id once more
 	KEY1_InitKeyCode(cartId, 2, 2);
-	KEY1_encrypt((uint32_t*)&m_cartData[0x4000]);
+	KEY1_encrypt((uint32_t*)&secureArea[0]);
 }
 
 uint8_t Cartridge::NDS7_read(uint32_t address)
@@ -276,7 +297,7 @@ void Cartridge::decodeUnencryptedCmd()
 		transferLength = 0x2000;
 		break;
 	case 0x00:								//read header
-		memcpy(readBuffer, &m_cartData[0], 0x200);
+		memcpy(readBuffer, romHeader, 0x200);
 		transferLength = 0x200;
 		break;
 	case 0x90:								//chip id
@@ -316,7 +337,7 @@ void Cartridge::decodeKEY1Cmd()
 	{
 		uint64_t baseBlock = ((cartCommand >> 44) & 0xF);
 		uint32_t baseAddr = baseBlock << 12;
-		memcpy(readBuffer, &m_cartData[baseAddr], 0x1000);
+		memcpy(readBuffer, &secureArea[baseAddr - 0x4000], 0x1000);
 		//transferLength = 0x1000;
 		break;
 	}
@@ -345,7 +366,9 @@ void Cartridge::decodeKEY2Cmd()
 		uint32_t baseAddr = ((cartCommand >> 24) & 0xFFFFFFFF);
 		if (baseAddr <= 0x8000)				//data read cmds can't read secure area :(
 			baseAddr = 0x8000 + (baseAddr & 0x1FF);
-		memcpy(readBuffer, &m_cartData[baseAddr], transferLength);
+
+		fileHandle.seekg(baseAddr);
+		fileHandle.read((char*)readBuffer, transferLength);
 		break;
 	}
 	case 0xB8:								//chip id
